@@ -21,9 +21,10 @@
     .profile-head { display:flex; align-items:start; justify-content:space-between; gap:16px; } .profile-head h1 { margin:0; } .search-again { color:var(--ink-soft); font-size:.85rem; text-decoration:none; white-space:nowrap; } .search-again:hover { color:var(--ink); text-decoration:underline; }
     body.profile-mode main { max-width:1280px; } body.profile-mode .card { min-height:calc(100vh - 48px); padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; }
     @media (max-width:680px) { body { padding:14px; } main { min-height:calc(100vh - 28px); } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } }
+    body.search-start { display:flex; align-items:center; } body.search-start main { width:100%; min-height:0; } body.search-start .card { min-height:0; padding:34px; }
   </style>
 </head>
-<body>
+<body class="search-start">
   <main class="card">
     <div class="profile-head"><h1 id="title">Student Lookup</h1><a id="searchAgain" class="search-again" href="#" hidden>Search again</a></div>
     <p id="summary">Search by first name, last name, or student ID.</p>
@@ -53,15 +54,16 @@
 
     function resize() { window.parent.postMessage({ type:'student-lookup-resize', height:Math.ceil(document.documentElement.scrollHeight) }, '*'); }
     function text(value) { return value == null || value === '' ? '—' : String(value); }
+    function showResultsLayout() { document.body.classList.remove('search-start'); }
     function renderProfile(record) {
       profile.innerHTML = '';
       if (!record || !record.SIS_ID) return;
       const fields = [['Student ID','SIS_ID'],['Email','email'],['Phone','phone'],['Record created','record_created_date'],['Term','term'],['Year','year'],['Program','program'],['Status','status'],['Church','church']];
       fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','church'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
-      document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=`${text(record.first)} ${text(record.last)}`; summary.textContent='Student profile';
+      showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=`${text(record.first)} ${text(record.last)}`; summary.textContent='Student profile';
     }
     function renderResults(candidates) {
-      document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true;
+      showResultsLayout(); document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true;
       candidates.forEach(person => { const button=document.createElement('button'); button.className='result'; button.type='button'; button.innerHTML='<span class="result-name"></span><span class="result-meta"></span>'; button.querySelector('.result-name').textContent=`${text(person.first)} ${text(person.last)}`; button.querySelector('.result-meta').textContent=[person.SIS_ID, person.email, person.program, person.status].filter(Boolean).join(' · '); button.addEventListener('click', () => window.parent.postMessage({ type:'student-lookup-select', studentId:person.SIS_ID }, '*')); results.appendChild(button); });
       summary.textContent=`${candidates.length} matching students — select one to view the profile.`;
     }
@@ -71,10 +73,11 @@
       firstInput.value = data.query && data.query.first || '';
       lastInput.value = data.query && data.query.last || '';
       sisidInput.value = data.query && data.query.sisid || '';
+      if (data.searched && candidates.length > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; empty.hidden=false; empty.textContent='More than 100 students matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
       if (data.profile || candidates.length === 1) renderProfile(data.profile || candidates[0]);
       else if (candidates.length > 1) renderResults(candidates);
       else if (candidates.length) { empty.hidden=false; empty.textContent='Loading the student profile…'; summary.textContent='Student Lookup'; }
-      else if (data.searched) { empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
+      else if (data.searched) { showResultsLayout(); empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
       requestAnimationFrame(resize);
     });
     searchForm.addEventListener('submit', (event) => {
