@@ -51,6 +51,9 @@ const WORKER_URL = "https://slate-query-tool.yoursubdomain.workers.dev";
 Push this repo to GitHub, enable **Settings → Pages → Deploy from branch**,
 and point it at the branch/folder containing `index.html`.
 
+The user and administrator views are available from the tabs in the deployed
+single-page app.
+
 ## Notes
 
 - The Worker requires the shared password for every API request. Login attempts

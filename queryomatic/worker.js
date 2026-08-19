@@ -43,8 +43,6 @@
  * - SLATE_TOKEN_MAINDB
  * - ANTHROPIC_API_KEY
  * - GITHUB_TOKEN
- * - APP_PASSWORD
- * - SESSION_SECRET
  *
  * Vars:
  * - SLATE_OPTIONS_URL
@@ -64,9 +62,6 @@ const GITHUB_OPTIONS_PATH = "options.md";
 
 const GITHUB_API_URL =
   `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_OPTIONS_PATH}`;
-
-const EXPORT_CACHE_PREFIX = "export-run:";
-const EXPORT_TTL_SECONDS = 15 * 60;
 
 
 
@@ -137,20 +132,11 @@ function corsHeaders(env) {
 
     "Access-Control-Allow-Headers":
       "Content-Type",
-
-    "Access-Control-Expose-Headers":
-      "Content-Disposition",
-
-    "Access-Control-Allow-Credentials":
-      "true",
-
-    "Vary":
-      "Origin",
   };
 }
 
 
-function json(data, env, status = 200, extraHeaders = {}) {
+function json(data, env, status = 200) {
   return new Response(
     JSON.stringify(data),
     {
@@ -158,97 +144,9 @@ function json(data, env, status = 200, extraHeaders = {}) {
       headers: {
         "Content-Type": "application/json",
         ...corsHeaders(env),
-        ...extraHeaders,
       },
     }
   );
-}
-
-
-// ============================================================
-// SHARED-PASSWORD SESSION AUTHENTICATION
-// ============================================================
-
-const SESSION_COOKIE = "queryomatic_session";
-const SESSION_DURATION_SECONDS = 8 * 60 * 60;
-const LOGIN_WINDOW_SECONDS = 15 * 60;
-const MAX_LOGIN_ATTEMPTS = 5;
-
-function base64UrlEncode(bytes) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function base64UrlDecode(value) {
-  const padded = String(value).replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - String(value).length % 4) % 4);
-  const binary = atob(padded);
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-}
-
-async function hmacSha256(secret, text) {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  return new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text)));
-}
-
-function timingSafeEqual(first, second) {
-  if (first.length !== second.length) return false;
-  let result = 0;
-  for (let i = 0; i < first.length; i++) result |= first[i] ^ second[i];
-  return result === 0;
-}
-
-function cookieValue(request, name) {
-  const match = request.headers.get("Cookie")?.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return match ? match[1] : null;
-}
-
-async function createSession(env) {
-  if (!env.SESSION_SECRET) throw new Error("SESSION_SECRET is missing");
-  const payload = base64UrlEncode(new TextEncoder().encode(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS })));
-  const signature = base64UrlEncode(await hmacSha256(env.SESSION_SECRET, payload));
-  return `${payload}.${signature}`;
-}
-
-async function hasValidSession(request, env) {
-  if (!env.SESSION_SECRET) return false;
-  const token = cookieValue(request, SESSION_COOKIE);
-  if (!token || token.split(".").length !== 2) return false;
-  try {
-    const [payload, providedSignature] = token.split(".");
-    const expectedSignature = base64UrlEncode(await hmacSha256(env.SESSION_SECRET, payload));
-    if (!timingSafeEqual(base64UrlDecode(providedSignature), base64UrlDecode(expectedSignature))) return false;
-    const { exp } = JSON.parse(new TextDecoder().decode(base64UrlDecode(payload)));
-    return Number.isInteger(exp) && exp > Math.floor(Date.now() / 1000);
-  } catch {
-    return false;
-  }
-}
-
-async function passwordMatches(password, expectedPassword) {
-  const encoder = new TextEncoder();
-  const suppliedHash = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(password)));
-  const expectedHash = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(expectedPassword)));
-  return timingSafeEqual(suppliedHash, expectedHash);
-}
-
-function clientIp(request) {
-  return request.headers.get("CF-Connecting-IP") || "unknown";
-}
-
-async function loginIsRateLimited(env, request) {
-  const attempts = Number(await env.OPTIONS_CACHE.get(`login-attempts:${clientIp(request)}`) || 0);
-  return attempts >= MAX_LOGIN_ATTEMPTS;
-}
-
-async function recordFailedLogin(env, request) {
-  const key = `login-attempts:${clientIp(request)}`;
-  const attempts = Number(await env.OPTIONS_CACHE.get(key) || 0) + 1;
-  await env.OPTIONS_CACHE.put(key, String(attempts), { expirationTtl: LOGIN_WINDOW_SECONDS });
-}
-
-function sessionCookie(value) {
-  return `${SESSION_COOKIE}=${value}; Path=/; Max-Age=${SESSION_DURATION_SECONDS}; HttpOnly; Secure; SameSite=None`;
 }
 
 
@@ -396,9 +294,7 @@ async function getGitHubOptionsFile(
   }
 
 
-  // GitHub represents an intentionally empty file as content: "".
-  // Accept that valid value so a Slate refresh can rebuild options.md.
-  if (typeof data.content !== "string") {
+  if (!data.content) {
     throw new Error(
       "GitHub options.md response did not contain file content"
     );
@@ -1221,11 +1117,6 @@ async function generateQueryParams(
   optionsMarkdown
 ) {
 
-  const currentDate =
-    new Date()
-      .toISOString()
-      .slice(0, 10);
-
   logInfo(
     id,
     "Starting Anthropic request",
@@ -1281,26 +1172,6 @@ If the user does not specify a parameter, leave that parameter as an empty strin
 
 If the user's language corresponds to an alias or instruction in a Context section, translate it to the appropriate exact value from Valid Values.
 
-The output keys are Slate query parameter names. Map them to these options.md sections:
-
-- term: academic_term
-- year: academic_year
-- status: person_status
-- pipeline: pipelines
-- teachingsite: teachingsites
-- program: program
-- app_code: Decision Code
-
-Use the exact Valid Values from the mapped section. For a shorthand location such as "Burbank", select the one teaching-site value that contains that location name.
-
-Today is ${currentDate}. Resolve relative academic-term language when possible. For example, "this fall" means term "Fall" and the academic-year value whose first year is this calendar year. Thus, during 2026, "this fall" maps to year "2026-2027".
-
-When the user asks for "students", use the exact person_status value "Student" in the status output key, if it is a valid value.
-
-When the user asks for "admitted students" or "admitted applications", set status to the exact person_status value "Student" and app_code to "AT", if those are valid values. When they specifically ask for provisionally admitted students, use app_code "ATP" instead.
-
-Application Created Date is a date range. Use app_createddate_start for the inclusive beginning of the requested range and app_createddate_end for the inclusive end. Return dates in YYYY-MM-DD format. If the user provides only one boundary (for example, "created since January 1, 2026"), leave the other boundary empty. If they name a full month, use its first and last calendar dates. Do not use app_createddate.
-
 OPTIONS.MD
 ============================================================
 
@@ -1319,8 +1190,7 @@ Respond with ONLY a JSON object using exactly these keys:
   "teachingsite": "",
   "program": "",
   "app_code": "",
-  "app_createddate_start": "",
-  "app_createddate_end": ""
+  "app_createddate": ""
 }
 
 No prose.
@@ -1597,36 +1467,6 @@ async function runSlateQuery(
 
 
 // ============================================================
-// CSV EXPORTS
-// ============================================================
-
-function slateRows(data) {
-  if (Array.isArray(data)) return data;
-  return Array.isArray(data?.row) ? data.row : [];
-}
-
-function csvCell(value) {
-  const text = String(value ?? "");
-  return /[\",\n\r]/.test(text)
-    ? `"${text.replace(/"/g, '""')}"`
-    : text;
-}
-
-function rowsToCsv(rows) {
-  if (!rows.length) return "";
-
-  const columns = [...new Set(rows.flatMap((row) => Object.keys(row || {})))];
-  const lines = [columns.map(csvCell).join(",")];
-
-  for (const row of rows) {
-    lines.push(columns.map((column) => csvCell(row?.[column])).join(","));
-  }
-
-  return lines.join("\r\n");
-}
-
-
-// ============================================================
 // WORKER
 // ============================================================
 
@@ -1682,37 +1522,6 @@ export default {
 
 
     try {
-
-      // Login is the only endpoint that does not require a valid session.
-      if (url.pathname === "/api/login" && request.method === "POST") {
-        if (!env.APP_PASSWORD || !env.SESSION_SECRET) {
-          throw new Error("APP_PASSWORD or SESSION_SECRET is missing");
-        }
-        if (await loginIsRateLimited(env, request)) {
-          return json({ error: "Too many attempts. Try again in 15 minutes." }, env, 429);
-        }
-
-        const body = await request.json();
-        if (!await passwordMatches(String(body?.password || ""), env.APP_PASSWORD)) {
-          await recordFailedLogin(env, request);
-          return json({ error: "Incorrect password" }, env, 401);
-        }
-
-        return json(
-          { ok: true },
-          env,
-          200,
-          { "Set-Cookie": sessionCookie(await createSession(env)) }
-        );
-      }
-
-      if (!await hasValidSession(request, env)) {
-        return json({ error: "Sign in required" }, env, 401);
-      }
-
-      if (url.pathname === "/api/session" && request.method === "GET") {
-        return json({ ok: true }, env);
-      }
 
 
       // ======================================================
@@ -1926,99 +1735,6 @@ export default {
           },
           env
         );
-      }
-
-
-      // ======================================================
-      // CREATE CSV EXPORT
-      //
-      // Generates query parameters from a prompt, runs the
-      // main Slate query, and stores the CSV briefly in KV.
-      // ======================================================
-
-      if (
-        url.pathname === "/api/export" &&
-        request.method === "POST"
-      ) {
-
-        const body = await request.json();
-        const prompt = body?.prompt;
-
-        if (!prompt || !String(prompt).trim()) {
-          return json(
-            {
-              error: "Missing 'prompt'",
-              requestId: id,
-            },
-            env,
-            400
-          );
-        }
-
-        const file = await getGitHubOptionsFile(env, id);
-        const params = await generateQueryParams(
-          env,
-          id,
-          String(prompt),
-          file.markdown
-        );
-        const data = await runSlateQuery(env, id, params);
-        const rows = slateRows(data);
-        const runId = crypto.randomUUID();
-
-        await env.OPTIONS_CACHE.put(
-          `${EXPORT_CACHE_PREFIX}${runId}`,
-          rowsToCsv(rows),
-          { expirationTtl: EXPORT_TTL_SECONDS }
-        );
-
-        return json(
-          {
-            runId,
-            downloadUrl: new URL(`/api/export/${runId}`, url.origin).toString(),
-            rowCount: rows.length,
-            params,
-            expiresInSeconds: EXPORT_TTL_SECONDS,
-            requestId: id,
-          },
-          env,
-          201
-        );
-      }
-
-
-      // ======================================================
-      // DOWNLOAD CSV EXPORT
-      // ======================================================
-
-      const exportMatch = url.pathname.match(
-        /^\/api\/export\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i
-      );
-
-      if (exportMatch && request.method === "GET") {
-        const csv = await env.OPTIONS_CACHE.get(
-          `${EXPORT_CACHE_PREFIX}${exportMatch[1]}`
-        );
-
-        if (csv === null) {
-          return json(
-            {
-              error: "Export run was not found or has expired",
-              requestId: id,
-            },
-            env,
-            404
-          );
-        }
-
-        return new Response(csv, {
-          headers: {
-            "Content-Type": "text/csv; charset=utf-8",
-            "Content-Disposition": `attachment; filename=\"enrollment_export_${exportMatch[1]}.csv\"`,
-            "Cache-Control": "no-store",
-            ...corsHeaders(env),
-          },
-        });
       }
 
 
