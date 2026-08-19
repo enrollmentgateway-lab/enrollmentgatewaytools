@@ -29,6 +29,7 @@
 
     function reportHeight() {
       const height = Math.ceil(document.documentElement.scrollHeight);
+      console.info('[iframe bridge] reporting height', height);
       window.parent.postMessage({ type: 'slate-iframe-resize', height }, '*');
     }
 
@@ -80,7 +81,13 @@
       requestAnimationFrame(reportHeight);
     });
 
-    window.addEventListener('load', reportHeight);
+    window.addEventListener('load', () => {
+      reportHeight();
+      // Slate can finish registering its listener after a very fast iframe load.
+      window.setTimeout(reportHeight, 100);
+      window.setTimeout(reportHeight, 500);
+    });
+    new ResizeObserver(reportHeight).observe(document.documentElement);
   </script>
 </body>
 </html>
