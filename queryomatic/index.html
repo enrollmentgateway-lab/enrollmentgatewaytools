@@ -310,7 +310,8 @@
 
   const $ = (id) => document.getElementById(id);
 
-  let mode = "user";
+  const requestedMode = new URLSearchParams(window.location.search).get("mode");
+  let mode = requestedMode === "admin" ? "admin" : "user";
   let lastPrompt = "";
   let lastParams = null;
   let currentData = [];
@@ -355,6 +356,7 @@
   document.querySelectorAll(".tab").forEach((t) => {
     t.addEventListener("click", () => setMode(t.dataset.mode));
   });
+  setMode(mode);
 
   $("prompt").addEventListener("input", () => setStep("ask"));
   $("prompt").addEventListener("keydown", (e) => {
