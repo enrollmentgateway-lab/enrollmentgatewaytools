@@ -43,6 +43,9 @@
     const empty = document.getElementById('empty');
     const summary = document.getElementById('summary');
     const searchForm = document.getElementById('searchForm');
+    const firstInput = document.getElementById('first');
+    const lastInput = document.getElementById('last');
+    const sisidInput = document.getElementById('sisid');
     const allowedOrigin = 'https://enroll.gs.edu';
 
     function resize() { window.parent.postMessage({ type:'student-lookup-resize', height:Math.ceil(document.documentElement.scrollHeight) }, '*'); }
@@ -62,6 +65,9 @@
     window.addEventListener('message', (event) => {
       if (event.origin !== allowedOrigin || !event.data || event.data.type !== 'student-lookup-data') return;
       const data = event.data.payload || {}; const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+      firstInput.value = data.query && data.query.first || '';
+      lastInput.value = data.query && data.query.last || '';
+      sisidInput.value = data.query && data.query.sisid || '';
       if (data.profile) renderProfile(data.profile);
       else if (candidates.length > 1) renderResults(candidates);
       else if (candidates.length) { empty.hidden=false; empty.textContent='Loading the student profile…'; summary.textContent='Student Lookup'; }
