@@ -68,7 +68,7 @@
       firstInput.value = data.query && data.query.first || '';
       lastInput.value = data.query && data.query.last || '';
       sisidInput.value = data.query && data.query.sisid || '';
-      if (data.profile) renderProfile(data.profile);
+      if (data.profile || candidates.length === 1) renderProfile(data.profile || candidates[0]);
       else if (candidates.length > 1) renderResults(candidates);
       else if (candidates.length) { empty.hidden=false; empty.textContent='Loading the student profile…'; summary.textContent='Student Lookup'; }
       else if (data.searched) { empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
