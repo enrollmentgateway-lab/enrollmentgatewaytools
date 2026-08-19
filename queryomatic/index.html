@@ -308,13 +308,18 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // Queryomatic is hosted below the consolidated GitHub Pages project path.
+  const SITE_BASE = "/enrollmentgatewaytools/queryomatic";
   const requestedPath = new URLSearchParams(window.location.search).get("path");
   const routePath = requestedPath || window.location.pathname;
-  let mode = routePath.replace(/\/$/, "") === "/admin" ? "admin" : "user";
+  const toolPath = routePath.startsWith(SITE_BASE)
+    ? (routePath.slice(SITE_BASE.length) || "/home")
+    : routePath;
+  let mode = toolPath.replace(/\/$/, "") === "/admin" ? "admin" : "user";
 
   // GitHub Pages serves 404.html for extensionless routes. Restore the
   // requested address after that fallback has loaded this single-page app.
-  if (requestedPath === "/home" || requestedPath === "/admin") {
+  if (requestedPath && (toolPath === "/home" || toolPath === "/admin")) {
     window.history.replaceState(null, "", requestedPath);
   }
   let lastPrompt = "";
