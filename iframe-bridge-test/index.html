@@ -27,6 +27,11 @@
     const status = document.getElementById('status');
     const payload = document.getElementById('payload');
 
+    function reportHeight() {
+      const height = Math.ceil(document.documentElement.scrollHeight);
+      window.parent.postMessage({ type: 'slate-iframe-resize', height }, '*');
+    }
+
     console.info('[iframe bridge] receiver loaded', {
       origin: window.location.origin,
       embedded: window.self !== window.top
@@ -72,7 +77,10 @@
       });
       table.appendChild(body);
       payload.appendChild(table);
+      requestAnimationFrame(reportHeight);
     });
+
+    window.addEventListener('load', reportHeight);
   </script>
 </body>
 </html>
