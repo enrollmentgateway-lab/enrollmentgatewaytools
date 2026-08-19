@@ -27,10 +27,25 @@
     const status = document.getElementById('status');
     const payload = document.getElementById('payload');
 
+    console.info('[iframe bridge] receiver loaded', {
+      origin: window.location.origin,
+      embedded: window.self !== window.top
+    });
+
     window.addEventListener('message', (event) => {
+      console.info('[iframe bridge] message received', {
+        origin: event.origin,
+        type: event.data && event.data.type
+      });
       // The production pages will replace this with the exact Slate origin.
-      if (!event.origin.endsWith('.gs.edu')) return;
-      if (!event.data || event.data.type !== 'slate-iframe-test') return;
+      if (!event.origin.endsWith('.gs.edu')) {
+        console.warn('[iframe bridge] rejected message: unexpected origin', event.origin);
+        return;
+      }
+      if (!event.data || event.data.type !== 'slate-iframe-test') {
+        console.warn('[iframe bridge] rejected message: unexpected payload');
+        return;
+      }
 
       status.textContent = 'Message received from Slate.';
       status.style.color = '#2a6b3c';
