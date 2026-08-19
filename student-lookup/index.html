@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Lookup</title>
+  <style>
+    :root { --navy:#1a2b4a; --gold:#c8952a; --cream:#f7f4ef; --border:#ddd8d0; --muted:#6b7a8d; font-family:Inter,system-ui,sans-serif; color:var(--navy); }
+    body { margin:0; background:var(--cream); padding:24px; } main { max-width:980px; margin:auto; }
+    .card { background:#fff; border:1px solid var(--border); border-radius:6px; padding:24px; box-shadow:0 2px 12px #1a2b4a18; }
+    h1 { margin:0 0 6px; font-size:1.6rem; } p { color:var(--muted); margin:0 0 18px; line-height:1.5; }
+    label { display:block; margin-bottom:6px; font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+    select { width:100%; padding:10px; border:1px solid var(--border); border-radius:4px; color:var(--navy); font:inherit; background:#fff; }
+    .profile { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-top:18px; }
+    .field { padding:12px; border:1px solid var(--border); border-radius:4px; background:#fff; } .field b { display:block; margin-top:4px; font-size:1rem; }
+    .empty { padding:28px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:4px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Student Lookup</h1>
+    <p id="summary">Search for a student from the Slate portal above.</p>
+    <div id="candidateArea" hidden>
+      <label for="candidateSelect">Matching students</label>
+      <select id="candidateSelect"><option value="">Choose a student…</option></select>
+    </div>
+    <section id="profile" class="profile" hidden></section>
+    <div id="empty" class="empty">Enter a first name, last name, or student ID to begin.</div>
+  </main>
+  <script>
+    const candidateArea = document.getElementById('candidateArea');
+    const candidateSelect = document.getElementById('candidateSelect');
+    const profile = document.getElementById('profile');
+    const empty = document.getElementById('empty');
+    const summary = document.getElementById('summary');
+    const allowedOrigin = 'https://enroll.gs.edu';
+
+    function resize() { window.parent.postMessage({ type:'student-lookup-resize', height:Math.ceil(document.documentElement.scrollHeight) }, '*'); }
+    function text(value) { return value == null || value === '' ? '—' : String(value); }
+    function renderProfile(record) {
+      profile.innerHTML = '';
+      if (!record || !record.id) return;
+      const fields = [['Student ID','id'],['Name','name'],['Email','email'],['Phone','phone'],['Program','program'],['Campus','campus'],['Status','status']];
+      fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field'; el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
+      profile.hidden=false; empty.hidden=true; summary.textContent='Student profile';
+    }
+    window.addEventListener('message', (event) => {
+      if (event.origin !== allowedOrigin || !event.data || event.data.type !== 'student-lookup-data') return;
+      const data = event.data.payload || {}; const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+      candidateSelect.innerHTML='<option value="">Choose a student…</option>';
+      candidates.forEach(person => { const option=document.createElement('option'); option.value=person.id || ''; option.textContent=`${text(person.name)} — ${text(person.id)}${person.email ? ' — '+person.email : ''}`; candidateSelect.appendChild(option); });
+      candidateArea.hidden = candidates.length < 2;
+      if (candidates.length === 1 && !data.profile) { window.parent.postMessage({ type:'student-lookup-select', studentId:candidates[0].id }, '*'); }
+      if (data.profile) renderProfile(data.profile); else if (candidates.length) { empty.hidden=false; empty.textContent='Select a student to view the full profile.'; summary.textContent=`${candidates.length} matching student${candidates.length === 1 ? '' : 's'}`; }
+      else if (data.searched) { empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
+      requestAnimationFrame(resize);
+    });
+    candidateSelect.addEventListener('change', () => { if (candidateSelect.value) window.parent.postMessage({ type:'student-lookup-select', studentId:candidateSelect.value }, '*'); });
+    window.addEventListener('load', () => { resize(); setTimeout(resize, 300); }); new ResizeObserver(resize).observe(document.documentElement);
+  </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!-- Configure the Slate query to expose `student_results` for name/ID searches
+     and `student_profile` for the selected ?student_id= record. -->
+<form method="get" style="margin-bottom:16px;">
+  <label for="lookupField">Search by</label>
+  <select id="lookupField" name="search_field">
+    <option value="first" {% if search_field == "first" %}selected{% endif %}>First name</option>
+    <option value="last" {% if search_field == "last" %}selected{% endif %}>Last name</option>
+    <option value="student_id" {% if search_field == "student_id" %}selected{% endif %}>Student ID</option>
+  </select>
+  <input name="search" value="{{search | escape}}" placeholder="Enter search text" style="margin:8px; padding:8px;">
+  <button type="submit">Search</button>
+</form>
+
+<div id="studentLookupData" style="display:none">
+  {% for person in student_results %}
+  <div class="candidate"><span class="id">{{person.id | escape}}</span><span class="name">{{person.name | escape}}</span><span class="email">{{person.email | escape}}</span></div>
+  {% endfor %}
+  {% for person in student_profile %}
+  <div class="profile"><span class="id">{{person.id | escape}}</span><span class="name">{{person.name | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="campus">{{person.campus | escape}}</span><span class="status">{{person.status | escape}}</span></div>
+  {% endfor %}
+</div>
+
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/" title="Student Lookup" style="width:100%;height:340px;border:0"></iframe>
+<script>
+(function () {
+  const frame = document.getElementById('studentLookupFrame');
+  const read = (node, key) => { const el = node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
+  const candidates = Array.from(document.querySelectorAll('#studentLookupData .candidate')).map(node => ({ id:read(node,'id'), name:read(node,'name'), email:read(node,'email') }));
+  const profileNode = document.querySelector('#studentLookupData .profile');
+  const profile = profileNode ? { id:read(profileNode,'id'), name:read(profileNode,'name'), email:read(profileNode,'email'), phone:read(profileNode,'phone'), program:read(profileNode,'program'), campus:read(profileNode,'campus'), status:read(profileNode,'status') } : null;
+  window.addEventListener('message', function (event) {
+    if (event.origin !== 'https://enrollmentgateway-lab.github.io' || !event.data) return;
+    if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(340, Math.min(Number(event.data.height) + 16, 5000)) + 'px';
+    if (event.data.type === 'student-lookup-select' && event.data.studentId) { const url = new URL(window.location.href); url.searchParams.set('student_id', event.data.studentId); window.location.assign(url); }
+  });
+  frame.addEventListener('load', function () { frame.contentWindow.postMessage({ type:'student-lookup-data', payload:{ searched: {{search | default: '' | size}} > 0, candidates:candidates, profile:profile } }, 'https://enrollmentgateway-lab.github.io'); });
+}());
+</script>

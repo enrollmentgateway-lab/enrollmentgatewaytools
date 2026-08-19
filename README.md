@@ -12,6 +12,8 @@ This repository is the single source of truth for the Enrollment Intelligence Hu
   - `event-tracker.liquid.html`
   - `teaching-site-overview.liquid.html`
 - `iframe-bridge-test/` — working proof of concept for Slate query data sent to a GitHub-hosted iframe with automatic height resizing.
+- `student-lookup/` — GitHub-hosted student search/profile interface.
+- `slate-templates/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Student Lookup portal.
 
 ## Deployment model
 
