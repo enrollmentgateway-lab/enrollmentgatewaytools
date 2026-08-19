@@ -19,8 +19,9 @@
     .empty { padding:28px; text-align:center; color:var(--ink-soft); border:1px dashed var(--line); border-radius:10px; }
     .results { display:grid; gap:10px; margin-top:18px; } .result { width:100%; height:auto; padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); text-align:left; box-shadow:none; } .result:hover { border-color:var(--accent-dark); background:#fffaf0; } .result-name { display:block; font-size:1rem; } .result-meta { display:block; margin-top:5px; color:var(--ink-soft); font-size:.85rem; font-weight:400; }
     .profile-head { display:flex; align-items:start; justify-content:space-between; gap:16px; } .profile-head h1 { margin:0; } .search-again { color:var(--ink-soft); font-size:.85rem; text-decoration:none; white-space:nowrap; } .search-again:hover { color:var(--ink); text-decoration:underline; }
-    body.profile-mode main { max-width:1280px; } body.profile-mode .card { min-height:calc(100vh - 48px); padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; }
-    @media (max-width:680px) { body { padding:14px; } main { min-height:calc(100vh - 28px); } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } }
+    body.profile-mode main { max-width:1280px; } body.profile-mode .card { min-height:calc(100vh - 48px); padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; } body.profile-mode .profile { grid-template-columns:repeat(3,minmax(0,1fr)); } form[hidden] { display:none !important; }
+    @media (max-width:800px) { body { padding:14px; } main { min-height:calc(100vh - 28px); } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } body.profile-mode .profile { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width:520px) { body.profile-mode .profile { grid-template-columns:1fr; } }
     body.search-start { display:flex; align-items:center; } body.search-start main { width:100%; min-height:0; } body.search-start .card { min-height:0; padding:34px; }
   </style>
 </head>
@@ -58,7 +59,7 @@
     function renderProfile(record) {
       profile.innerHTML = '';
       if (!record || !record.SIS_ID) return;
-      const fields = [['Student ID','SIS_ID'],['Email','email'],['Phone','phone'],['Record created','record_created_date'],['Term','term'],['Year','year'],['Program','program'],['Status','status'],['Church','church']];
+      const fields = [['Program','program'],['Status','status'],['Church','church'],['Student ID','SIS_ID'],['Email','email'],['Phone','phone'],['Record created','record_created_date'],['Term','term'],['Year','year']];
       fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','church'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
       showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=`${text(record.first)} ${text(record.last)}`; summary.textContent='Student profile';
     }
