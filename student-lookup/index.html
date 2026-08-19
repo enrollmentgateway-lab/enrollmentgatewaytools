@@ -13,11 +13,13 @@
     select, input { width:100%; height:42px; margin-top:6px; padding:9px 11px; border:1.5px solid var(--line); border-radius:8px; color:var(--ink); font:inherit; background:#fff; }
     input:focus { outline:none; border-color:var(--ink); box-shadow:0 0 0 3px #12172b14; }
     .search { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 112px; gap:12px; margin:20px 0; align-items:end; } button { height:42px; padding:0 18px; border:1px solid var(--accent-dark); border-radius:999px; background:var(--accent); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; box-shadow:0 2px 0 var(--accent-dark); } button:active { transform:translateY(2px); box-shadow:none; }
-    .profile { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-top:18px; }
+    .profile { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:24px; }
     .field { padding:12px; border:1px solid var(--border); border-radius:4px; background:#fff; } .field b { display:block; margin-top:4px; font-size:1rem; }
+    .field.feature { padding:18px; border-color:#f2d9a3; background:#fffaf0; box-shadow:0 1px 0 #f2d9a3; } .field.feature b { font-size:1.15rem; color:var(--ink); }
     .empty { padding:28px; text-align:center; color:var(--ink-soft); border:1px dashed var(--line); border-radius:10px; }
     .results { display:grid; gap:10px; margin-top:18px; } .result { width:100%; height:auto; padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); text-align:left; box-shadow:none; } .result:hover { border-color:var(--accent-dark); background:#fffaf0; } .result-name { display:block; font-size:1rem; } .result-meta { display:block; margin-top:5px; color:var(--ink-soft); font-size:.85rem; font-weight:400; }
     .profile-head { display:flex; align-items:start; justify-content:space-between; gap:16px; } .profile-head h1 { margin:0; } .search-again { color:var(--ink-soft); font-size:.85rem; text-decoration:none; white-space:nowrap; } .search-again:hover { color:var(--ink); text-decoration:underline; }
+    body.profile-mode main { max-width:1280px; } body.profile-mode .card { min-height:calc(100vh - 48px); padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; }
     @media (max-width:680px) { body { padding:14px; } main { min-height:calc(100vh - 28px); } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } }
   </style>
 </head>
@@ -39,6 +41,7 @@
     const results = document.getElementById('results');
     const title = document.getElementById('title');
     const searchAgain = document.getElementById('searchAgain');
+    const app = document.querySelector('main');
     const profile = document.getElementById('profile');
     const empty = document.getElementById('empty');
     const summary = document.getElementById('summary');
@@ -53,12 +56,12 @@
     function renderProfile(record) {
       profile.innerHTML = '';
       if (!record || !record.SIS_ID) return;
-      const fields = [['Student ID','SIS_ID'],['First name','first'],['Last name','last'],['Email','email'],['Phone','phone'],['Program','program'],['Status','status'],['Record created','record_created_date'],['Term','term'],['Year','year'],['Church','church']];
-      fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field'; el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
-      profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=`${text(record.first)} ${text(record.last)}`; summary.textContent='Student profile';
+      const fields = [['Student ID','SIS_ID'],['Email','email'],['Phone','phone'],['Record created','record_created_date'],['Term','term'],['Year','year'],['Program','program'],['Status','status'],['Church','church']];
+      fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','church'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
+      document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=`${text(record.first)} ${text(record.last)}`; summary.textContent='Student profile';
     }
     function renderResults(candidates) {
-      results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true;
+      document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true;
       candidates.forEach(person => { const button=document.createElement('button'); button.className='result'; button.type='button'; button.innerHTML='<span class="result-name"></span><span class="result-meta"></span>'; button.querySelector('.result-name').textContent=`${text(person.first)} ${text(person.last)}`; button.querySelector('.result-meta').textContent=[person.SIS_ID, person.email, person.program, person.status].filter(Boolean).join(' · '); button.addEventListener('click', () => window.parent.postMessage({ type:'student-lookup-select', studentId:person.SIS_ID }, '*')); results.appendChild(button); });
       summary.textContent=`${candidates.length} matching students — select one to view the profile.`;
     }
