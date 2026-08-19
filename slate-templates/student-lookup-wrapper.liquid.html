@@ -1,5 +1,5 @@
-<!-- Configure the Slate query to expose `student_results` for name/ID searches
-     and `student_profile` for the selected ?student_id= record. -->
+<!-- Configure the Slate query node `student_lookup` to filter by `search_field`
+     + `search`, or by the selected ?student_id= SIS_ID. -->
 <form method="get" style="margin-bottom:16px;">
   <label for="lookupField">Search by</label>
   <select id="lookupField" name="search_field">
@@ -12,12 +12,7 @@
 </form>
 
 <div id="studentLookupData" style="display:none">
-  {% for person in student_results %}
-  <div class="candidate"><span class="id">{{person.id | escape}}</span><span class="name">{{person.name | escape}}</span><span class="email">{{person.email | escape}}</span></div>
-  {% endfor %}
-  {% for person in student_profile %}
-  <div class="profile"><span class="id">{{person.id | escape}}</span><span class="name">{{person.name | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="campus">{{person.campus | escape}}</span><span class="status">{{person.status | escape}}</span></div>
-  {% endfor %}
+  {% if student_id != blank %}{% for person in student_lookup %}<div class="profile"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="status">{{person.status | escape}}</span><span class="record_created_date">{{person.record_created_date | escape}}</span><span class="term">{{person.term | escape}}</span><span class="year">{{person.year | escape}}</span><span class="church">{{person.church | escape}}</span></div>{% endfor %}{% else %}{% for person in student_lookup %}<div class="candidate"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span></div>{% endfor %}{% endif %}
 </div>
 
 <iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/" title="Student Lookup" style="width:100%;height:340px;border:0"></iframe>
@@ -25,9 +20,9 @@
 (function () {
   const frame = document.getElementById('studentLookupFrame');
   const read = (node, key) => { const el = node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
-  const candidates = Array.from(document.querySelectorAll('#studentLookupData .candidate')).map(node => ({ id:read(node,'id'), name:read(node,'name'), email:read(node,'email') }));
+  const candidates = Array.from(document.querySelectorAll('#studentLookupData .candidate')).map(node => ({ SIS_ID:read(node,'SIS_ID'), first:read(node,'first'), last:read(node,'last'), email:read(node,'email') }));
   const profileNode = document.querySelector('#studentLookupData .profile');
-  const profile = profileNode ? { id:read(profileNode,'id'), name:read(profileNode,'name'), email:read(profileNode,'email'), phone:read(profileNode,'phone'), program:read(profileNode,'program'), campus:read(profileNode,'campus'), status:read(profileNode,'status') } : null;
+  const profile = profileNode ? { SIS_ID:read(profileNode,'SIS_ID'), first:read(profileNode,'first'), last:read(profileNode,'last'), email:read(profileNode,'email'), phone:read(profileNode,'phone'), program:read(profileNode,'program'), status:read(profileNode,'status'), record_created_date:read(profileNode,'record_created_date'), term:read(profileNode,'term'), year:read(profileNode,'year'), church:read(profileNode,'church') } : null;
   window.addEventListener('message', function (event) {
     if (event.origin !== 'https://enrollmentgateway-lab.github.io' || !event.data) return;
     if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(340, Math.min(Number(event.data.height) + 16, 5000)) + 'px';

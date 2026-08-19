@@ -39,8 +39,8 @@
     function text(value) { return value == null || value === '' ? '—' : String(value); }
     function renderProfile(record) {
       profile.innerHTML = '';
-      if (!record || !record.id) return;
-      const fields = [['Student ID','id'],['Name','name'],['Email','email'],['Phone','phone'],['Program','program'],['Campus','campus'],['Status','status']];
+      if (!record || !record.SIS_ID) return;
+      const fields = [['Student ID','SIS_ID'],['First name','first'],['Last name','last'],['Email','email'],['Phone','phone'],['Program','program'],['Status','status'],['Record created','record_created_date'],['Term','term'],['Year','year'],['Church','church']];
       fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field'; el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
       profile.hidden=false; empty.hidden=true; summary.textContent='Student profile';
     }
@@ -48,9 +48,9 @@
       if (event.origin !== allowedOrigin || !event.data || event.data.type !== 'student-lookup-data') return;
       const data = event.data.payload || {}; const candidates = Array.isArray(data.candidates) ? data.candidates : [];
       candidateSelect.innerHTML='<option value="">Choose a student…</option>';
-      candidates.forEach(person => { const option=document.createElement('option'); option.value=person.id || ''; option.textContent=`${text(person.name)} — ${text(person.id)}${person.email ? ' — '+person.email : ''}`; candidateSelect.appendChild(option); });
+      candidates.forEach(person => { const option=document.createElement('option'); option.value=person.SIS_ID || ''; option.textContent=`${text(person.first)} ${text(person.last)} — ${text(person.SIS_ID)}${person.email ? ' — '+person.email : ''}`; candidateSelect.appendChild(option); });
       candidateArea.hidden = candidates.length < 2;
-      if (candidates.length === 1 && !data.profile) { window.parent.postMessage({ type:'student-lookup-select', studentId:candidates[0].id }, '*'); }
+      if (candidates.length === 1 && !data.profile) { window.parent.postMessage({ type:'student-lookup-select', studentId:candidates[0].SIS_ID }, '*'); }
       if (data.profile) renderProfile(data.profile); else if (candidates.length) { empty.hidden=false; empty.textContent='Select a student to view the full profile.'; summary.textContent=`${candidates.length} matching student${candidates.length === 1 ? '' : 's'}`; }
       else if (data.searched) { empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
       requestAnimationFrame(resize);
