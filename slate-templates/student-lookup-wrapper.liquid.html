@@ -2,24 +2,26 @@
 
 <div id="studentLookupData" style="display:none">
   <div class="query"><span class="first">{{first | escape}}</span><span class="last">{{last | escape}}</span><span class="sisid">{{sisid | escape}}</span></div>
-  {% for person in student_lookup %}<div class="candidate"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="status">{{person.status | escape}}</span><span class="record_created_date">{{person.record_created_date | escape}}</span><span class="term">{{person.term | escape}}</span><span class="year">{{person.year | escape}}</span><span class="church">{{person.church | escape}}</span></div>{% endfor %}
+  <span class="result-count">{{student_lookup.size}}</span>
+  {% if student_lookup.size > 100 %}{% else %}{% for person in student_lookup %}<div class="candidate"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="status">{{person.status | escape}}</span><span class="record_created_date">{{person.record_created_date | escape}}</span><span class="term">{{person.term | escape}}</span><span class="year">{{person.year | escape}}</span><span class="church">{{person.church | escape}}</span></div>{% endfor %}{% endif %}
 </div>
 
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v7" title="Student Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v8" title="Student Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   const frame = document.getElementById('studentLookupFrame');
   const read = (node, key) => { const el = node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
   const queryNode = document.querySelector('#studentLookupData .query');
   const query = queryNode ? { first:read(queryNode,'first'), last:read(queryNode,'last'), sisid:read(queryNode,'sisid') } : {};
+  const resultCount = Number(document.querySelector('#studentLookupData .result-count').textContent) || 0;
   const candidates = Array.from(document.querySelectorAll('#studentLookupData .candidate')).map(node => ({ SIS_ID:read(node,'SIS_ID'), first:read(node,'first'), last:read(node,'last'), email:read(node,'email'), phone:read(node,'phone'), program:read(node,'program'), status:read(node,'status'), record_created_date:read(node,'record_created_date'), term:read(node,'term'), year:read(node,'year'), church:read(node,'church') }));
   const profile = null;
   window.addEventListener('message', function (event) {
     if (event.origin !== 'https://enrollmentgateway-lab.github.io' || !event.data) return;
-    if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(window.innerHeight, 600, Math.min(Number(event.data.height) + 16, 5000)) + 'px';
+    if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height), 5000)) + 'px';
     if (event.data.type === 'student-lookup-select' && event.data.studentId) { const url = new URL(window.location.href); url.searchParams.set('sisid', event.data.studentId); url.searchParams.delete('first'); url.searchParams.delete('last'); window.location.assign(url); }
     if (event.data.type === 'student-lookup-search' && event.data.values) { const url = new URL(window.location.href); ['first','last','sisid'].forEach(key => { const value = String(event.data.values[key] || '').trim(); if (value) url.searchParams.set(key, value); else url.searchParams.delete(key); }); window.location.assign(url); }
   });
-  frame.addEventListener('load', function () { frame.contentWindow.postMessage({ type:'student-lookup-data', payload:{ searched: {{first | default: '' | size}} > 0 || {{last | default: '' | size}} > 0 || {{sisid | default: '' | size}} > 0, query:query, candidates:candidates, profile:profile } }, 'https://enrollmentgateway-lab.github.io'); });
+  frame.addEventListener('load', function () { frame.contentWindow.postMessage({ type:'student-lookup-data', payload:{ searched: {{first | default: '' | size}} > 0 || {{last | default: '' | size}} > 0 || {{sisid | default: '' | size}} > 0, resultCount:resultCount, query:query, candidates:candidates, profile:profile } }, 'https://enrollmentgateway-lab.github.io'); });
 }());
 </script>

@@ -74,7 +74,7 @@
       firstInput.value = data.query && data.query.first || '';
       lastInput.value = data.query && data.query.last || '';
       sisidInput.value = data.query && data.query.sisid || '';
-      if (data.searched && candidates.length > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; empty.hidden=false; empty.textContent='More than 100 students matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
+      if (data.searched && Number(data.resultCount || candidates.length) > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; empty.hidden=false; empty.textContent='More than 100 students matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
       if (data.profile || candidates.length === 1) renderProfile(data.profile || candidates[0]);
       else if (candidates.length > 1) renderResults(candidates);
       else if (candidates.length) { empty.hidden=false; empty.textContent='Loading the student profile…'; summary.textContent='Student Lookup'; }
