@@ -1,16 +1,4 @@
 <!-- Configure `student_lookup` to filter from the first, last, and sisid URL parameters. -->
-<form method="get" style="display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin-bottom:16px;">
-  <label style="display:flex; flex-direction:column; gap:6px;">First name
-    <input type="text" name="first" value="{{first | escape}}" placeholder="First name" style="padding:8px;">
-  </label>
-  <label style="display:flex; flex-direction:column; gap:6px;">Last name
-    <input type="text" name="last" value="{{last | escape}}" placeholder="Last name" style="padding:8px;">
-  </label>
-  <label style="display:flex; flex-direction:column; gap:6px;">Student ID
-    <input type="text" name="sisid" value="{{sisid | escape}}" placeholder="SIS ID" style="padding:8px;">
-  </label>
-  <button type="submit" style="padding:9px 16px;">Search</button>
-</form>
 
 <div id="studentLookupData" style="display:none">
   {% if sisid != blank %}{% for person in student_lookup %}<div class="profile"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="status">{{person.status | escape}}</span><span class="record_created_date">{{person.record_created_date | escape}}</span><span class="term">{{person.term | escape}}</span><span class="year">{{person.year | escape}}</span><span class="church">{{person.church | escape}}</span></div>{% endfor %}{% else %}{% for person in student_lookup %}<div class="candidate"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span></div>{% endfor %}{% endif %}
@@ -27,8 +15,9 @@
   window.addEventListener('message', function (event) {
     if (event.origin !== 'https://enrollmentgateway-lab.github.io' || !event.data) return;
     if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(window.innerHeight - 180, 600, Math.min(Number(event.data.height) + 16, 5000)) + 'px';
-    if (event.data.type === 'student-lookup-select' && event.data.studentId) { const url = new URL(window.location.href); url.searchParams.set('sisid', event.data.studentId); window.location.assign(url); }
+    if (event.data.type === 'student-lookup-select' && event.data.studentId) { const url = new URL(window.location.href); url.searchParams.set('sisid', event.data.studentId); url.searchParams.delete('first'); url.searchParams.delete('last'); window.location.assign(url); }
+    if (event.data.type === 'student-lookup-search' && event.data.values) { const url = new URL(window.location.href); ['first','last','sisid'].forEach(key => { const value = String(event.data.values[key] || '').trim(); if (value) url.searchParams.set(key, value); else url.searchParams.delete(key); }); window.location.assign(url); }
   });
-  frame.addEventListener('load', function () { frame.contentWindow.postMessage({ type:'student-lookup-data', payload:{ searched: true, candidates:candidates, profile:profile } }, 'https://enrollmentgateway-lab.github.io'); });
+  frame.addEventListener('load', function () { frame.contentWindow.postMessage({ type:'student-lookup-data', payload:{ searched: {{first | default: '' | size}} > 0 || {{last | default: '' | size}} > 0 || {{sisid | default: '' | size}} > 0, candidates:candidates, profile:profile } }, 'https://enrollmentgateway-lab.github.io'); });
 }());
 </script>

@@ -10,7 +10,8 @@
     .card { background:#fff; border:1px solid var(--border); border-radius:6px; padding:24px; box-shadow:0 2px 12px #1a2b4a18; }
     h1 { margin:0 0 6px; font-size:1.6rem; } p { color:var(--muted); margin:0 0 18px; line-height:1.5; }
     label { display:block; margin-bottom:6px; font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-    select { width:100%; padding:10px; border:1px solid var(--border); border-radius:4px; color:var(--navy); font:inherit; background:#fff; }
+    select, input { width:100%; padding:10px; border:1px solid var(--border); border-radius:4px; color:var(--navy); font:inherit; background:#fff; }
+    .search { display:grid; grid-template-columns:repeat(3,minmax(150px,1fr)) auto; gap:12px; margin:18px 0; align-items:end; } button { padding:10px 18px; border:0; border-radius:4px; background:var(--navy); color:#fff; font:inherit; font-weight:700; cursor:pointer; }
     .profile { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-top:18px; }
     .field { padding:12px; border:1px solid var(--border); border-radius:4px; background:#fff; } .field b { display:block; margin-top:4px; font-size:1rem; }
     .empty { padding:28px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:4px; }
@@ -19,7 +20,13 @@
 <body>
   <main class="card">
     <h1>Student Lookup</h1>
-    <p id="summary">Search for a student from the Slate portal above.</p>
+    <p id="summary">Search by first name, last name, or student ID.</p>
+    <form id="searchForm" class="search">
+      <label>First name<input id="first" name="first" type="text" autocomplete="given-name"></label>
+      <label>Last name<input id="last" name="last" type="text" autocomplete="family-name"></label>
+      <label>Student ID<input id="sisid" name="sisid" type="text"></label>
+      <button type="submit">Search</button>
+    </form>
     <div id="candidateArea" hidden>
       <label for="candidateSelect">Matching students</label>
       <select id="candidateSelect"><option value="">Choose a student…</option></select>
@@ -33,6 +40,7 @@
     const profile = document.getElementById('profile');
     const empty = document.getElementById('empty');
     const summary = document.getElementById('summary');
+    const searchForm = document.getElementById('searchForm');
     const allowedOrigin = 'https://enroll.gs.edu';
 
     function resize() { window.parent.postMessage({ type:'student-lookup-resize', height:Math.ceil(document.documentElement.scrollHeight) }, '*'); }
@@ -54,6 +62,12 @@
       if (data.profile) renderProfile(data.profile); else if (candidates.length) { empty.hidden=false; empty.textContent='Select a student to view the full profile.'; summary.textContent=`${candidates.length} matching student${candidates.length === 1 ? '' : 's'}`; }
       else if (data.searched) { empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
       requestAnimationFrame(resize);
+    });
+    searchForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(searchForm).entries());
+      if (!values.first && !values.last && !values.sisid) return;
+      window.parent.postMessage({ type:'student-lookup-search', values }, '*');
     });
     candidateSelect.addEventListener('change', () => { if (candidateSelect.value) window.parent.postMessage({ type:'student-lookup-select', studentId:candidateSelect.value }, '*'); });
     window.addEventListener('load', () => { resize(); setTimeout(resize, 300); }); new ResizeObserver(resize).observe(document.documentElement);
