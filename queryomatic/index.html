@@ -105,7 +105,7 @@
     letter-spacing: 0.05em;
     margin-bottom: 0.4rem;
   }
-  textarea, input[type=text] {
+  textarea, input[type=text], input[type=password] {
     width: 100%;
     font-family: var(--sans);
     font-size: 0.95rem;
@@ -190,7 +190,7 @@
   th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
   th { background: var(--ink); color: #fff; font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em; position: sticky; top: 0; }
   tbody tr:hover { background: var(--teal-soft); }
-  .table-scroll { overflow-x: auto; max-height: 480px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+  .table-scroll { overflow-x: auto; max-height: 480px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; margin-top: 0.75rem; }
   .count { font-size: 0.82rem; color: var(--teal-dark); font-weight: 700; margin-bottom: 0.5rem; }
   .empty { color: var(--ink-soft); font-size: 0.9rem; padding: 1.5rem; text-align: center; }
 
@@ -209,13 +209,26 @@
 </style>
 </head>
 <body>
+<div class="wrap" id="loginPanel">
+  <div class="title-mark"><h1>BetterQuery</h1></div>
+  <div class="panel">
+    <h3>Staff sign-in</h3>
+    <p class="hint">Enter the shared staff password to access this tool.</p>
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" />
+    <div class="row">
+      <button id="loginBtn">Sign in</button>
+      <span class="status" id="loginStatus"></span>
+    </div>
+  </div>
+</div>
 <div class="rail" id="rail" aria-hidden="true">
   <div class="seg" data-step="ask" title="Ask"></div>
   <div class="seg" data-step="parse" title="Parse"></div>
   <div class="seg" data-step="results" title="Results"></div>
 </div>
 
-<div class="wrap">
+<div class="wrap" id="appContent" style="display:none;">
   <div class="title-mark"><h1 id="pageTitle">BetterQuery</h1></div>
   <p class="sub" id="modeSub">Type what you need. Hit Go.</p>
 
@@ -279,12 +292,38 @@
   // Point this at your deployed Cloudflare Worker URL.
   const WORKER_URL = "https://slate-query-tool.queryomatic.workers.dev";
 
-  const PARAM_KEYS = ["term", "year", "status", "pipeline", "teachingsite", "program", "app_code", "app_createddate"];
+  const PARAMS = [
+    ["term", "Term"],
+    ["year", "Academic Year"],
+    ["status", "Person Status"],
+    ["pipeline", "Pipeline"],
+    ["teachingsite", "Teaching Site"],
+    ["program", "Program"],
+    ["app_code", "Decision Code"],
+    ["app_createddate_start", "Application Created Date (Start)"],
+    ["app_createddate_end", "Application Created Date (End)"],
+  ];
+  const PARAM_LABELS = Object.fromEntries(PARAMS);
+  const PARAM_KEYS = PARAMS.map(([key]) => key);
 
   const $ = (id) => document.getElementById(id);
 
-  const requestedMode = new URLSearchParams(window.location.search).get("mode");
-  let mode = requestedMode === "admin" ? "admin" : "user";
+  // Queryomatic is hosted below the consolidated GitHub Pages project path.
+  const SITE_BASE = "/enrollmentgatewaytools/queryomatic";
+  const searchParams = new URLSearchParams(window.location.search);
+  const requestedPath = searchParams.get("path");
+  const requestedMode = searchParams.get("mode");
+  const routePath = requestedPath || window.location.pathname;
+  const toolPath = routePath.startsWith(SITE_BASE)
+    ? (routePath.slice(SITE_BASE.length) || "/home")
+    : routePath;
+  let mode = requestedMode === "admin" || toolPath.replace(/\/$/, "") === "/admin" ? "admin" : "user";
+
+  // GitHub Pages serves 404.html for extensionless routes. Restore the
+  // requested address after that fallback has loaded this single-page app.
+  if (requestedPath && (toolPath === "/home" || toolPath === "/admin")) {
+    window.history.replaceState(null, "", requestedPath);
+  }
   let lastPrompt = "";
   let lastParams = null;
   let currentData = [];
@@ -293,6 +332,50 @@
     el.textContent = msg;
     el.className = "status" + (isError ? " error" : "");
   }
+
+  async function apiFetch(path, options = {}) {
+    return fetch(`${WORKER_URL}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: { ...(options.headers || {}) },
+    });
+  }
+
+  function showApp() {
+    $("loginPanel").style.display = "none";
+    $("appContent").style.display = "block";
+  }
+
+  async function signIn() {
+    const password = $("password").value;
+    const button = $("loginBtn");
+    button.disabled = true;
+    setStatus($("loginStatus"), "Signing in...");
+    try {
+      const response = await apiFetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Sign-in failed");
+      $("password").value = "";
+      showApp();
+    } catch (error) {
+      setStatus($("loginStatus"), error.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  $("loginBtn").addEventListener("click", signIn);
+  $("password").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") signIn();
+  });
+
+  apiFetch("/api/session").then((response) => {
+    if (response.ok) showApp();
+  }).catch(() => {});
 
   // Signature: the top rail always reflects which of the three states we're in.
   function setStep(step, pulsing = false) {
@@ -344,7 +427,7 @@
   // ---------- Query generation ----------
 
   async function generateParams(promptText) {
-    const resp = await fetch(`${WORKER_URL}/api/generate`, {
+    const resp = await apiFetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: promptText }),
@@ -355,7 +438,7 @@
   }
 
   async function runParams(params) {
-    const resp = await fetch(`${WORKER_URL}/api/run`, {
+    const resp = await apiFetch("/api/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ params }),
@@ -368,10 +451,10 @@
   function renderParamsGrid(params) {
     const grid = $("paramsGrid");
     grid.innerHTML = "";
-    PARAM_KEYS.forEach((key) => {
+    PARAMS.forEach(([key, labelText]) => {
       const field = document.createElement("div");
       const label = document.createElement("label");
-      label.textContent = key;
+      label.textContent = labelText;
       const input = document.createElement("input");
       input.type = "text";
       input.value = params[key] || "";
@@ -400,7 +483,7 @@
       const tag = document.createElement("span");
       tag.className = "tag";
       tag.style.animationDelay = `${i * 40}ms`;
-      tag.innerHTML = `${key}: <b>${value}</b>`;
+      tag.innerHTML = `${PARAM_LABELS[key] || key}: <b>${value}</b>`;
       row.appendChild(tag);
     });
   }
@@ -473,7 +556,7 @@
       const chip = document.createElement("span");
       chip.className = "chip";
       chip.style.animationDelay = `${i * 40}ms`;
-      chip.innerHTML = `${key}: ${value}`;
+      chip.innerHTML = `${PARAM_LABELS[key] || key}: ${value}`;
       const removeBtn = document.createElement("button");
       removeBtn.textContent = "Remove";
       removeBtn.addEventListener("click", () => removeParamAndRerun(key));
@@ -622,7 +705,7 @@
   async function loadOptions() {
     setStatus($("optionsStatus"), "Loading...");
     try {
-      const resp = await fetch(`${WORKER_URL}/api/options`);
+      const resp = await apiFetch("/api/options");
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Failed to load options.md");
       $("optionsContent").value = data.markdown || "";
@@ -639,7 +722,7 @@
     btn.disabled = true;
     setStatus($("optionsStatus"), "Refreshing from source...");
     try {
-      const resp = await fetch(`${WORKER_URL}/api/options/refresh`, { method: "POST" });
+      const resp = await apiFetch("/api/options/refresh", { method: "POST" });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Refresh failed");
       if (data.updated) {
@@ -661,7 +744,7 @@
     btn.disabled = true;
     setStatus($("optionsStatus"), "Saving...");
     try {
-      const resp = await fetch(`${WORKER_URL}/api/options`, {
+      const resp = await apiFetch("/api/options", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: $("optionsContent").value }),
