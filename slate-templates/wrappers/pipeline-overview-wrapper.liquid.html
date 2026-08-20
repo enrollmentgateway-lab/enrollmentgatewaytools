@@ -4,7 +4,6 @@
   the optional status, term, and year URL parameters before publishing this template.
 -->
 <div id="pipelineOverviewData" style="display:none">
-  <div class="filters"><span class="status">{{ status | default: "applicant" | escape }}</span><span class="term">{{ term | escape }}</span><span class="year">{{ year | escape }}</span></div>
   <div class="totals"><span class="applications">{{ total_apps.size }}</span><span class="inquiries">{{ total_inquiries.size }}</span><span class="prospects">{{ total_prospects.size }}</span></div>
   <div class="records">{% for record in pipeline_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
 </div>
@@ -18,8 +17,9 @@
   const root = document.getElementById('pipelineOverviewData');
   const read = (node, key) => { const el = node && node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
   const number = value => Number(value) || 0;
+  const pageUrl = new URL(window.location.href);
   const payload = {
-    filters: { status: read(root.querySelector('.filters'), 'status') || 'applicant', term: read(root.querySelector('.filters'), 'term'), year: read(root.querySelector('.filters'), 'year') },
+    filters: { status: pageUrl.searchParams.get('status') || 'applicant', term: pageUrl.searchParams.get('term') || '', year: pageUrl.searchParams.get('year') || '' },
     totals: { applications: number(read(root.querySelector('.totals'), 'applications')), inquiries: number(read(root.querySelector('.totals'), 'inquiries')), prospects: number(read(root.querySelector('.totals'), 'prospects')) },
     records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') }))
   };

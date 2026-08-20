@@ -6,16 +6,19 @@
   <title>Funnel Overview</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
 </head>
-<body>
+<body class="classic-dashboard funnel-dashboard">
   <header class="gs-header">
     <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
     <div class="header-divider"></div>
     <div class="header-title">Funnel Overview</div>
     <div class="header-spacer"></div>
-    <button id="action-toggle" class="icon-button" type="button" title="Action items" aria-label="Open action items">●<span id="notification-count" class="notification-count">0</span></button>
+    <button id="action-toggle" class="icon-button" type="button" title="Action items" aria-label="Open action items">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c-1.7 0-3 1.3-3 3v.5C6.7 6.3 5 8.5 5 11v4l-1.5 2.5C3.2 18 3.5 19 4.4 19h15.2c.9 0 1.2-1 .8-1.5L19 15v-4c0-2.5-1.7-4.7-4-5.5V5c0-1.7-1.3-3-3-3Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.6"/><path d="M9.5 21a2.5 2.5 0 0 0 5 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.6"/></svg>
+      <span id="notification-count" class="notification-count">0</span>
+    </button>
   </header>
 
   <div id="drawer-overlay" class="drawer-overlay" hidden></div>
@@ -50,7 +53,7 @@
       <div class="stat-cell"><div id="sum-admitted" class="stat-val">0</div><div class="stat-lbl">Admitted</div></div>
     </div>
 
-    <div id="funnel" class="funnel panel"></div>
+    <div id="funnel" class="funnel"></div>
 
     <div class="section-divider"><div class="section-eyebrow">Awaiting Approval</div><div class="section-heading">Applicants Pending Review</div></div>
     <div class="panel">
@@ -113,15 +116,45 @@
         { label:'Admitted', count:ui.number(data.counts.admitted), color:'#2a6b3c' }
       ];
       const root = document.getElementById('funnel'); root.replaceChildren();
+      const maxWidth = 680;
+      const minWidth = 220;
+      const height = 80;
+      const step = (maxWidth - minWidth) / (stages.length - 1);
+      const svgNamespace = 'http://www.w3.org/2000/svg';
       stages.forEach(function (stage, index) {
+        const topWidth = maxWidth - index * step;
+        const bottomWidth = index === stages.length - 1 ? minWidth : Math.max(minWidth, topWidth - step);
+        const inset = (topWidth - bottomWidth) / 2;
+        const element = document.createElement('div');
+        element.className = 'funnel-stage';
+        element.style.width = topWidth + 'px';
+
+        const svg = document.createElementNS(svgNamespace, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + topWidth + ' ' + height);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        const definitions = document.createElementNS(svgNamespace, 'defs');
+        const gradient = document.createElementNS(svgNamespace, 'linearGradient');
+        gradient.id = 'funnel-gradient-' + index;
+        gradient.setAttribute('x1', '0'); gradient.setAttribute('y1', '0'); gradient.setAttribute('x2', '0'); gradient.setAttribute('y2', '1');
+        const topStop = document.createElementNS(svgNamespace, 'stop'); topStop.setAttribute('offset', '0%'); topStop.setAttribute('stop-color', stage.color);
+        const bottomStop = document.createElementNS(svgNamespace, 'stop'); bottomStop.setAttribute('offset', '100%'); bottomStop.setAttribute('stop-color', stage.color); bottomStop.setAttribute('stop-opacity', '.82');
+        gradient.append(topStop, bottomStop); definitions.appendChild(gradient); svg.appendChild(definitions);
+        const polygon = document.createElementNS(svgNamespace, 'polygon');
+        polygon.setAttribute('points', '0,0 ' + topWidth + ',0 ' + (topWidth - inset) + ',' + height + ' ' + inset + ',' + height);
+        polygon.setAttribute('fill', 'url(#' + gradient.id + ')'); svg.appendChild(polygon);
+
+        const label = document.createElement('div'); label.className = 'funnel-label';
+        const name = document.createElement('div'); name.className = 'stage-name'; name.textContent = stage.label;
+        const count = document.createElement('div'); count.className = 'stage-count'; count.textContent = stage.count.toLocaleString();
+        label.append(name, count);
         if (index) {
           const base = conversionMode === 'cumulative' ? stages[0].count : stages[index - 1].count;
-          const rate = document.createElement('div'); rate.className = 'conversion-label'; rate.textContent = percent(stage.count, base) + '% conversion'; root.appendChild(rate);
+          const rate = document.createElement('div'); rate.className = 'stage-rate';
+          rate.textContent = (conversionMode === 'cumulative' ? 'From Inquiries: ' : 'From Prev: ') + percent(stage.count, base) + '%';
+          label.appendChild(rate);
         }
-        const element = document.createElement('div'); element.className = 'funnel-stage';
-        element.style.width = 'min(100%, ' + (680 - index * 150) + 'px)'; element.style.background = stage.color;
-        const count = document.createElement('strong'); count.textContent = stage.count.toLocaleString();
-        const label = document.createElement('span'); label.textContent = stage.label; element.append(count, label); root.appendChild(element);
+        element.append(svg, label); root.appendChild(element);
       });
     }
 

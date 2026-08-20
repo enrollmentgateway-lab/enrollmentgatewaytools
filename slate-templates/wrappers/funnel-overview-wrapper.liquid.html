@@ -3,7 +3,6 @@
   term_app, year_app, and conv_mode URL contract used by the Slate exports.
 -->
 <div id="funnelOverviewData" style="display:none">
-  <div class="filters"><span class="start-date">{{ start_date | escape }}</span><span class="end-date">{{ end_date | escape }}</span><span class="term-app">{{ term_app | escape }}</span><span class="year-app">{{ year_app | escape }}</span><span class="conv-mode">{{ conv_mode | default: "cumulative" | escape }}</span></div>
   <div class="counts"><span class="inquiries">{{ inquiries.size }}</span><span class="applications">{{ total_apps.size }}</span><span class="awaiting">{{ apps_awaiting_approval.size }}</span><span class="admitted">{{ apps_admitted.size }}</span></div>
   <div class="awaiting-records">{% for record in apps_awaiting_approval %}<div class="awaiting-record"><span class="name">{{ record.name | escape }}</span><span class="program">{{ record.program | escape }}</span><span class="email">{{ record.email | escape }}</span><span class="status">{{ record.status | escape }}</span><span class="url">{{ record.url | escape }}</span></div>{% endfor %}</div>
   <div class="action-records">{% for record in f1_students %}<div class="action-record"><span class="name">{{ record.name | escape }}</span><span class="email">{{ record.email | escape }}</span><span class="phone">{{ record.phone | escape }}</span><span class="url">{{ record.url | escape }}</span></div>{% endfor %}</div>
@@ -18,9 +17,10 @@
   const root = document.getElementById('funnelOverviewData');
   const read = (node, key) => { const el = node && node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
   const number = value => Number(value) || 0;
-  const filters = root.querySelector('.filters'); const counts = root.querySelector('.counts');
+  const counts = root.querySelector('.counts');
+  const pageUrl = new URL(window.location.href);
   const payload = {
-    filters: { startDate:read(filters,'start-date'), endDate:read(filters,'end-date'), termApp:read(filters,'term-app'), yearApp:read(filters,'year-app'), convMode:read(filters,'conv-mode') || 'cumulative' },
+    filters: { startDate:pageUrl.searchParams.get('start_date') || '', endDate:pageUrl.searchParams.get('end_date') || '', termApp:pageUrl.searchParams.get('term_app') || '', yearApp:pageUrl.searchParams.get('year_app') || '', convMode:pageUrl.searchParams.get('conv_mode') || 'cumulative' },
     counts: { inquiries:number(read(counts,'inquiries')), applications:number(read(counts,'applications')), awaiting:number(read(counts,'awaiting')), admitted:number(read(counts,'admitted')) },
     awaiting: Array.from(root.querySelectorAll('.awaiting-record')).map(node => ({ name:read(node,'name'), program:read(node,'program'), email:read(node,'email'), status:read(node,'status'), url:read(node,'url') })),
     actions: Array.from(root.querySelectorAll('.action-record')).map(node => ({ name:read(node,'name'), email:read(node,'email'), phone:read(node,'phone'), url:read(node,'url') }))
