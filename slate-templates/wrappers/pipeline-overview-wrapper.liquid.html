@@ -1,7 +1,8 @@
 <!--
   Pipeline Overview Slate wrapper.
-  Configure pipeline_persons, total_apps, total_inquiries, total_prospects, and total_students to use
-  the optional status, term, and year URL parameters before publishing this template.
+  Configure pipeline_persons to use the status, term, and year URL parameters.
+  The total_* exports are fixed comparison populations and should not use the
+  term or year parameters.
 -->
 <div id="pipelineOverviewData" style="display:none">
   <div class="totals"><span class="applications">{{ total_apps.size }}</span><span class="inquiries">{{ total_inquiries.size }}</span><span class="prospects">{{ total_prospects.size }}</span><span class="students">{{ total_students.size }}</span></div>

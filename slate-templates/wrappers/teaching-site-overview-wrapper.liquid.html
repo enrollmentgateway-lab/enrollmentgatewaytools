@@ -1,10 +1,11 @@
 <!--
   Teaching Sites Slate wrapper.
-  Configure teaching_sites_persons to use the optional status, term, and year URL
-  parameters and to include records with a blank teaching-site title. The hosted
-  page uses the full result count as its percentage denominator.
+  Configure teaching_sites_persons to use the status, term, and year URL parameters.
+  The total_* exports are fixed comparison populations and should not use the
+  term or year parameters.
 -->
 <div id="teachingSiteOverviewData" style="display:none">
+  <div class="totals"><span class="applications">{{ total_apps.size }}</span><span class="inquiries">{{ total_inq.size }}</span><span class="prospects">{{ total_prospects.size }}</span><span class="students">{{ total_students.size }}</span></div>
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
 </div>
 <iframe id="teachingSiteOverviewFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/teaching-site-overview/" title="Teaching Sites Overview" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
@@ -16,9 +17,11 @@
   const frame = document.getElementById('teachingSiteOverviewFrame');
   const root = document.getElementById('teachingSiteOverviewData');
   const read = (node, key) => { const el = node && node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
+  const number = value => Number(value) || 0;
   const pageUrl = new URL(window.location.href);
   const payload = {
     filters: { status: pageUrl.searchParams.get('status') || 'applicant', term: pageUrl.searchParams.get('term') || '', year: pageUrl.searchParams.get('year') || '' },
+    totals: { applications: number(read(root.querySelector('.totals'), 'applications')), inquiries: number(read(root.querySelector('.totals'), 'inquiries')), prospects: number(read(root.querySelector('.totals'), 'prospects')), students: number(read(root.querySelector('.totals'), 'students')) },
     records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') }))
   };
   const allowedParams = new Set(['status', 'term', 'year']);
