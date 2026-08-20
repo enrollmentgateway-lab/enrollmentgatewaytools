@@ -30,6 +30,7 @@
           <option value="applicant">Applicant</option>
           <option value="inquiry">Inquiry</option>
           <option value="prospect">Prospect</option>
+          <option value="student">Student</option>
         </select>
       </div>
       <div class="control-group">
@@ -77,6 +78,7 @@
       const totals = data.totals || {};
       if (data.filters.status === 'inquiry') return { value: ui.number(totals.inquiries), label: 'Total Inquiries' };
       if (data.filters.status === 'prospect') return { value: ui.number(totals.prospects), label: 'Total Prospects' };
+      if (data.filters.status === 'student') return { value: ui.number(totals.students), label: 'Total Students' };
       return { value: ui.number(totals.applications), label: 'Total Applications' };
     }
 
