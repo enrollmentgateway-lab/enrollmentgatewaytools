@@ -33,7 +33,7 @@ Publish and verify one wrapper at a time in this order:
 Before publishing the Pipeline and Teaching Sites wrappers, configure their Slate query exports to accept optional `term` and `year` URL parameters:
 
 - `pipeline_persons` must apply `status`, `term`, and `year`. `total_apps`, `total_inquiries`, `total_prospects`, and `total_students` must apply the same optional `term` and `year` filters so percentages use the correct denominator.
-- `teaching_sites_persons` must apply `status`, `term`, and `year`. `total_apps`, `total_inq`, `total_prospects`, and `total_students` must apply the same optional `term` and `year` filters.
+- `teaching_sites_persons` must apply `status`, `term`, and `year` and include the full filtered population, including records with a blank teaching-site title. Teaching Sites uses this result set's complete row count as the denominator and counts only non-blank titles in the numerator.
 
 Both status dropdowns support `applicant`, `inquiry`, `prospect`, and `student`. Configure the Slate status filter so `?status=student` returns the intended student population.
 

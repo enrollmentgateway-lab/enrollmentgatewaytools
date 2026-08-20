@@ -98,11 +98,10 @@
     }
 
     function comparisonTotal() {
-      const totals = data.totals || {};
-      if (data.filters.status === 'inquiry') return ui.number(totals.inquiries);
-      if (data.filters.status === 'prospect') return ui.number(totals.prospects);
-      if (data.filters.status === 'student') return ui.number(totals.students);
-      return ui.number(totals.applications);
+      // teaching_sites_persons contains the complete filtered population, including
+      // records with no teaching-site title. Use that same result set as the
+      // denominator so status/term/year filters cannot drift between exports.
+      return Array.isArray(data.records) ? data.records.length : 0;
     }
 
     function render(payload) {
