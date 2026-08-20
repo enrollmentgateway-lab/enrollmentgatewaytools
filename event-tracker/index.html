@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Event Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+</head>
+<body>
+  <header class="gs-header">
+    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <div class="header-divider"></div>
+    <div class="header-title">Event Tracker</div>
+  </header>
+
+  <div id="loading" class="loading">Waiting for Event data from Slate…</div>
+  <main id="app" class="container" hidden>
+    <div class="page-intro">
+      <h1 class="intro-heading">Event Tracker</h1>
+      <p class="intro-subtitle">See what each recruiting event cost and what it returned—registrants, inquiries, and applicants generated per dollar spent.</p>
+    </div>
+
+    <div class="stat-bar">
+      <div class="stat-cell"><div id="event-count" class="stat-val">0</div><div class="stat-lbl">Events Tracked</div></div>
+      <div class="stat-cell"><div id="total-spend" class="stat-val">$0</div><div class="stat-lbl">Total Spend</div></div>
+      <div class="stat-cell"><div id="total-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries Generated</div></div>
+      <div class="stat-cell"><div id="total-applicants" class="stat-val">0</div><div class="stat-lbl">Applicants Generated</div></div>
+      <div class="stat-sub"><div id="blended-cost" class="stat-sub-val">—</div><div id="registrant-summary" class="stat-sub-lbl">blended cost per applicant</div></div>
+    </div>
+
+    <div class="section-divider"><div class="section-eyebrow">Yield by Event</div><div class="section-heading">Applicants Generated per Event</div></div>
+    <div id="event-bars" class="bar-chart"></div>
+
+    <div class="section-divider"><div class="section-eyebrow">Detailed View</div><div class="section-heading">Spend &amp; Yield by Event</div></div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Event</th><th>Dates</th><th class="align-right">Registrants</th><th class="align-right">Spend</th><th class="align-right">Inquiries</th><th class="align-right">Applicants</th><th class="align-right">Cost / Applicant</th></tr></thead>
+        <tbody id="event-table"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="../assets/dashboard-common.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const ui = window.DashboardUI;
+    const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+    window.DashboardBridge.create('event-tracker', render);
+
+    function numeric(value) {
+      const cleaned = String(value == null ? '' : value).trim().replace(/[$,]/g, '');
+      if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return 0;
+      return ui.number(cleaned);
+    }
+
+    function prepare(payload) {
+      const people = Array.isArray(payload.people) ? payload.people : [];
+      return (Array.isArray(payload.events) ? payload.events : []).map(function (event) {
+        const matches = people.filter(function (person) { return person.title === event.title; });
+        return {
+          title: ui.text(event.title, ''), startdate: ui.text(event.startdate, ''), enddate: ui.text(event.enddate, ''),
+          registrants: numeric(event.registrants), expenses: numeric(event.expenses),
+          inquiries: matches.filter(function (person) { return person.status === 'Inquiry'; }).length,
+          applicants: matches.filter(function (person) { return person.status === 'Applicant'; }).length
+        };
+      }).sort(function (a, b) { return b.expenses - a.expenses || a.title.localeCompare(b.title); });
+    }
+
+    function render(payload) {
+      const events = prepare(payload || {});
+      const totals = events.reduce(function (sum, event) {
+        sum.spend += event.expenses; sum.registrants += event.registrants; sum.inquiries += event.inquiries; sum.applicants += event.applicants; return sum;
+      }, { spend: 0, registrants: 0, inquiries: 0, applicants: 0 });
+      const blended = totals.applicants ? totals.spend / totals.applicants : 0;
+
+      ui.setText('event-count', events.length.toLocaleString());
+      document.getElementById('total-spend').textContent = currency.format(totals.spend);
+      ui.setText('total-inquiries', totals.inquiries.toLocaleString());
+      ui.setText('total-applicants', totals.applicants.toLocaleString());
+      document.getElementById('blended-cost').textContent = blended ? currency.format(blended) : '—';
+      document.getElementById('registrant-summary').textContent = 'blended cost per applicant across all events (' + totals.registrants.toLocaleString() + ' total registrants)';
+      renderBars(events);
+      renderTable(events, blended);
+      ui.showApp();
+    }
+
+    function renderBars(events) {
+      const root = document.getElementById('event-bars'); root.replaceChildren();
+      if (!events.length) { root.appendChild(ui.emptyState('No event data available.')); return; }
+      const max = Math.max.apply(null, events.map(function (event) { return event.applicants; }).concat([1]));
+      events.forEach(function (event) {
+        const row = document.createElement('div'); row.className = 'bar-row';
+        const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = event.title; label.title = event.title;
+        const track = document.createElement('div'); track.className = 'bar-track';
+        const fill = document.createElement('div'); fill.className = 'bar-fill'; fill.style.width = ((event.applicants / max) * 100) + '%'; track.appendChild(fill);
+        const value = document.createElement('div'); value.className = 'bar-value'; value.textContent = event.applicants.toLocaleString();
+        row.append(label, track, value); root.appendChild(row);
+      });
+    }
+
+    function renderTable(events, blended) {
+      const body = document.getElementById('event-table'); body.replaceChildren();
+      if (!events.length) {
+        const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 7; cell.appendChild(ui.emptyState('No event data available.')); return;
+      }
+      events.forEach(function (event) {
+        const row = body.insertRow();
+        const title = row.insertCell(); title.textContent = event.title; title.style.fontWeight = '700';
+        row.insertCell().textContent = [event.startdate, event.enddate].filter(Boolean).join(' – ');
+        [event.registrants.toLocaleString(), currency.format(event.expenses), event.inquiries.toLocaleString(), event.applicants.toLocaleString()].forEach(function (value) {
+          const cell = row.insertCell(); cell.className = 'align-right number'; cell.textContent = value;
+        });
+        const costCell = row.insertCell(); costCell.className = 'align-right';
+        const badge = document.createElement('span'); badge.className = 'badge';
+        if (!event.applicants) { badge.textContent = 'No applicants'; }
+        else {
+          const cost = event.expenses / event.applicants; badge.textContent = currency.format(cost);
+          badge.classList.add(blended && cost <= blended ? 'badge-good' : 'badge-bad');
+        }
+        costCell.appendChild(badge);
+      });
+    }
+  }());
+  </script>
+</body>
+</html>

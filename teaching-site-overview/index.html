@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Teaching Sites Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+</head>
+<body>
+  <header class="gs-header">
+    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <div class="header-divider"></div>
+    <div class="header-title">Teaching Sites Overview</div>
+  </header>
+
+  <div id="loading" class="loading">Waiting for Teaching Sites data from Slate…</div>
+  <main id="app" class="container" hidden>
+    <div class="page-intro">
+      <h1 class="intro-heading">Teaching Sites Overview</h1>
+      <p class="intro-subtitle">Record counts by teaching site, filterable by pipeline status and academic period.</p>
+    </div>
+
+    <div class="controls-row">
+      <div class="control-group">
+        <label class="ctrl-label" for="status">Status</label>
+        <select id="status" class="control-select">
+          <option value="applicant">Applicant</option>
+          <option value="inquiry">Inquiry</option>
+          <option value="prospect">Prospect</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label class="ctrl-label" for="period">Period</label>
+        <select id="period" class="control-select"></select>
+      </div>
+    </div>
+
+    <div class="stat-bar">
+      <div class="stat-cell"><div id="site-count" class="stat-val">0</div><div class="stat-lbl">Active Teaching Sites</div></div>
+      <div class="stat-sub"><div id="coverage" class="stat-sub-val">0%</div><div id="coverage-label" class="stat-sub-lbl">of total applicant records</div></div>
+    </div>
+
+    <button id="inactive-toggle" class="inactive-toggle" type="button" aria-expanded="false" aria-controls="inactive-list">
+      <span id="inactive-summary">0 inactive teaching sites</span><span aria-hidden="true">▾</span>
+    </button>
+    <div id="inactive-list" class="inactive-list" hidden><ul id="inactive-items"></ul></div>
+
+    <div class="section-divider"><div class="section-eyebrow">Overview</div><div class="section-heading">Records by Teaching Site</div></div>
+    <div id="site-bars" class="bar-chart"></div>
+
+    <div class="section-divider"><div class="section-eyebrow">Detailed View</div><div class="section-heading">Teaching Site Record Count</div></div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Teaching Site</th><th class="align-right">Records</th><th class="align-right">% of Total</th></tr></thead>
+        <tbody id="site-table"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="../assets/dashboard-common.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const allTeachingSites = [
+      'Bakersfield Site at Kern Country Southern Baptist Association',
+      'Boston School of Ministry',
+      'Burbank Site at Story City Church',
+      'Colorado Springs Site at Cross Fellowship Church',
+      'Fort Collins Site at Gateway Seminary Northern Colorado',
+      'Fountain Valley Site at First Chinese Baptist Church',
+      'Fresno Site at Woodward Park Baptist Church',
+      'Honk Kong Site at Kwun Tong Swatow Baptist Church',
+      'Honk Kong Site at Saddleback Church',
+      'Honolulu Site at Hawaii Pacific School of Theology',
+      'Las Vegas Site at Nevada Southern Baptist Convention',
+      'Lviv Site at Ukrainian Baptist Theological Seminary',
+      'Mesa Site at HiWay Baptist Church',
+      'Milpitas Site at New Vision Church',
+      'Phoenix Site at Valley Life Church',
+      'Sacramento Site at SOL Bible Academy'
+    ];
+    const ui = window.DashboardUI;
+    let data = {};
+    const bridge = window.DashboardBridge.create('teaching-site-overview', render);
+
+    function groupRecords(records) {
+      const counts = new Map();
+      (Array.isArray(records) ? records : []).forEach(function (record) {
+        const title = ui.text(record.title, '').trim();
+        if (title) counts.set(title, (counts.get(title) || 0) + 1);
+      });
+      return Array.from(counts, function (entry) { return { title: entry[0], count: entry[1] }; })
+        .sort(function (a, b) { return b.count - a.count || a.title.localeCompare(b.title); });
+    }
+
+    function comparisonTotal() {
+      const totals = data.totals || {};
+      if (data.filters.status === 'inquiry') return ui.number(totals.inquiries);
+      if (data.filters.status === 'prospect') return ui.number(totals.prospects);
+      return ui.number(totals.applications);
+    }
+
+    function render(payload) {
+      data = payload || {};
+      data.filters = data.filters || {};
+      data.filters.status = data.filters.status || 'applicant';
+      const grouped = groupRecords(data.records);
+      const total = comparisonTotal();
+      const recordCount = grouped.reduce(function (sum, item) { return sum + item.count; }, 0);
+      const active = new Set(grouped.map(function (item) { return item.title; }));
+      const inactive = allTeachingSites.filter(function (title) { return !active.has(title); });
+
+      document.getElementById('status').value = data.filters.status;
+      window.AcademicPeriods.populate(document.getElementById('period'), data.filters.term, data.filters.year);
+      ui.setText('site-count', grouped.length);
+      document.getElementById('coverage').textContent = (total ? (recordCount * 100 / total).toFixed(1) : '0.0') + '%';
+      document.getElementById('coverage-label').textContent = 'of total ' + data.filters.status + ' records';
+      renderInactive(inactive);
+      renderBars(grouped);
+      renderTable(grouped, total);
+      ui.showApp();
+    }
+
+    function renderInactive(inactive) {
+      document.getElementById('inactive-summary').textContent = inactive.length + ' inactive teaching site' + (inactive.length === 1 ? '' : 's');
+      const list = document.getElementById('inactive-items'); list.replaceChildren();
+      inactive.forEach(function (title) { const item = document.createElement('li'); item.textContent = title; list.appendChild(item); });
+    }
+
+    function renderBars(grouped) {
+      const root = document.getElementById('site-bars'); root.replaceChildren();
+      if (!grouped.length) { root.appendChild(ui.emptyState('No teaching site data available.')); return; }
+      const max = grouped[0].count || 1;
+      grouped.forEach(function (item) {
+        const row = document.createElement('div'); row.className = 'bar-row';
+        const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = item.title; label.title = item.title;
+        const track = document.createElement('div'); track.className = 'bar-track';
+        const fill = document.createElement('div'); fill.className = 'bar-fill'; fill.style.width = ((item.count / max) * 100) + '%'; track.appendChild(fill);
+        const value = document.createElement('div'); value.className = 'bar-value'; value.textContent = item.count.toLocaleString();
+        row.append(label, track, value); root.appendChild(row);
+      });
+    }
+
+    function renderTable(grouped, total) {
+      const body = document.getElementById('site-table'); body.replaceChildren();
+      if (!grouped.length) {
+        const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 3; cell.appendChild(ui.emptyState('No teaching site data available.')); return;
+      }
+      grouped.forEach(function (item) {
+        const row = body.insertRow(); row.insertCell().textContent = item.title;
+        const count = row.insertCell(); count.className = 'align-right number'; count.textContent = item.count.toLocaleString();
+        const percent = row.insertCell(); percent.className = 'align-right number'; percent.textContent = (total ? item.count * 100 / total : 0).toFixed(1) + '%';
+      });
+    }
+
+    document.getElementById('status').addEventListener('change', function (event) { bridge.navigate({ status: event.target.value }, []); });
+    document.getElementById('period').addEventListener('change', function (event) {
+      const navigation = window.AcademicPeriods.navigation(event.target.value); bridge.navigate(navigation.set, navigation.remove);
+    });
+    document.getElementById('inactive-toggle').addEventListener('click', function () {
+      const list = document.getElementById('inactive-list'); const expanded = list.hidden;
+      list.hidden = !expanded; this.setAttribute('aria-expanded', String(expanded)); bridge.resize();
+    });
+  }());
+  </script>
+</body>
+</html>

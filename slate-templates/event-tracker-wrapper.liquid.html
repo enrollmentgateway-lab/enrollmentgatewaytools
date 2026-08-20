@@ -1,0 +1,27 @@
+<!-- Event Tracker Slate wrapper. Query/export names must remain events_general and event_people. -->
+<div id="eventTrackerData" style="display:none">
+  <div class="events">{% for event in events_general %}<div class="event"><span class="title">{{ event.title | escape }}</span><span class="startdate">{{ event.startdate | escape }}</span><span class="enddate">{{ event.enddate | escape }}</span><span class="registrants">{{ event.registrants | escape }}</span><span class="expenses">{{ event.expenses | escape }}</span></div>{% endfor %}</div>
+  <div class="people">{% for person in event_people %}<div class="person"><span class="title">{{ person.title | escape }}</span><span class="status">{{ person.status | escape }}</span></div>{% endfor %}</div>
+</div>
+<iframe id="eventTrackerFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/event-tracker/" title="Event Tracker" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<script>
+(function () {
+  'use strict';
+  const dashboard = 'event-tracker';
+  const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const frame = document.getElementById('eventTrackerFrame');
+  const root = document.getElementById('eventTrackerData');
+  const read = (node, key) => { const el = node && node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
+  const payload = {
+    events: Array.from(root.querySelectorAll('.event')).map(node => ({ title:read(node,'title'), startdate:read(node,'startdate'), enddate:read(node,'enddate'), registrants:read(node,'registrants'), expenses:read(node,'expenses') })),
+    people: Array.from(root.querySelectorAll('.person')).map(node => ({ title:read(node,'title'), status:read(node,'status') }))
+  };
+  function sendData() { if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload }, frameOrigin); }
+  window.addEventListener('message', function (event) {
+    if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data || event.data.dashboard !== dashboard) return;
+    if (event.data.type === 'enrollment-dashboard-ready') sendData();
+    if (event.data.type === 'enrollment-dashboard-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+  });
+  frame.addEventListener('load', sendData);
+}());
+</script>

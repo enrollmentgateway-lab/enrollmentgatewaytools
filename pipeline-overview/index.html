@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pipeline Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+</head>
+<body>
+  <header class="gs-header">
+    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <div class="header-divider"></div>
+    <div class="header-title">Pipeline Overview</div>
+  </header>
+
+  <div id="loading" class="loading">Waiting for Pipeline data from Slate…</div>
+  <main id="app" class="container" hidden>
+    <div class="page-intro">
+      <h1 class="intro-heading">Pipeline Overview</h1>
+      <p class="intro-subtitle">Track records by source and see which locations and groups generate the most student interest.</p>
+    </div>
+
+    <div class="controls-row">
+      <div class="control-group">
+        <label class="ctrl-label" for="status">Status</label>
+        <select id="status" class="control-select">
+          <option value="applicant">Applicant</option>
+          <option value="inquiry">Inquiry</option>
+          <option value="prospect">Prospect</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label class="ctrl-label" for="period">Period</label>
+        <select id="period" class="control-select"></select>
+      </div>
+    </div>
+
+    <div class="stat-bar">
+      <div class="stat-cell"><div id="pipeline-count" class="stat-val">0</div><div class="stat-lbl">Active Pipelines</div></div>
+      <div class="stat-cell"><div id="record-total" class="stat-val">0</div><div id="record-label" class="stat-lbl">Total Applications</div></div>
+    </div>
+
+    <div class="section-divider"><div class="section-eyebrow">Breakdown by Source</div><div class="section-heading">Records by Pipeline</div></div>
+    <div id="pipeline-bars" class="bar-chart"></div>
+
+    <div class="section-divider"><div class="section-eyebrow">Detailed View</div><div class="section-heading">Pipeline Record Count</div></div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Pipeline</th><th class="align-right">Records</th><th class="align-right">% of Total</th></tr></thead>
+        <tbody id="pipeline-table"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="../assets/dashboard-common.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const ui = window.DashboardUI;
+    let data = {};
+    const bridge = window.DashboardBridge.create('pipeline-overview', render);
+
+    function groupRecords(records) {
+      const counts = new Map();
+      (Array.isArray(records) ? records : []).forEach(function (record) {
+        const title = ui.text(record.title, '').trim();
+        if (title) counts.set(title, (counts.get(title) || 0) + 1);
+      });
+      return Array.from(counts, function (entry) { return { title: entry[0], count: entry[1] }; })
+        .sort(function (a, b) { return b.count - a.count || a.title.localeCompare(b.title); });
+    }
+
+    function comparisonTotal() {
+      const totals = data.totals || {};
+      if (data.filters.status === 'inquiry') return { value: ui.number(totals.inquiries), label: 'Total Inquiries' };
+      if (data.filters.status === 'prospect') return { value: ui.number(totals.prospects), label: 'Total Prospects' };
+      return { value: ui.number(totals.applications), label: 'Total Applications' };
+    }
+
+    function render(payload) {
+      data = payload || {};
+      data.filters = data.filters || {};
+      data.filters.status = data.filters.status || 'applicant';
+      const grouped = groupRecords(data.records);
+      const comparison = comparisonTotal();
+
+      document.getElementById('status').value = data.filters.status;
+      window.AcademicPeriods.populate(document.getElementById('period'), data.filters.term, data.filters.year);
+      ui.setText('pipeline-count', grouped.length);
+      ui.setText('record-total', (data.records || []).length);
+      document.getElementById('record-label').textContent = comparison.label;
+      renderBars(grouped);
+      renderTable(grouped, comparison.value);
+      ui.showApp();
+    }
+
+    function renderBars(grouped) {
+      const root = document.getElementById('pipeline-bars');
+      root.replaceChildren();
+      if (!grouped.length) { root.appendChild(ui.emptyState('No pipeline data available.')); return; }
+      const max = grouped[0].count || 1;
+      grouped.forEach(function (item) {
+        const row = document.createElement('div'); row.className = 'bar-row';
+        const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = item.title; label.title = item.title;
+        const track = document.createElement('div'); track.className = 'bar-track';
+        const fill = document.createElement('div'); fill.className = 'bar-fill'; fill.style.width = ((item.count / max) * 100) + '%'; track.appendChild(fill);
+        const value = document.createElement('div'); value.className = 'bar-value'; value.textContent = item.count.toLocaleString();
+        row.append(label, track, value); root.appendChild(row);
+      });
+    }
+
+    function renderTable(grouped, total) {
+      const body = document.getElementById('pipeline-table');
+      body.replaceChildren();
+      if (!grouped.length) {
+        const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 3; cell.appendChild(ui.emptyState('No pipeline data available.')); return;
+      }
+      grouped.forEach(function (item) {
+        const row = body.insertRow();
+        row.insertCell().textContent = item.title;
+        const count = row.insertCell(); count.className = 'align-right number'; count.textContent = item.count.toLocaleString();
+        const percent = row.insertCell(); percent.className = 'align-right number'; percent.textContent = (total ? Math.round(item.count * 100 / total) : 0) + '%';
+      });
+    }
+
+    document.getElementById('status').addEventListener('change', function (event) {
+      bridge.navigate({ status: event.target.value }, []);
+    });
+    document.getElementById('period').addEventListener('change', function (event) {
+      const navigation = window.AcademicPeriods.navigation(event.target.value);
+      bridge.navigate(navigation.set, navigation.remove);
+    });
+  }());
+  </script>
+</body>
+</html>

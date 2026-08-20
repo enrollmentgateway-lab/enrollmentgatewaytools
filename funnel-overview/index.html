@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Funnel Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+</head>
+<body>
+  <header class="gs-header">
+    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <div class="header-divider"></div>
+    <div class="header-title">Funnel Overview</div>
+    <div class="header-spacer"></div>
+    <button id="action-toggle" class="icon-button" type="button" title="Action items" aria-label="Open action items">●<span id="notification-count" class="notification-count">0</span></button>
+  </header>
+
+  <div id="drawer-overlay" class="drawer-overlay" hidden></div>
+  <aside id="action-drawer" class="drawer" aria-label="Action items" hidden>
+    <div class="drawer-head"><h2>Action Items</h2><button id="drawer-close" class="close-button" type="button" aria-label="Close">×</button></div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th></th></tr></thead>
+        <tbody id="action-table"></tbody>
+      </table>
+    </div>
+    <div id="action-empty" class="empty-state" hidden>No F-1 student action items right now.</div>
+  </aside>
+
+  <div id="loading" class="loading">Waiting for Funnel data from Slate…</div>
+  <main id="app" class="container" hidden>
+    <div class="controls-row">
+      <div class="control-group"><label class="ctrl-label" for="period">Period</label><select id="period" class="control-select"></select></div>
+      <div class="control-group">
+        <span class="ctrl-label">Conversion</span>
+        <div class="toggle-group" role="group" aria-label="Conversion mode">
+          <button id="cumulative" class="toggle-btn" type="button">From Stage 1</button>
+          <button id="sequential" class="toggle-btn" type="button">Step-to-Step</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-bar">
+      <div class="stat-cell"><div id="sum-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries</div></div>
+      <div class="stat-cell"><div id="sum-applications" class="stat-val">0</div><div class="stat-lbl">Applications</div></div>
+      <div class="stat-cell"><div id="sum-awaiting" class="stat-val">0</div><div class="stat-lbl">Awaiting Approval</div></div>
+      <div class="stat-cell"><div id="sum-admitted" class="stat-val">0</div><div class="stat-lbl">Admitted</div></div>
+    </div>
+
+    <div id="funnel" class="funnel panel"></div>
+
+    <div class="section-divider"><div class="section-eyebrow">Awaiting Approval</div><div class="section-heading">Applicants Pending Review</div></div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Program</th><th>Email</th><th><button id="sort-status" class="toggle-btn" type="button" style="color:#fff;padding:0">Status ↕</button></th></tr></thead>
+        <tbody id="awaiting-table"></tbody>
+      </table>
+      <div class="pagination">
+        <span id="page-info"></span>
+        <div id="page-buttons" class="pagination-buttons"></div>
+        <div><label class="ctrl-label" for="per-page">Rows</label> <select id="per-page" class="control-select" style="min-width:75px;padding:6px 8px"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../assets/dashboard-common.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const funnelPeriods = {
+      total: { label:'Total (All Time)', start:null, end:null, term:null, year:null },
+      FA26: { label:'FA26 — Fall 2026', start:'2026-01-01', end:'2026-08-15', term:'Fall', year:'2026-2027' },
+      SP27: { label:'SP27 — Spring 2027', start:'2026-08-16', end:'2027-01-15', term:'Spring', year:'2026-2027' },
+      FA27: { label:'FA27 — Fall 2027', start:'2027-01-16', end:'2027-08-15', term:'Fall', year:'2027-2028' }
+    };
+    const ui = window.DashboardUI;
+    let data = { counts:{}, awaiting:[], actions:[], filters:{} };
+    let conversionMode = sessionStorage.getItem('funnel-conversion-mode') || 'cumulative';
+    let currentPage = 1;
+    let perPage = 25;
+    let statusDirection = 0;
+    const bridge = window.DashboardBridge.create('funnel-overview', render);
+
+    function render(payload) {
+      data = payload || data;
+      data.counts = data.counts || {}; data.filters = data.filters || {};
+      data.awaiting = Array.isArray(data.awaiting) ? data.awaiting : [];
+      data.actions = Array.isArray(data.actions) ? data.actions : [];
+      if (!sessionStorage.getItem('funnel-conversion-mode') && ['cumulative','sequential'].includes(data.filters.convMode)) conversionMode = data.filters.convMode;
+      populatePeriod(); updateModeButtons();
+      ui.setText('sum-inquiries', ui.number(data.counts.inquiries).toLocaleString());
+      ui.setText('sum-applications', ui.number(data.counts.applications).toLocaleString());
+      ui.setText('sum-awaiting', ui.number(data.counts.awaiting).toLocaleString());
+      ui.setText('sum-admitted', ui.number(data.counts.admitted).toLocaleString());
+      renderFunnel(); renderActions(); renderAwaiting(); ui.showApp();
+    }
+
+    function populatePeriod() {
+      const select = document.getElementById('period'); select.replaceChildren();
+      Object.keys(funnelPeriods).forEach(function (key) { const option = document.createElement('option'); option.value = key; option.textContent = funnelPeriods[key].label; select.appendChild(option); });
+      select.value = Object.keys(funnelPeriods).find(function (key) { return funnelPeriods[key].start === (data.filters.startDate || null); }) || 'total';
+    }
+
+    function percent(value, base) { return base > 0 ? Math.round(value * 1000 / base) / 10 : 0; }
+    function renderFunnel() {
+      const stages = [
+        { label:'Inquiries', count:ui.number(data.counts.inquiries), color:'#1a2b4a' },
+        { label:'Applied', count:ui.number(data.counts.applications), color:'#1e3b6e' },
+        { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#c8952a' },
+        { label:'Admitted', count:ui.number(data.counts.admitted), color:'#2a6b3c' }
+      ];
+      const root = document.getElementById('funnel'); root.replaceChildren();
+      stages.forEach(function (stage, index) {
+        if (index) {
+          const base = conversionMode === 'cumulative' ? stages[0].count : stages[index - 1].count;
+          const rate = document.createElement('div'); rate.className = 'conversion-label'; rate.textContent = percent(stage.count, base) + '% conversion'; root.appendChild(rate);
+        }
+        const element = document.createElement('div'); element.className = 'funnel-stage';
+        element.style.width = 'min(100%, ' + (680 - index * 150) + 'px)'; element.style.background = stage.color;
+        const count = document.createElement('strong'); count.textContent = stage.count.toLocaleString();
+        const label = document.createElement('span'); label.textContent = stage.label; element.append(count, label); root.appendChild(element);
+      });
+    }
+
+    function dismissedIds() {
+      try { const value = JSON.parse(localStorage.getItem('funnel-dismissed-actions') || '[]'); return Array.isArray(value) ? value : []; }
+      catch (_) { return []; }
+    }
+    function actionId(record) { return record.email || record.url || record.name; }
+    function renderActions() {
+      const dismissed = dismissedIds();
+      const actions = data.actions.filter(function (record) { return !dismissed.includes(actionId(record)); });
+      const body = document.getElementById('action-table'); body.replaceChildren();
+      actions.forEach(function (record) {
+        const row = body.insertRow(); row.className = 'clickable'; row.tabIndex = 0;
+        row.insertCell().textContent = ui.text(record.name); row.insertCell().textContent = ui.text(record.email); row.insertCell().textContent = ui.text(record.phone);
+        const action = row.insertCell(); const dismiss = document.createElement('button'); dismiss.className = 'dismiss-button'; dismiss.type = 'button'; dismiss.textContent = '×'; dismiss.title = 'Dismiss';
+        dismiss.addEventListener('click', function (event) { event.stopPropagation(); const ids = dismissedIds(); const id = actionId(record); if (!ids.includes(id)) ids.push(id); localStorage.setItem('funnel-dismissed-actions', JSON.stringify(ids)); renderActions(); });
+        action.appendChild(dismiss); row.addEventListener('click', function () { bridge.openRecord(record.url); });
+        row.addEventListener('keydown', function (event) { if (event.key === 'Enter') bridge.openRecord(record.url); });
+      });
+      document.getElementById('notification-count').textContent = actions.length;
+      document.getElementById('notification-count').hidden = !actions.length;
+      document.getElementById('action-empty').hidden = !!actions.length;
+    }
+
+    function sortedAwaiting() {
+      const records = data.awaiting.slice();
+      if (statusDirection) records.sort(function (a, b) { return statusDirection * ui.text(a.status, '').localeCompare(ui.text(b.status, '')); });
+      return records;
+    }
+    function statusBadge(status) {
+      const badge = document.createElement('span'); badge.className = 'badge'; badge.textContent = ui.text(status);
+      if (status === 'Awaiting Payment') badge.classList.add('badge-bad');
+      else if (status === 'Awaiting Decision' || status === 'Awaiting Confirmation') badge.classList.add('badge-gold');
+      return badge;
+    }
+    function renderAwaiting() {
+      const records = sortedAwaiting();
+      const pages = Math.max(1, Math.ceil(records.length / perPage)); currentPage = Math.min(currentPage, pages);
+      const visible = records.slice((currentPage - 1) * perPage, currentPage * perPage);
+      const body = document.getElementById('awaiting-table'); body.replaceChildren();
+      if (!visible.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 4; cell.appendChild(ui.emptyState('No applicants currently awaiting approval.')); }
+      visible.forEach(function (record) {
+        const row = body.insertRow(); row.className = 'clickable'; row.tabIndex = 0;
+        row.insertCell().textContent = ui.text(record.name); row.insertCell().textContent = ui.text(record.program); row.insertCell().textContent = ui.text(record.email);
+        row.insertCell().appendChild(statusBadge(record.status));
+        row.addEventListener('click', function () { bridge.openRecord(record.url); });
+        row.addEventListener('keydown', function (event) { if (event.key === 'Enter') bridge.openRecord(record.url); });
+      });
+      const start = records.length ? (currentPage - 1) * perPage + 1 : 0; const end = Math.min(currentPage * perPage, records.length);
+      document.getElementById('page-info').textContent = start + '–' + end + ' of ' + records.length;
+      renderPagination(pages);
+    }
+    function renderPagination(pages) {
+      const root = document.getElementById('page-buttons'); root.replaceChildren();
+      function button(label, page, disabled, active) { const element = document.createElement('button'); element.className = 'page-button' + (active ? ' active' : ''); element.type = 'button'; element.textContent = label; element.disabled = disabled; element.addEventListener('click', function () { currentPage = page; renderAwaiting(); }); return element; }
+      root.appendChild(button('‹', Math.max(1, currentPage - 1), currentPage === 1, false));
+      for (let page = 1; page <= pages; page += 1) { if (pages <= 7 || page === 1 || page === pages || Math.abs(page - currentPage) <= 1) root.appendChild(button(page, page, false, page === currentPage)); }
+      root.appendChild(button('›', Math.min(pages, currentPage + 1), currentPage === pages, false));
+    }
+
+    function updateModeButtons() {
+      document.getElementById('cumulative').classList.toggle('active', conversionMode === 'cumulative');
+      document.getElementById('sequential').classList.toggle('active', conversionMode === 'sequential');
+    }
+    function setMode(mode) { conversionMode = mode; sessionStorage.setItem('funnel-conversion-mode', mode); updateModeButtons(); renderFunnel(); }
+    function setDrawer(open) { document.getElementById('action-drawer').hidden = !open; document.getElementById('drawer-overlay').hidden = !open; bridge.resize(); }
+
+    document.getElementById('period').addEventListener('change', function (event) {
+      const period = funnelPeriods[event.target.value] || funnelPeriods.total;
+      if (!period.start) bridge.navigate({ conv_mode:conversionMode }, ['start_date','end_date','term_app','year_app']);
+      else bridge.navigate({ start_date:period.start, end_date:period.end, term_app:period.term, year_app:period.year, conv_mode:conversionMode }, []);
+    });
+    document.getElementById('cumulative').addEventListener('click', function () { setMode('cumulative'); });
+    document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
+    document.getElementById('sort-status').addEventListener('click', function () { statusDirection = statusDirection === 1 ? -1 : 1; currentPage = 1; renderAwaiting(); });
+    document.getElementById('per-page').addEventListener('change', function (event) { perPage = Number(event.target.value) || 25; currentPage = 1; renderAwaiting(); });
+    document.getElementById('action-toggle').addEventListener('click', function () { setDrawer(true); });
+    document.getElementById('drawer-close').addEventListener('click', function () { setDrawer(false); });
+    document.getElementById('drawer-overlay').addEventListener('click', function () { setDrawer(false); });
+    window.addEventListener('keydown', function (event) { if (event.key === 'Escape') setDrawer(false); });
+  }());
+  </script>
+</body>
+</html>
