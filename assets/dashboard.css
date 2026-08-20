@@ -57,6 +57,8 @@ button, select { font: inherit; }
 .control-select:focus, button:focus-visible { outline: 3px solid rgba(200,149,42,.35); outline-offset: 2px; }
 
 .stat-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); overflow: hidden; margin-bottom: 30px; border-radius: var(--radius); background: linear-gradient(135deg, var(--navy), var(--navy-mid)); box-shadow: 0 7px 24px rgba(26,43,74,.22); }
+.event-stat-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.event-stat-bar .stat-val { overflow-wrap: normal; white-space: nowrap; }
 .stat-cell { min-width: 0; padding: 22px 25px; border-right: 1px solid rgba(255,255,255,.14); color: #fff; }
 .stat-cell:last-child { border-right: 0; }
 .stat-val { font: 700 2rem/1.1 Georgia, serif; overflow-wrap: anywhere; }
@@ -130,6 +132,8 @@ button, select { font: inherit; }
   .control-group { width: 100%; flex-direction: column; }
   .control-select { width: 100%; }
   .stat-bar { grid-template-columns: repeat(2, 1fr); }
+  .event-stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .event-stat-bar .stat-val { font-size: clamp(1.35rem, 7vw, 2rem); }
   .stat-cell:nth-child(2n) { border-right: 0; }
   .bar-row { grid-template-columns: 110px 1fr 36px; gap: 8px; }
   .panel { overflow-x: auto; }
