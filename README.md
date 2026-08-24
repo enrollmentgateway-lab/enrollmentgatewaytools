@@ -35,6 +35,15 @@ Before publishing the Pipeline and Teaching Sites wrappers, configure their prim
 - `pipeline_persons` must apply `status`, `term`, and `year`.
 - `teaching_sites_persons` must apply `status`, `term`, and `year`.
 
+The Teaching Sites wrapper also powers the site-specific funnel inside the same tool. Add these four exports to its Slate query and configure each one to apply the `site`, `term`, and `year` URL parameters:
+
+- `teaching_site_inquiries`
+- `teaching_site_applications`
+- `teaching_site_awaiting_approval`
+- `teaching_site_admitted`
+
+The `site` parameter must filter each export by an exact match against the same teaching-site title returned as `teaching_sites_persons.title`. Do not apply the overview's `status` parameter to these four exports; each export represents its named funnel stage. With no `site` parameter, the hosted page shows the existing overview. Selecting a site adds `site` to the same Slate page URL and switches the iframe to the site-funnel view while preserving `term` and `year`.
+
 The `total_apps`, `total_inquiries` / `total_inq`, `total_prospects`, and `total_students` exports are fixed comparison populations used as percentage denominators. Do not apply the `term` or `year` URL parameters to those total exports.
 
 Both status dropdowns support `applicant`, `inquiry`, `prospect`, and `student`. Configure the Slate status filter so `?status=student` returns the intended student population.

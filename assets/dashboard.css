@@ -190,6 +190,29 @@ button, select { font: inherit; }
 .teaching-dashboard .bar-chart { padding: 20px 24px; }
 .teaching-dashboard .bar-row { grid-template-columns: 280px 1fr 50px; }
 .teaching-dashboard .bar-track { height: 14px; border: 1px solid var(--border); }
+.teaching-dashboard .clickable-site { margin: -5px -8px; padding: 5px 8px; border-radius: var(--radius); cursor: pointer; transition: background-color .18s, box-shadow .18s; }
+.teaching-dashboard .clickable-site:hover { background: #eaf4f4; }
+.teaching-dashboard .clickable-site:focus-visible, .teaching-dashboard .data-table tr.clickable:focus-visible { outline: 3px solid rgba(15,118,110,.28); outline-offset: 1px; }
+.teaching-dashboard.site-detail-active .container { max-width: 900px; }
+.teaching-site-detail .back-button { margin: 0 0 25px; padding: 6px 0; border: 0; color: #0f766e; font-size: .82rem; font-weight: 750; background: transparent; cursor: pointer; }
+.teaching-site-detail .back-button:hover { text-decoration: underline; }
+.teaching-site-detail .site-detail-intro { margin-bottom: 25px; }
+.teaching-site-detail .site-detail-intro .section-eyebrow { margin-bottom: 6px; color: #0f766e; }
+.teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin-bottom: 28px; border: 1px solid var(--border); background: var(--border); box-shadow: var(--shadow); }
+.teaching-site-detail .site-funnel-stat-bar .stat-cell { padding: 14px 18px; color: var(--navy); background: var(--white); }
+.teaching-site-detail .site-funnel-stat-bar .stat-val { color: var(--navy); font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; }
+.teaching-site-detail .site-funnel-stat-bar .stat-lbl { color: var(--muted); font-size: .67rem; }
+.teaching-site-detail .toggle-group { padding: 0; overflow: hidden; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); }
+.teaching-site-detail .toggle-btn { border-radius: 0; }
+.teaching-site-detail .toggle-btn.active { background: #0f766e; }
+.teaching-site-detail .funnel { gap: 6px; padding: 0; margin-bottom: 36px; }
+.teaching-site-detail .funnel-stage { position: relative; min-height: 80px; display: flex; align-items: center; justify-content: center; border-radius: 0; box-shadow: none; text-align: center; transition: filter .2s; }
+.teaching-site-detail .funnel-stage:hover { filter: brightness(1.06); }
+.teaching-site-detail .funnel-stage svg { position: absolute; inset: 0; display: block; width: 100%; height: 80px; }
+.teaching-site-detail .funnel-label { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; pointer-events: none; user-select: none; }
+.teaching-site-detail .stage-name { margin-bottom: 4px; color: rgba(255,255,255,.92); font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.teaching-site-detail .stage-count { color: #fff; font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; font-weight: 700; line-height: 1; }
+.teaching-site-detail .stage-rate { margin-top: 4px; padding: 2px 8px; border-radius: 20px; color: rgba(255,255,255,.92); font-size: .7rem; font-weight: 600; background: rgba(0,0,0,.2); }
 
 .funnel-dashboard .stat-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin-bottom: 28px; border: 1px solid var(--border); background: var(--border); box-shadow: var(--shadow); }
 .funnel-dashboard .stat-cell { padding: 14px 18px; color: var(--navy); background: var(--white); }
@@ -225,9 +248,9 @@ button, select { font: inherit; }
   .inactive-list ul { columns: 1; }
   .classic-dashboard .gs-header { padding: 14px 16px; }
   .classic-dashboard .container { width: 100%; padding: 25px 12px 45px; }
-  .pipeline-dashboard .stat-bar, .funnel-dashboard .stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pipeline-dashboard .stat-bar, .funnel-dashboard .stat-bar, .teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pipeline-dashboard .stat-cell { padding: 24px 14px; }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }
   .pipeline-dashboard .bar-row, .teaching-dashboard .bar-row { grid-template-columns: 110px 1fr 40px; }
-  .funnel-dashboard .funnel-stage { max-width: 100%; }
+  .funnel-dashboard .funnel-stage, .teaching-site-detail .funnel-stage { max-width: 100%; }
 }

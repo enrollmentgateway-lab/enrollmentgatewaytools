@@ -13,11 +13,12 @@
   <header class="gs-header">
     <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
     <div class="header-divider"></div>
-    <div class="header-title">Teaching Sites Overview</div>
+    <div id="header-title" class="header-title">Teaching Sites Overview</div>
   </header>
 
   <div id="loading" class="loading">Waiting for Teaching Sites data from Slate…</div>
   <main id="app" class="container" hidden>
+    <section id="overview-view">
     <div class="page-intro">
       <h1 class="intro-heading">Teaching Sites Overview</h1>
       <p class="intro-subtitle">Record counts by teaching site, filterable by pipeline status and academic period.</p>
@@ -34,8 +35,8 @@
         </select>
       </div>
       <div class="control-group">
-        <label class="ctrl-label" for="period">Period</label>
-        <select id="period" class="control-select"></select>
+        <label class="ctrl-label" for="overview-period">Period</label>
+        <select id="overview-period" class="control-select"></select>
       </div>
     </div>
 
@@ -59,6 +60,41 @@
         <tbody id="site-table"></tbody>
       </table>
     </div>
+    </section>
+
+    <section id="site-detail-view" class="teaching-site-detail" hidden>
+      <button id="site-back" class="back-button" type="button"><span aria-hidden="true">←</span> Back to Teaching Sites</button>
+
+      <div class="page-intro site-detail-intro">
+        <div class="section-eyebrow">Teaching Site Funnel</div>
+        <h1 id="site-title" class="intro-heading">Teaching Site</h1>
+        <p class="intro-subtitle">Enrollment progress for this teaching site and academic period.</p>
+      </div>
+
+      <div class="controls-row">
+        <div class="control-group">
+          <label class="ctrl-label" for="detail-period">Period</label>
+          <select id="detail-period" class="control-select"></select>
+        </div>
+        <div class="control-group">
+          <span class="ctrl-label">Conversion</span>
+          <div class="toggle-group" role="group" aria-label="Conversion mode">
+            <button id="site-cumulative" class="toggle-btn" type="button">From Stage 1</button>
+            <button id="site-sequential" class="toggle-btn" type="button">Step-to-Step</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-bar site-funnel-stat-bar">
+        <div class="stat-cell"><div id="site-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries</div></div>
+        <div class="stat-cell"><div id="site-applications" class="stat-val">0</div><div class="stat-lbl">Applications</div></div>
+        <div class="stat-cell"><div id="site-awaiting" class="stat-val">0</div><div class="stat-lbl">Awaiting Approval</div></div>
+        <div class="stat-cell"><div id="site-admitted" class="stat-val">0</div><div class="stat-lbl">Admitted</div></div>
+      </div>
+
+      <div id="site-funnel" class="funnel" aria-label="Teaching site enrollment funnel"></div>
+      <div id="site-funnel-empty" class="empty-state" hidden>No funnel records are available for this teaching site and period.</div>
+    </section>
   </main>
 
   <script src="../assets/dashboard-common.js"></script>
@@ -85,6 +121,7 @@
     ];
     const ui = window.DashboardUI;
     let data = {};
+    let conversionMode = sessionStorage.getItem('teaching-site-funnel-conversion-mode') || 'cumulative';
     const bridge = window.DashboardBridge.create('teaching-site-overview', render);
 
     function groupRecords(records) {
@@ -111,6 +148,22 @@
       data = payload || {};
       data.filters = data.filters || {};
       data.filters.status = data.filters.status || 'applicant';
+      data.filters.site = ui.text(data.filters.site, '').trim();
+      data.funnel = data.funnel || {};
+      const detailActive = Boolean(data.filters.site);
+
+      document.getElementById('overview-view').hidden = detailActive;
+      document.getElementById('site-detail-view').hidden = !detailActive;
+      document.getElementById('header-title').textContent = detailActive ? 'Teaching Site Funnel' : 'Teaching Sites Overview';
+      document.body.classList.toggle('site-detail-active', detailActive);
+
+      if (detailActive) renderSiteDetail();
+      else renderOverview();
+      ui.showApp();
+    }
+
+    function renderOverview() {
+      document.title = 'Teaching Sites Overview';
       const grouped = groupRecords(data.records);
       const total = comparisonTotal();
       const recordCount = grouped.reduce(function (sum, item) { return sum + item.count; }, 0);
@@ -118,14 +171,25 @@
       const inactive = allTeachingSites.filter(function (title) { return !active.has(title); });
 
       document.getElementById('status').value = data.filters.status;
-      window.AcademicPeriods.populate(document.getElementById('period'), data.filters.term, data.filters.year);
+      window.AcademicPeriods.populate(document.getElementById('overview-period'), data.filters.term, data.filters.year);
       ui.setText('site-count', grouped.length);
       document.getElementById('coverage').textContent = (total ? (recordCount * 100 / total).toFixed(1) : '0.0') + '%';
       document.getElementById('coverage-label').textContent = 'of total ' + data.filters.status + ' records';
       renderInactive(inactive);
       renderBars(grouped);
       renderTable(grouped, total);
-      ui.showApp();
+    }
+
+    function renderSiteDetail() {
+      document.title = data.filters.site + ' — Teaching Site Funnel';
+      document.getElementById('site-title').textContent = data.filters.site;
+      window.AcademicPeriods.populate(document.getElementById('detail-period'), data.filters.term, data.filters.year);
+      updateModeButtons();
+      ui.setText('site-inquiries', ui.number(data.funnel.inquiries).toLocaleString());
+      ui.setText('site-applications', ui.number(data.funnel.applications).toLocaleString());
+      ui.setText('site-awaiting', ui.number(data.funnel.awaiting).toLocaleString());
+      ui.setText('site-admitted', ui.number(data.funnel.admitted).toLocaleString());
+      renderSiteFunnel();
     }
 
     function renderInactive(inactive) {
@@ -139,11 +203,13 @@
       if (!grouped.length) { root.appendChild(ui.emptyState('No teaching site data available.')); return; }
       const max = grouped[0].count || 1;
       grouped.forEach(function (item) {
-        const row = document.createElement('div'); row.className = 'bar-row';
+        const row = document.createElement('div'); row.className = 'bar-row clickable-site'; row.tabIndex = 0; row.setAttribute('role', 'link'); row.setAttribute('aria-label', 'Open funnel for ' + item.title);
         const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = item.title; label.title = item.title;
         const track = document.createElement('div'); track.className = 'bar-track';
         const fill = document.createElement('div'); fill.className = 'bar-fill'; fill.style.width = ((item.count / max) * 100) + '%'; track.appendChild(fill);
         const value = document.createElement('div'); value.className = 'bar-value'; value.textContent = item.count.toLocaleString();
+        row.addEventListener('click', function () { openSite(item.title); });
+        row.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openSite(item.title); } });
         row.append(label, track, value); root.appendChild(row);
       });
     }
@@ -154,16 +220,98 @@
         const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 3; cell.appendChild(ui.emptyState('No teaching site data available.')); return;
       }
       grouped.forEach(function (item) {
-        const row = body.insertRow(); row.insertCell().textContent = item.title;
+        const row = body.insertRow(); row.className = 'clickable'; row.tabIndex = 0; row.setAttribute('aria-label', 'Open funnel for ' + item.title);
+        row.insertCell().textContent = item.title;
         const count = row.insertCell(); count.className = 'align-right number'; count.textContent = item.count.toLocaleString();
         const percent = row.insertCell(); percent.className = 'align-right number'; percent.textContent = (total ? item.count * 100 / total : 0).toFixed(1) + '%';
+        row.addEventListener('click', function () { openSite(item.title); });
+        row.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openSite(item.title); } });
       });
     }
 
+    function openSite(title) { bridge.navigate({ site: title }, []); }
+
+    function percent(value, base) { return base > 0 ? Math.round(value * 1000 / base) / 10 : 0; }
+
+    function renderSiteFunnel() {
+      const stages = [
+        { label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#0f766e' },
+        { label:'Applied', count:ui.number(data.funnel.applications), color:'#2563eb' },
+        { label:'Awaiting Approval', count:ui.number(data.funnel.awaiting), color:'#7c3aed' },
+        { label:'Admitted', count:ui.number(data.funnel.admitted), color:'#d95d39' }
+      ];
+      const root = document.getElementById('site-funnel'); root.replaceChildren();
+      const hasRecords = stages.some(function (stage) { return stage.count > 0; });
+      root.hidden = !hasRecords;
+      document.getElementById('site-funnel-empty').hidden = hasRecords;
+      if (!hasRecords) return;
+      const maxWidth = 680;
+      const minWidth = 220;
+      const height = 80;
+      const step = (maxWidth - minWidth) / (stages.length - 1);
+      const svgNamespace = 'http://www.w3.org/2000/svg';
+
+      stages.forEach(function (stage, index) {
+        const topWidth = maxWidth - index * step;
+        const bottomWidth = index === stages.length - 1 ? minWidth : Math.max(minWidth, topWidth - step);
+        const inset = (topWidth - bottomWidth) / 2;
+        const element = document.createElement('div');
+        element.className = 'funnel-stage';
+        element.style.width = topWidth + 'px';
+        element.setAttribute('aria-label', stage.label + ': ' + stage.count.toLocaleString());
+
+        const svg = document.createElementNS(svgNamespace, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + topWidth + ' ' + height);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        const definitions = document.createElementNS(svgNamespace, 'defs');
+        const gradient = document.createElementNS(svgNamespace, 'linearGradient');
+        gradient.id = 'site-funnel-gradient-' + index;
+        gradient.setAttribute('x1', '0'); gradient.setAttribute('y1', '0'); gradient.setAttribute('x2', '0'); gradient.setAttribute('y2', '1');
+        const topStop = document.createElementNS(svgNamespace, 'stop'); topStop.setAttribute('offset', '0%'); topStop.setAttribute('stop-color', stage.color);
+        const bottomStop = document.createElementNS(svgNamespace, 'stop'); bottomStop.setAttribute('offset', '100%'); bottomStop.setAttribute('stop-color', stage.color); bottomStop.setAttribute('stop-opacity', '.82');
+        gradient.append(topStop, bottomStop); definitions.appendChild(gradient); svg.appendChild(definitions);
+        const polygon = document.createElementNS(svgNamespace, 'polygon');
+        polygon.setAttribute('points', '0,0 ' + topWidth + ',0 ' + (topWidth - inset) + ',' + height + ' ' + inset + ',' + height);
+        polygon.setAttribute('fill', 'url(#' + gradient.id + ')'); svg.appendChild(polygon);
+
+        const label = document.createElement('div'); label.className = 'funnel-label';
+        const name = document.createElement('div'); name.className = 'stage-name'; name.textContent = stage.label;
+        const count = document.createElement('div'); count.className = 'stage-count'; count.textContent = stage.count.toLocaleString();
+        label.append(name, count);
+        if (index) {
+          const base = conversionMode === 'cumulative' ? stages[0].count : stages[index - 1].count;
+          const rate = document.createElement('div'); rate.className = 'stage-rate';
+          rate.textContent = (conversionMode === 'cumulative' ? 'From Inquiries: ' : 'From Prev: ') + percent(stage.count, base) + '%';
+          label.appendChild(rate);
+        }
+        element.append(svg, label); root.appendChild(element);
+      });
+    }
+
+    function updateModeButtons() {
+      document.getElementById('site-cumulative').classList.toggle('active', conversionMode === 'cumulative');
+      document.getElementById('site-sequential').classList.toggle('active', conversionMode === 'sequential');
+    }
+
+    function setMode(mode) {
+      conversionMode = mode;
+      sessionStorage.setItem('teaching-site-funnel-conversion-mode', mode);
+      updateModeButtons();
+      renderSiteFunnel();
+    }
+
+    function changePeriod(value) {
+      const navigation = window.AcademicPeriods.navigation(value);
+      bridge.navigate(navigation.set, navigation.remove);
+    }
+
     document.getElementById('status').addEventListener('change', function (event) { bridge.navigate({ status: event.target.value }, []); });
-    document.getElementById('period').addEventListener('change', function (event) {
-      const navigation = window.AcademicPeriods.navigation(event.target.value); bridge.navigate(navigation.set, navigation.remove);
-    });
+    document.getElementById('overview-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
+    document.getElementById('detail-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
+    document.getElementById('site-back').addEventListener('click', function () { bridge.navigate({}, ['site']); });
+    document.getElementById('site-cumulative').addEventListener('click', function () { setMode('cumulative'); });
+    document.getElementById('site-sequential').addEventListener('click', function () { setMode('sequential'); });
     document.getElementById('inactive-toggle').addEventListener('click', function () {
       const list = document.getElementById('inactive-list'); const expanded = list.hidden;
       list.hidden = !expanded; this.setAttribute('aria-expanded', String(expanded)); bridge.resize();

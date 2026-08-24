@@ -15,3 +15,5 @@ These are the current production templates. Each file sends Slate query results 
 These are the previous self-contained dashboard templates. They include the old HTML, CSS, JavaScript, and Liquid in one file and are retained only as backups.
 
 The live hosted HTML is kept in each tool's top-level folder—for example, `pipeline-overview/index.html`. Those locations must not be moved without also updating the iframe URLs in the wrappers.
+
+The Teaching Sites overview and its site-specific funnel share `teaching-site-overview-wrapper.liquid.html`; there is no separate funnel wrapper. See the repository README for the four `teaching_site_*` funnel exports and their required `site`, `term`, and `year` URL filters.
