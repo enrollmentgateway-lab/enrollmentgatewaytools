@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Regional Campus Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+  <style>
+    .regional-dashboard .container { max-width: 1040px; }
+    .regional-dashboard .controls-row { justify-content: flex-start; }
+    .regional-dashboard .control-group:last-child { margin-left: auto; }
+    .regional-dashboard .summary-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .regional-dashboard .summary-bar .stat-cell { text-align: center; }
+    .regional-dashboard .summary-bar .stat-val { color: var(--gold-light); font-family: 'Playfair Display', Georgia, serif; }
+
+    .campus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .campus-card { min-height: 126px; padding: 20px; border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--navy); text-align: left; background: var(--white); box-shadow: var(--shadow); cursor: pointer; transition: border-color .18s, transform .18s, box-shadow .18s; }
+    .campus-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 7px 20px rgba(26,43,74,.13); }
+    .campus-card-name { display: block; font: 700 1.08rem/1.3 'Playfair Display', Georgia, serif; }
+    .campus-card-count { display: block; margin-top: 18px; color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+
+    .regional-funnel { display: grid; justify-items: center; gap: 7px; padding: 6px 0 14px; }
+    .regional-stage { position: relative; min-height: 76px; display: grid; place-items: center; padding: 12px 20px; border: 0; border-radius: 3px; color: #fff; text-align: center; background: var(--stage-color); box-shadow: 0 3px 10px rgba(26,43,74,.16); cursor: pointer; transition: filter .18s, transform .18s; }
+    .regional-stage::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.13), rgba(0,0,0,.08)); pointer-events: none; }
+    .regional-stage:hover { filter: brightness(1.07); transform: scale(1.01); }
+    .regional-stage-label, .regional-stage-count, .regional-stage-rate { position: relative; z-index: 1; display: block; }
+    .regional-stage-label { font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .regional-stage-count { margin-top: 2px; font: 700 1.85rem/1 'Playfair Display', Georgia, serif; }
+    .regional-stage-rate { margin-top: 5px; font-size: .68rem; font-weight: 600; opacity: .88; }
+
+    .view-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+    .back-button { padding: 6px 0; border: 0; color: #0f766e; font-size: .82rem; font-weight: 750; background: transparent; cursor: pointer; }
+    .back-button:hover { text-decoration: underline; }
+    .filter-chip { display: inline-flex; gap: 7px; align-items: center; padding: 7px 11px; border-radius: 999px; color: #765410; font-size: .75rem; font-weight: 700; background: var(--gold-light); }
+    .filter-chip button { padding: 0; border: 0; color: inherit; font-size: 1rem; line-height: 1; background: transparent; cursor: pointer; }
+
+    .lookup-panel { padding: 20px; }
+    .lookup-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: .7rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .lookup-input { width: 100%; min-height: 44px; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--navy); font: inherit; background: #fff; }
+    .lookup-input:focus { outline: 3px solid rgba(200,149,42,.28); border-color: var(--gold); }
+    .lookup-help { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
+    #lookup-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
+    #lookup-results .empty-state { grid-column: 1 / -1; }
+    .record-count { margin: 18px 0 9px; color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .record-row { cursor: pointer; }
+    .record-name { color: var(--navy); font-weight: 750; }
+    .record-contact { display: block; margin-top: 3px; color: var(--muted); font-size: .76rem; }
+    .record-row:focus-visible { outline: 3px solid rgba(15,118,110,.25); outline-offset: -3px; }
+
+    .profile-card { overflow: hidden; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); }
+    .profile-hero { padding: 28px 30px; color: #fff; background: linear-gradient(125deg, var(--navy), var(--navy-mid)); border-bottom: 4px solid var(--gold); }
+    .profile-kicker { color: var(--gold-light); font-size: .68rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .profile-name { margin: 7px 0 5px; font: 700 clamp(1.65rem, 4vw, 2.2rem)/1.15 'Playfair Display', Georgia, serif; }
+    .profile-program { margin: 0; color: #d9e0eb; }
+    .profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--border); }
+    .profile-field { min-height: 105px; padding: 20px 24px; background: #fff; }
+    .profile-field-label { display: block; color: var(--muted); font-size: .67rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .profile-field-value { display: block; margin-top: 8px; color: var(--navy); font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
+    .profile-field-value a { color: #0f766e; }
+
+    @media (max-width: 720px) {
+      .regional-dashboard .control-group:last-child { margin-left: 0; }
+      .regional-dashboard .summary-bar { grid-template-columns: 1fr; }
+      .regional-dashboard .summary-bar .stat-cell { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.14); }
+      .regional-stage { max-width: 100%; }
+      .profile-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="classic-dashboard regional-dashboard">
+  <header class="gs-header">
+    <div class="wordmark">Gateway Seminary<span>Admissions &middot; Enrollment Intelligence</span></div>
+    <div class="header-divider"></div>
+    <div id="header-title" class="header-title">Regional Campus Portal</div>
+  </header>
+
+  <div id="loading" class="loading">Waiting for regional campus data from Slate&hellip;</div>
+  <main id="app" class="container" hidden>
+    <section id="portal-view">
+      <div class="page-intro">
+        <h1 id="portal-title" class="intro-heading">Regional Campus Portal</h1>
+        <p id="portal-subtitle" class="intro-subtitle">Explore each campus funnel, drill into a stage, or look up an individual record.</p>
+      </div>
+
+      <div class="controls-row">
+        <div class="control-group">
+          <label class="ctrl-label" for="campus">Campus</label>
+          <select id="campus" class="control-select"><option value="">All Regional Campuses</option></select>
+        </div>
+        <div class="control-group">
+          <label class="ctrl-label" for="period">Period</label>
+          <select id="period" class="control-select"></select>
+        </div>
+      </div>
+
+      <div class="stat-bar summary-bar">
+        <div class="stat-cell"><div id="record-total" class="stat-val">0</div><div class="stat-lbl">Records</div></div>
+        <div class="stat-cell"><div id="campus-total" class="stat-val">0</div><div class="stat-lbl">Campuses</div></div>
+        <div class="stat-cell"><div id="program-total" class="stat-val">0</div><div class="stat-lbl">Programs</div></div>
+      </div>
+
+      <div id="campus-section">
+        <div class="section-divider"><div class="section-eyebrow">Regional View</div><div class="section-heading">Records by Campus</div></div>
+        <div id="campus-grid" class="campus-grid"></div>
+      </div>
+
+      <div id="funnel-section">
+        <div class="section-divider"><div class="section-eyebrow">Enrollment Funnel</div><div id="funnel-heading" class="section-heading">Records by Status</div></div>
+        <div id="funnel" class="regional-funnel" aria-label="Regional campus enrollment funnel"></div>
+      </div>
+
+      <div class="section-divider"><div class="section-eyebrow">Individual Lookup</div><div class="section-heading">Find a Record</div></div>
+      <div class="panel lookup-panel">
+        <label class="lookup-label" for="lookup">Name, email, phone, status, or program</label>
+        <input id="lookup" class="lookup-input" type="search" autocomplete="off" placeholder="Start typing to find a record">
+        <p class="lookup-help">Choose a match to open the individual dashboard.</p>
+        <div id="lookup-results" class="results"></div>
+      </div>
+    </section>
+
+    <section id="records-view" hidden>
+      <div class="view-toolbar">
+        <button id="records-back" class="back-button" type="button">&larr; Back to funnel</button>
+        <span id="active-filter" class="filter-chip"><span></span><button type="button" aria-label="Clear status filter">&times;</button></span>
+      </div>
+      <div class="page-intro">
+        <div class="section-eyebrow">Funnel Drilldown</div>
+        <h1 id="records-title" class="intro-heading">Records</h1>
+        <p id="records-subtitle" class="intro-subtitle"></p>
+      </div>
+      <div class="panel lookup-panel">
+        <label class="lookup-label" for="record-search">Search within these records</label>
+        <input id="record-search" class="lookup-input" type="search" autocomplete="off" placeholder="Name, email, phone, or program">
+        <div id="record-count" class="record-count"></div>
+        <div class="panel">
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>Program</th><th>Status</th><th>Campus</th></tr></thead>
+            <tbody id="record-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="profile-view" hidden>
+      <button id="profile-back" class="back-button" type="button">&larr; Back to records</button>
+      <div id="profile-card" class="profile-card"></div>
+    </section>
+  </main>
+
+  <script src="../assets/dashboard-common.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const ui = window.DashboardUI;
+    const bridge = window.DashboardBridge.create('regional-campus', render);
+    const colors = ['#0f766e', '#2563eb', '#7c3aed', '#c8952a', '#d95d39', '#2a6b3c', '#1a2b4a'];
+    const statusOrder = ['inquiry', 'prospect', 'applicant', 'application', 'awaiting approval', 'admitted', 'student', 'enrolled'];
+    let data = { filters:{}, records:[] };
+    let lastView = 'portal';
+
+    function clean(value) { return ui.text(value, '').trim(); }
+    function unique(values) { return Array.from(new Set(values.filter(Boolean))).sort(function (a, b) { return a.localeCompare(b); }); }
+    function countBy(records, key) {
+      const counts = new Map();
+      records.forEach(function (record) { const value = clean(record[key]) || 'Not specified'; counts.set(value, (counts.get(value) || 0) + 1); });
+      return Array.from(counts, function (entry) { return { label:entry[0], count:entry[1] }; });
+    }
+    function statusRank(label) {
+      const normalized = label.toLowerCase();
+      const exact = statusOrder.indexOf(normalized);
+      if (exact >= 0) return exact;
+      const partial = statusOrder.findIndex(function (known) { return normalized.includes(known); });
+      return partial >= 0 ? partial : statusOrder.length;
+    }
+    function statusGroups() {
+      return countBy(data.records, 'status').sort(function (a, b) { return statusRank(a.label) - statusRank(b.label) || a.label.localeCompare(b.label); });
+    }
+    function searchRecords(value, records) {
+      const terms = clean(value).toLowerCase().split(/\s+/).filter(Boolean);
+      if (!terms.length) return [];
+      return records.filter(function (record) {
+        const haystack = [record.name, record.email, record.phone, record.status, record.program, record.campus].map(clean).join(' ').toLowerCase();
+        return terms.every(function (term) { return haystack.includes(term); });
+      });
+    }
+
+    function render(payload) {
+      data = payload || {};
+      data.filters = data.filters || {};
+      data.records = Array.isArray(data.records) ? data.records : [];
+      populateControls();
+      if (clean(data.filters.status)) showRecords();
+      else showPortal();
+      ui.showApp();
+    }
+
+    function populateControls() {
+      const select = document.getElementById('campus');
+      const selected = clean(data.filters.campus);
+      const campuses = unique(data.records.map(function (record) { return clean(record.campus); }).concat(selected ? [selected] : []));
+      select.replaceChildren();
+      const all = document.createElement('option'); all.value = ''; all.textContent = 'All Regional Campuses'; select.appendChild(all);
+      campuses.forEach(function (campus) { const option = document.createElement('option'); option.value = campus; option.textContent = campus; select.appendChild(option); });
+      select.value = selected;
+      window.AcademicPeriods.populate(document.getElementById('period'), clean(data.filters.term), clean(data.filters.year));
+    }
+
+    function showOnly(view) {
+      document.getElementById('portal-view').hidden = view !== 'portal';
+      document.getElementById('records-view').hidden = view !== 'records';
+      document.getElementById('profile-view').hidden = view !== 'profile';
+      document.body.classList.toggle('profile-active', view === 'profile');
+      lastView = view === 'profile' ? lastView : view;
+      bridge.resize();
+    }
+
+    function showPortal() {
+      showOnly('portal');
+      const campus = clean(data.filters.campus);
+      document.title = campus ? campus + ' — Regional Campus Portal' : 'Regional Campus Portal';
+      document.getElementById('header-title').textContent = campus || 'Regional Campus Portal';
+      document.getElementById('portal-title').textContent = campus || 'Regional Campus Portal';
+      document.getElementById('portal-subtitle').textContent = campus ? 'Review the campus funnel or look up an individual record.' : 'Select a campus, explore the combined funnel, or look up an individual record.';
+      const campuses = countBy(data.records, 'campus').filter(function (item) { return item.label !== 'Not specified'; }).sort(function (a, b) { return b.count - a.count || a.label.localeCompare(b.label); });
+      ui.setText('record-total', data.records.length.toLocaleString());
+      ui.setText('campus-total', campuses.length.toLocaleString());
+      ui.setText('program-total', unique(data.records.map(function (record) { return clean(record.program); })).length.toLocaleString());
+      renderCampusCards(campuses, campus);
+      renderFunnel();
+      document.getElementById('lookup').value = '';
+      renderLookupResults([]);
+    }
+
+    function renderCampusCards(campuses, selectedCampus) {
+      const section = document.getElementById('campus-section');
+      section.hidden = Boolean(selectedCampus);
+      const root = document.getElementById('campus-grid'); root.replaceChildren();
+      if (!campuses.length) { root.appendChild(ui.emptyState('No campus records are available for this period.')); return; }
+      campuses.forEach(function (campus) {
+        const button = document.createElement('button'); button.className = 'campus-card'; button.type = 'button';
+        const name = document.createElement('span'); name.className = 'campus-card-name'; name.textContent = campus.label;
+        const count = document.createElement('span'); count.className = 'campus-card-count'; count.textContent = campus.count.toLocaleString() + ' record' + (campus.count === 1 ? '' : 's');
+        button.append(name, count); button.addEventListener('click', function () { bridge.navigate({ campus:campus.label }, ['status']); }); root.appendChild(button);
+      });
+    }
+
+    function renderFunnel() {
+      const root = document.getElementById('funnel'); root.replaceChildren();
+      const stages = statusGroups();
+      const campus = clean(data.filters.campus);
+      document.getElementById('funnel-heading').textContent = campus ? campus + ' Records by Status' : 'All Campus Records by Status';
+      if (!stages.length) { root.appendChild(ui.emptyState('No funnel records are available for this selection.')); return; }
+      const firstCount = stages[0].count || 1;
+      stages.forEach(function (stage, index) {
+        const width = Math.max(58, 100 - (index * (42 / Math.max(stages.length - 1, 1))));
+        const button = document.createElement('button'); button.className = 'regional-stage'; button.type = 'button'; button.style.width = width + '%'; button.style.setProperty('--stage-color', colors[index % colors.length]);
+        button.setAttribute('aria-label', 'View ' + stage.count + ' ' + stage.label + ' records');
+        const label = document.createElement('span'); label.className = 'regional-stage-label'; label.textContent = stage.label;
+        const count = document.createElement('span'); count.className = 'regional-stage-count'; count.textContent = stage.count.toLocaleString();
+        button.append(label, count);
+        if (index) { const rate = document.createElement('span'); rate.className = 'regional-stage-rate'; rate.textContent = Math.round(stage.count * 1000 / firstCount) / 10 + '% of first stage'; button.appendChild(rate); }
+        button.addEventListener('click', function () { bridge.navigate({ status:stage.label }, []); }); root.appendChild(button);
+      });
+    }
+
+    function renderLookupResults(records) {
+      const root = document.getElementById('lookup-results'); root.replaceChildren();
+      if (!document.getElementById('lookup').value.trim()) return;
+      if (!records.length) { root.appendChild(ui.emptyState('No records matched that search.')); return; }
+      records.slice(0, 25).forEach(function (record) { root.appendChild(recordButton(record)); });
+      if (records.length > 25) { const note = document.createElement('p'); note.className = 'lookup-help'; note.textContent = 'Showing the first 25 of ' + records.length + ' matches. Add another search term to narrow the results.'; root.appendChild(note); }
+    }
+
+    function recordButton(record) {
+      const button = document.createElement('button'); button.className = 'campus-card'; button.type = 'button';
+      const name = document.createElement('span'); name.className = 'campus-card-name'; name.textContent = clean(record.name) || 'Unnamed record';
+      const meta = document.createElement('span'); meta.className = 'campus-card-count'; meta.textContent = [clean(record.email), clean(record.program), clean(record.status)].filter(Boolean).join(' · ') || 'View dashboard';
+      button.append(name, meta); button.addEventListener('click', function () { showProfile(record, 'portal'); }); return button;
+    }
+
+    function showRecords() {
+      showOnly('records');
+      const status = clean(data.filters.status);
+      const campus = clean(data.filters.campus);
+      document.title = status + ' — Regional Campus Records';
+      document.getElementById('header-title').textContent = 'Funnel Drilldown';
+      document.getElementById('active-filter').querySelector('span').textContent = status;
+      document.getElementById('records-title').textContent = status + ' Records';
+      document.getElementById('records-subtitle').textContent = (campus ? campus + ' · ' : '') + data.records.length.toLocaleString() + ' matching record' + (data.records.length === 1 ? '' : 's') + '.';
+      document.getElementById('record-search').value = '';
+      renderRecordTable(data.records);
+    }
+
+    function renderRecordTable(records) {
+      const body = document.getElementById('record-table'); body.replaceChildren();
+      document.getElementById('record-count').textContent = records.length.toLocaleString() + ' record' + (records.length === 1 ? '' : 's');
+      if (!records.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 4; cell.appendChild(ui.emptyState('No records are available for this filter.')); return; }
+      records.forEach(function (record) {
+        const row = body.insertRow(); row.className = 'record-row'; row.tabIndex = 0;
+        const name = row.insertCell(); const nameText = document.createElement('span'); nameText.className = 'record-name'; nameText.textContent = clean(record.name) || 'Unnamed record'; name.appendChild(nameText);
+        const contact = [clean(record.email), clean(record.phone)].filter(Boolean).join(' · '); if (contact) { const meta = document.createElement('span'); meta.className = 'record-contact'; meta.textContent = contact; name.appendChild(meta); }
+        row.insertCell().textContent = clean(record.program) || '—';
+        const status = row.insertCell(); const badge = document.createElement('span'); badge.className = 'badge badge-gold'; badge.textContent = clean(record.status) || '—'; status.appendChild(badge);
+        row.insertCell().textContent = clean(record.campus) || '—';
+        row.addEventListener('click', function () { showProfile(record, 'records'); });
+        row.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showProfile(record, 'records'); } });
+      });
+      bridge.resize();
+    }
+
+    function showProfile(record, fromView) {
+      lastView = fromView;
+      document.getElementById('portal-view').hidden = true;
+      document.getElementById('records-view').hidden = true;
+      document.getElementById('profile-view').hidden = false;
+      document.getElementById('header-title').textContent = 'Record Dashboard';
+      document.title = (clean(record.name) || 'Record') + ' — Regional Campus Portal';
+      const card = document.getElementById('profile-card'); card.replaceChildren();
+      const hero = document.createElement('div'); hero.className = 'profile-hero';
+      const kicker = document.createElement('div'); kicker.className = 'profile-kicker'; kicker.textContent = 'Individual Record Dashboard';
+      const name = document.createElement('h1'); name.className = 'profile-name'; name.textContent = clean(record.name) || 'Unnamed record';
+      const program = document.createElement('p'); program.className = 'profile-program'; program.textContent = clean(record.program) || 'Program not specified';
+      hero.append(kicker, name, program);
+      const grid = document.createElement('div'); grid.className = 'profile-grid';
+      addProfileField(grid, 'Campus', clean(record.campus));
+      addProfileField(grid, 'Status', clean(record.status));
+      addProfileField(grid, 'Email', clean(record.email), 'email');
+      addProfileField(grid, 'Phone', clean(record.phone), 'phone');
+      addProfileField(grid, 'Program', clean(record.program));
+      addProfileField(grid, 'Academic Period', [clean(record.term), clean(record.year)].filter(Boolean).join(' '));
+      card.append(hero, grid); bridge.resize();
+    }
+
+    function addProfileField(root, labelText, value, linkType) {
+      const field = document.createElement('div'); field.className = 'profile-field';
+      const label = document.createElement('span'); label.className = 'profile-field-label'; label.textContent = labelText;
+      const display = document.createElement('span'); display.className = 'profile-field-value';
+      if (value && linkType === 'email' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) { const link = document.createElement('a'); link.href = 'mailto:' + value; link.textContent = value; display.appendChild(link); }
+      else if (value && linkType === 'phone') { const link = document.createElement('a'); link.href = 'tel:' + value.replace(/[^\d+]/g, ''); link.textContent = value; display.appendChild(link); }
+      else display.textContent = value || '—';
+      field.append(label, display); root.appendChild(field);
+    }
+
+    function changePeriod(value) { const navigation = window.AcademicPeriods.navigation(value); bridge.navigate(navigation.set, navigation.remove); }
+    function clearStatus() { bridge.navigate({}, ['status']); }
+
+    document.getElementById('campus').addEventListener('change', function (event) { const value = event.target.value; bridge.navigate(value ? { campus:value } : {}, value ? ['status'] : ['campus','status']); });
+    document.getElementById('period').addEventListener('change', function (event) { changePeriod(event.target.value); });
+    document.getElementById('lookup').addEventListener('input', function (event) { renderLookupResults(searchRecords(event.target.value, data.records)); });
+    document.getElementById('record-search').addEventListener('input', function (event) { const value = event.target.value; renderRecordTable(value.trim() ? searchRecords(value, data.records) : data.records); });
+    document.getElementById('records-back').addEventListener('click', clearStatus);
+    document.getElementById('active-filter').querySelector('button').addEventListener('click', clearStatus);
+    document.getElementById('profile-back').addEventListener('click', function () {
+      document.getElementById('profile-view').hidden = true;
+      if (lastView === 'records') showRecords(); else showPortal();
+    });
+  }());
+  </script>
+</body>
+</html>

@@ -11,6 +11,8 @@ This repository is the single source of truth for the Enrollment Intelligence Hu
 - `iframe-bridge-test/` — working proof of concept for Slate query data sent to a GitHub-hosted iframe with automatic height resizing.
 - `student-lookup/` — GitHub-hosted student search/profile interface.
 - `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Student Lookup portal.
+- `regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
+- `slate-templates/wrappers/regional-campus-wrapper.liquid.html` — the Slate query wrapper for the Regional Campus portal.
 - `pipeline-overview/`, `teaching-site-overview/`, `event-tracker/`, and `funnel-overview/` — GitHub-hosted dashboard interfaces.
 - `assets/dashboard.css` and `assets/dashboard-common.js` — shared dashboard presentation, iframe bridge, and academic-period definitions.
 - `slate-templates/wrappers/*-wrapper.liquid.html` — thin Slate templates that serialize query results and host the corresponding dashboard iframe.
@@ -45,6 +47,8 @@ The Teaching Sites wrapper also powers the site-specific funnel inside the same 
 The `site` parameter must filter each export by an exact match against the same teaching-site title returned as `teaching_sites_persons.title`. Do not apply the overview's `status` parameter to these four exports; each export represents its named funnel stage. With no `site` parameter, the hosted page shows the existing overview. Selecting a site adds `site` to the same Slate page URL and switches the iframe to the site-funnel view while preserving `term` and `year`.
 
 The `total_apps`, `total_inquiries` / `total_inq`, `total_prospects`, and `total_students` exports are fixed comparison populations used as percentage denominators. Do not apply the `term` or `year` URL parameters to those total exports.
+
+The Regional Campus wrapper expects one query export named `campus_records`. Export `campus`, `term`, `year`, `name`, `email`, `phone`, `status`, and `program`, and configure the query so the `campus`, `term`, `year`, and `status` URL parameters filter their matching fields. With no filters, the export should return the complete regional-campus population available to the signed-in portal user. The hosted interface derives campus totals and funnel stages from those records; choosing a campus or funnel stage reloads the Slate portal with the corresponding URL filter.
 
 Both status dropdowns support `applicant`, `inquiry`, `prospect`, and `student`. Configure the Slate status filter so `?status=student` returns the intended student population.
 

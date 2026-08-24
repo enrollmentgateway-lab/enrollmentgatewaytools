@@ -1,0 +1,82 @@
+<!--
+  Regional Campus Slate wrapper.
+
+  Query export: campus_records
+  URL filters: campus, term, year, status
+  Exported fields: campus, term, year, name, email, phone, status, program
+
+  Configure campus_records so each URL parameter filters the matching query
+  field. With no parameter, the export should return the complete population
+  that the signed-in portal user is permitted to view.
+-->
+<div id="regionalCampusData" style="display:none">
+  <span class="record-count">{{ campus_records.size }}</span>
+  <div class="records">
+    {% for record in campus_records %}
+      <div class="record">
+        <span class="campus">{{ record.campus | escape }}</span>
+        <span class="term">{{ record.term | escape }}</span>
+        <span class="year">{{ record.year | escape }}</span>
+        <span class="name">{{ record.name | escape }}</span>
+        <span class="email">{{ record.email | escape }}</span>
+        <span class="phone">{{ record.phone | escape }}</span>
+        <span class="status">{{ record.status | escape }}</span>
+        <span class="program">{{ record.program | escape }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<iframe id="regionalCampusFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/regional-campus/" title="Regional Campus Portal" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<script>
+(function () {
+  'use strict';
+  const dashboard = 'regional-campus';
+  const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const frame = document.getElementById('regionalCampusFrame');
+  const root = document.getElementById('regionalCampusData');
+  const read = (node, key) => { const element = node && node.querySelector('.' + key); return element ? element.textContent.trim() : ''; };
+  const pageUrl = new URL(window.location.href);
+  const payload = {
+    filters: {
+      campus: pageUrl.searchParams.get('campus') || '',
+      term: pageUrl.searchParams.get('term') || '',
+      year: pageUrl.searchParams.get('year') || '',
+      status: pageUrl.searchParams.get('status') || ''
+    },
+    records: Array.from(root.querySelectorAll('.record')).map(node => ({
+      campus: read(node, 'campus'),
+      term: read(node, 'term'),
+      year: read(node, 'year'),
+      name: read(node, 'name'),
+      email: read(node, 'email'),
+      phone: read(node, 'phone'),
+      status: read(node, 'status'),
+      program: read(node, 'program')
+    }))
+  };
+  const allowedParams = new Set(['campus', 'term', 'year', 'status']);
+
+  function sendData() {
+    if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload }, frameOrigin);
+  }
+
+  function navigate(message) {
+    const url = new URL(window.location.href);
+    Object.keys(message.set || {}).forEach(key => {
+      const value = String(message.set[key] || '').trim();
+      if (allowedParams.has(key) && value.length <= 100) url.searchParams.set(key, value);
+    });
+    (message.remove || []).forEach(key => { if (allowedParams.has(key)) url.searchParams.delete(key); });
+    window.location.assign(url.toString());
+  }
+
+  window.addEventListener('message', function (event) {
+    if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data || event.data.dashboard !== dashboard) return;
+    if (event.data.type === 'enrollment-dashboard-ready') sendData();
+    if (event.data.type === 'enrollment-dashboard-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+    if (event.data.type === 'enrollment-dashboard-navigate') navigate(event.data);
+  });
+  frame.addEventListener('load', sendData);
+}());
+</script>
