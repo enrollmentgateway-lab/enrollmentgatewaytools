@@ -198,7 +198,7 @@ button, select { font: inherit; }
 .teaching-site-detail .back-button:hover { text-decoration: underline; }
 .teaching-site-detail .site-detail-intro { margin-bottom: 25px; }
 .teaching-site-detail .site-detail-intro .section-eyebrow { margin-bottom: 6px; color: #0f766e; }
-.teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin-bottom: 28px; border: 1px solid var(--border); background: var(--border); box-shadow: var(--shadow); }
+.teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-bottom: 28px; border: 1px solid var(--border); background: var(--border); box-shadow: var(--shadow); }
 .teaching-site-detail .site-funnel-stat-bar .stat-cell { padding: 14px 18px; color: var(--navy); background: var(--white); }
 .teaching-site-detail .site-funnel-stat-bar .stat-val { color: var(--navy); font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; }
 .teaching-site-detail .site-funnel-stat-bar .stat-lbl { color: var(--muted); font-size: .67rem; }
@@ -244,7 +244,8 @@ button, select { font: inherit; }
   .inactive-list ul { columns: 1; }
   .classic-dashboard .gs-header { padding: 14px 16px; }
   .classic-dashboard .container { width: 100%; padding: 25px 12px 45px; }
-  .pipeline-dashboard .stat-bar, .funnel-dashboard .stat-bar, .teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pipeline-dashboard .stat-bar, .funnel-dashboard .stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pipeline-dashboard .stat-cell { padding: 24px 14px; }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }
   .pipeline-dashboard .bar-row, .teaching-dashboard .bar-row { grid-template-columns: 110px 1fr 40px; }

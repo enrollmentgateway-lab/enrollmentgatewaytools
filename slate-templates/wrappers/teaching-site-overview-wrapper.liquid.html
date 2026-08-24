@@ -1,16 +1,12 @@
 <!--
   Teaching Sites Slate wrapper.
-  Configure teaching_sites_persons to use the status, term, and year URL parameters.
-  The total_* exports are fixed comparison populations and should not use the
-  term or year parameters.
-  Configure teaching_site_inquiries, teaching_site_applications,
-  teaching_site_awaiting_approval, and teaching_site_admitted to use the site,
-  term, and year URL parameters. The site filter must exactly match the teaching
-  site title returned by teaching_sites_persons.
+  Configure teaching_sites_persons to return all teaching-site records and use
+  only the term and year URL parameters.
+  The site funnel calls one JSON service query three times with the status values
+  inquiry, applicant, and student. Configure that query's status,
+  site, term, and year filters accordingly.
 -->
 <div id="teachingSiteOverviewData" style="display:none">
-  <div class="totals"><span class="applications">{{ total_apps.size }}</span><span class="inquiries">{{ total_inq.size }}</span><span class="prospects">{{ total_prospects.size }}</span><span class="students">{{ total_students.size }}</span></div>
-  <div class="site-funnel"><span class="inquiries">{{ teaching_site_inquiries.size }}</span><span class="applications">{{ teaching_site_applications.size }}</span><span class="awaiting">{{ teaching_site_awaiting_approval.size }}</span><span class="admitted">{{ teaching_site_admitted.size }}</span></div>
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
 </div>
 <iframe id="teachingSiteOverviewFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/teaching-site-overview/" title="Teaching Sites Overview" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
@@ -19,25 +15,60 @@
   'use strict';
   const dashboard = 'teaching-site-overview';
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const funnelService = 'https://enroll.gs.edu/manage/query/run?id=3095d9eb-e68c-4253-bd57-e57f310e0f14&cmd=service&output=json&h=65d38d9a-bfb3-4931-a95c-e74dc6cf9d5d';
+  const funnelStatuses = { inquiries:'inquiry', applications:'applicant', students:'student' };
   const frame = document.getElementById('teachingSiteOverviewFrame');
   const root = document.getElementById('teachingSiteOverviewData');
   const read = (node, key) => { const el = node && node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
-  const number = value => Number(value) || 0;
   const pageUrl = new URL(window.location.href);
-  const funnel = root.querySelector('.site-funnel');
+  if (pageUrl.searchParams.has('status')) {
+    pageUrl.searchParams.delete('status');
+    window.location.replace(pageUrl.toString().replace(/\+/g, '%20'));
+    return;
+  }
   const payload = {
-    filters: { status: pageUrl.searchParams.get('status') || 'applicant', term: pageUrl.searchParams.get('term') || '', year: pageUrl.searchParams.get('year') || '', site: pageUrl.searchParams.get('site') || '' },
-    totals: { applications: number(read(root.querySelector('.totals'), 'applications')), inquiries: number(read(root.querySelector('.totals'), 'inquiries')), prospects: number(read(root.querySelector('.totals'), 'prospects')), students: number(read(root.querySelector('.totals'), 'students')) },
-    funnel: { inquiries: number(read(funnel, 'inquiries')), applications: number(read(funnel, 'applications')), awaiting: number(read(funnel, 'awaiting')), admitted: number(read(funnel, 'admitted')) },
+    filters: { term: pageUrl.searchParams.get('term') || '', year: pageUrl.searchParams.get('year') || '', site: pageUrl.searchParams.get('site') || '' },
+    funnel: { inquiries:0, applications:0, students:0 },
     records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') }))
   };
-  const allowedParams = new Set(['status', 'term', 'year', 'site']);
-  function sendData() { if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload }, frameOrigin); }
+  const allowedParams = new Set(['term', 'year', 'site']);
+  const removableParams = new Set(['status', 'term', 'year', 'site']);
+  function rowsFrom(response) {
+    if (Array.isArray(response)) return response;
+    if (response && Array.isArray(response.row)) return response.row;
+    return response && response.row ? [response.row] : [];
+  }
+  async function loadFunnel() {
+    if (!payload.filters.site) return payload;
+    try {
+      const stages = Object.keys(funnelStatuses);
+      const counts = await Promise.all(stages.map(async stage => {
+        const url = new URL(funnelService);
+        url.searchParams.set('status', funnelStatuses[stage]);
+        url.searchParams.set('year', payload.filters.year);
+        url.searchParams.set('term', payload.filters.term);
+        url.searchParams.set('site', payload.filters.site);
+        const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
+        if (!response.ok) throw new Error('Teaching site query returned ' + response.status);
+        return rowsFrom(await response.json()).length;
+      }));
+      stages.forEach((stage, index) => { payload.funnel[stage] = counts[index]; });
+    } catch (error) {
+      payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
+      console.error('Teaching site funnel query failed.', error);
+    }
+    return payload;
+  }
+  const payloadReady = loadFunnel();
+  async function sendData() {
+    const resolvedPayload = await payloadReady;
+    if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload:resolvedPayload }, frameOrigin);
+  }
   function navigate(message) {
     const url = new URL(window.location.href);
     Object.keys(message.set || {}).forEach(key => { const value = String(message.set[key] || '').trim(); if (allowedParams.has(key) && value.length <= 100) url.searchParams.set(key, value); });
-    (message.remove || []).forEach(key => { if (allowedParams.has(key)) url.searchParams.delete(key); });
-    window.location.assign(url.toString());
+    (message.remove || []).forEach(key => { if (removableParams.has(key)) url.searchParams.delete(key); });
+    window.location.assign(url.toString().replace(/\+/g, '%20'));
   }
   window.addEventListener('message', function (event) {
     if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data || event.data.dashboard !== dashboard) return;

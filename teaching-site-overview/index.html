@@ -21,19 +21,10 @@
     <section id="overview-view">
     <div class="page-intro">
       <h1 class="intro-heading">Teaching Sites Overview</h1>
-      <p class="intro-subtitle">Record counts by teaching site, filterable by pipeline status and academic period.</p>
+      <p class="intro-subtitle">Total record counts by teaching site, filterable by academic period.</p>
     </div>
 
     <div class="controls-row">
-      <div class="control-group">
-        <label class="ctrl-label" for="status">Status</label>
-        <select id="status" class="control-select">
-          <option value="applicant">Applicant</option>
-          <option value="inquiry">Inquiry</option>
-          <option value="prospect">Prospect</option>
-          <option value="student">Student</option>
-        </select>
-      </div>
       <div class="control-group">
         <label class="ctrl-label" for="overview-period">Period</label>
         <select id="overview-period" class="control-select"></select>
@@ -42,7 +33,7 @@
 
     <div class="stat-bar">
       <div class="stat-cell"><div id="site-count" class="stat-val">0</div><div class="stat-lbl">Active Teaching Sites</div></div>
-      <div class="stat-sub"><div id="coverage" class="stat-sub-val">0%</div><div id="coverage-label" class="stat-sub-lbl">of total applicant records</div></div>
+      <div class="stat-sub"><div id="record-total" class="stat-sub-val">0</div><div class="stat-sub-lbl">total records across active teaching sites</div></div>
     </div>
 
     <button id="inactive-toggle" class="inactive-toggle" type="button" aria-expanded="false" aria-controls="inactive-list">
@@ -72,9 +63,8 @@
 
       <div class="stat-bar site-funnel-stat-bar">
         <div class="stat-cell"><div id="site-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries</div></div>
-        <div class="stat-cell"><div id="site-applications" class="stat-val">0</div><div class="stat-lbl">Applications</div></div>
-        <div class="stat-cell"><div id="site-awaiting" class="stat-val">0</div><div class="stat-lbl">Awaiting Approval</div></div>
-        <div class="stat-cell"><div id="site-admitted" class="stat-val">0</div><div class="stat-lbl">Admitted</div></div>
+        <div class="stat-cell"><div id="site-applications" class="stat-val">0</div><div class="stat-lbl">Applicants</div></div>
+        <div class="stat-cell"><div id="site-students" class="stat-val">0</div><div class="stat-lbl">Students</div></div>
       </div>
 
       <div id="site-funnel" class="funnel" aria-label="Teaching site enrollment funnel"></div>
@@ -118,20 +108,9 @@
         .sort(function (a, b) { return b.count - a.count || a.title.localeCompare(b.title); });
     }
 
-    function comparisonTotal() {
-      // These totals are fixed comparison populations. Academic-period filters
-      // apply to teaching_sites_persons, not to these denominator exports.
-      const totals = data.totals || {};
-      if (data.filters.status === 'inquiry') return ui.number(totals.inquiries);
-      if (data.filters.status === 'prospect') return ui.number(totals.prospects);
-      if (data.filters.status === 'student') return ui.number(totals.students);
-      return ui.number(totals.applications);
-    }
-
     function render(payload) {
       data = payload || {};
       data.filters = data.filters || {};
-      data.filters.status = data.filters.status || 'applicant';
       data.filters.site = ui.text(data.filters.site, '').trim();
       data.funnel = data.funnel || {};
       const detailActive = Boolean(data.filters.site);
@@ -149,16 +128,13 @@
     function renderOverview() {
       document.title = 'Teaching Sites Overview';
       const grouped = groupRecords(data.records);
-      const total = comparisonTotal();
       const recordCount = grouped.reduce(function (sum, item) { return sum + item.count; }, 0);
       const active = new Set(grouped.map(function (item) { return item.title; }));
       const inactive = allTeachingSites.filter(function (title) { return !active.has(title); });
 
-      document.getElementById('status').value = data.filters.status;
       window.AcademicPeriods.populate(document.getElementById('overview-period'), data.filters.term, data.filters.year);
       ui.setText('site-count', grouped.length);
-      document.getElementById('coverage').textContent = (total ? (recordCount * 100 / total).toFixed(1) : '0.0') + '%';
-      document.getElementById('coverage-label').textContent = 'of total ' + data.filters.status + ' records';
+      ui.setText('record-total', recordCount.toLocaleString());
       renderInactive(inactive);
       renderBars(grouped);
     }
@@ -169,8 +145,7 @@
       window.AcademicPeriods.populate(document.getElementById('detail-period'), data.filters.term, data.filters.year);
       ui.setText('site-inquiries', ui.number(data.funnel.inquiries).toLocaleString());
       ui.setText('site-applications', ui.number(data.funnel.applications).toLocaleString());
-      ui.setText('site-awaiting', ui.number(data.funnel.awaiting).toLocaleString());
-      ui.setText('site-admitted', ui.number(data.funnel.admitted).toLocaleString());
+      ui.setText('site-students', ui.number(data.funnel.students).toLocaleString());
       renderSiteFunnel();
     }
 
@@ -201,14 +176,21 @@
     function renderSiteFunnel() {
       const stages = [
         { label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#0f766e' },
-        { label:'Applied', count:ui.number(data.funnel.applications), color:'#2563eb' },
-        { label:'Awaiting Approval', count:ui.number(data.funnel.awaiting), color:'#7c3aed' },
-        { label:'Admitted', count:ui.number(data.funnel.admitted), color:'#d95d39' }
+        { label:'Applicants', count:ui.number(data.funnel.applications), color:'#2563eb' },
+        { label:'Students', count:ui.number(data.funnel.students), color:'#d95d39' }
       ];
       const root = document.getElementById('site-funnel'); root.replaceChildren();
+      const empty = document.getElementById('site-funnel-empty');
+      if (data.funnelError) {
+        root.hidden = true;
+        empty.textContent = data.funnelError;
+        empty.hidden = false;
+        return;
+      }
       const hasRecords = stages.some(function (stage) { return stage.count > 0; });
       root.hidden = !hasRecords;
-      document.getElementById('site-funnel-empty').hidden = hasRecords;
+      empty.textContent = 'No funnel records are available for this teaching site and period.';
+      empty.hidden = hasRecords;
       if (!hasRecords) return;
       const maxWidth = 680;
       const minWidth = 220;
@@ -253,7 +235,6 @@
       bridge.navigate(navigation.set, navigation.remove);
     }
 
-    document.getElementById('status').addEventListener('change', function (event) { bridge.navigate({ status: event.target.value }, []); });
     document.getElementById('overview-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('detail-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('site-back').addEventListener('click', function () { bridge.navigate({}, ['site']); });

@@ -32,27 +32,26 @@ Publish and verify one wrapper at a time in this order:
 3. `slate-templates/wrappers/event-tracker-wrapper.liquid.html`
 4. `slate-templates/wrappers/funnel-overview-wrapper.liquid.html`
 
-Before publishing the Pipeline and Teaching Sites wrappers, configure their primary Slate query exports to accept `status`, `term`, and `year` URL parameters:
+Before publishing the Pipeline and Teaching Sites wrappers, configure their primary Slate query exports as follows:
 
 - `pipeline_persons` must apply `status`, `term`, and `year`.
-- `teaching_sites_persons` must apply `status`, `term`, and `year`.
+- `teaching_sites_persons` must return all teaching-site records and apply only `term` and `year`. Do not filter this export by `status`; the overview displays total records per site.
 
-The Teaching Sites wrapper also powers the site-specific funnel inside the same tool. Add these four exports to its Slate query and configure each one to apply the `site`, `term`, and `year` URL parameters:
+The Teaching Sites wrapper also powers the site-specific funnel inside the same tool. It calls the configured JSON service query three times with these `status` values whenever a site detail page loads or its period dropdown changes:
 
-- `teaching_site_inquiries`
-- `teaching_site_applications`
-- `teaching_site_awaiting_approval`
-- `teaching_site_admitted`
+- `inquiry` → Inquiries
+- `applicant` → Applicants
+- `student` → Students
 
-The `site` parameter must filter each export by an exact match against the same teaching-site title returned as `teaching_sites_persons.title`. Do not apply the overview's `status` parameter to these four exports; each export represents its named funnel stage. With no `site` parameter, the hosted page shows the existing overview. Selecting a site adds `site` to the same Slate page URL and switches the iframe to the site-funnel view while preserving `term` and `year`.
+Configure the service query to apply `status`, `site`, `term`, and `year` and return JSON in the form `{ "row": [...] }`. The `site` parameter must be an exact text match against the same teaching-site title returned as `teaching_sites_persons.title`. The wrapper writes spaces as `%20`; standard query parsing also decodes `+` as a space, so either encoding represents the same site name. No separate `teaching_site_*` Liquid exports are required.
 
-The `total_apps`, `total_inquiries` / `total_inq`, `total_prospects`, and `total_students` exports are fixed comparison populations used as percentage denominators. Do not apply the `term` or `year` URL parameters to those total exports.
+The Pipeline wrapper's `total_apps`, `total_inquiries`, `total_prospects`, and `total_students` exports are fixed comparison populations used as percentage denominators. Do not apply the `term` or `year` URL parameters to those total exports. The Teaching Sites wrapper no longer uses comparison-total exports.
 
 The Regional Campus wrapper expects one query export named `campus_records`. Export `campus`, `term`, `year`, `name`, `email`, `phone`, `status`, `app_status`, and `program`, and configure the query so the `campus`, `term`, `year`, and `status` URL parameters filter their matching fields. The interface displays `app_status` as **Application Status**. With no filters, the export should return the complete regional-campus population available to the signed-in portal user. The hosted interface derives campus totals and funnel stages from those records; choosing a campus or funnel stage reloads the Slate portal with the corresponding URL filter.
 
-Both status dropdowns support `applicant`, `inquiry`, `prospect`, and `student`. Configure the Slate status filter so `?status=student` returns the intended student population.
+The Pipeline status dropdown supports `applicant`, `inquiry`, `prospect`, and `student`. Configure its Slate status filter so `?status=student` returns the intended student population.
 
-The hosted dropdown sends combinations such as `?status=applicant&term=Fall&year=2026-2027`. Choosing **Total (All Time)** removes `term` and `year`. Status and period changes preserve one another.
+The Pipeline dropdowns send combinations such as `?status=applicant&term=Fall&year=2026-2027`. The Teaching Sites period dropdown sends `term` and `year` without a status. Choosing **Total (All Time)** removes `term` and `year`.
 
 Do not rename the query exports or their fields without making the matching change in the relevant wrapper. The iframe pages intentionally accept data only from `https://enroll.gs.edu`, and the wrappers intentionally accept messages only from the configured GitHub Pages origin.
 
