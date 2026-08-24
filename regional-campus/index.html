@@ -114,7 +114,7 @@
 
       <div class="section-divider"><div class="section-eyebrow">Individual Lookup</div><div class="section-heading">Find a Record</div></div>
       <div class="panel lookup-panel">
-        <label class="lookup-label" for="lookup">Name, email, phone, status, or program</label>
+        <label class="lookup-label" for="lookup">Name, email, phone, status, application status, or program</label>
         <input id="lookup" class="lookup-input" type="search" autocomplete="off" placeholder="Start typing to find a record">
         <p class="lookup-help">Choose a match to open the individual dashboard.</p>
         <div id="lookup-results" class="results"></div>
@@ -133,11 +133,11 @@
       </div>
       <div class="panel lookup-panel">
         <label class="lookup-label" for="record-search">Search within these records</label>
-        <input id="record-search" class="lookup-input" type="search" autocomplete="off" placeholder="Name, email, phone, or program">
+        <input id="record-search" class="lookup-input" type="search" autocomplete="off" placeholder="Name, email, phone, application status, or program">
         <div id="record-count" class="record-count"></div>
         <div class="panel">
           <table class="data-table">
-            <thead><tr><th>Name</th><th>Program</th><th>Status</th><th>Campus</th></tr></thead>
+            <thead><tr><th>Name</th><th>Program</th><th>Status</th><th>Application Status</th><th>Campus</th></tr></thead>
             <tbody id="record-table"></tbody>
           </table>
         </div>
@@ -182,7 +182,7 @@
       const terms = clean(value).toLowerCase().split(/\s+/).filter(Boolean);
       if (!terms.length) return [];
       return records.filter(function (record) {
-        const haystack = [record.name, record.email, record.phone, record.status, record.program, record.campus].map(clean).join(' ').toLowerCase();
+        const haystack = [record.name, record.email, record.phone, record.status, record.app_status, record.program, record.campus].map(clean).join(' ').toLowerCase();
         return terms.every(function (term) { return haystack.includes(term); });
       });
     }
@@ -277,7 +277,7 @@
     function recordButton(record) {
       const button = document.createElement('button'); button.className = 'campus-card'; button.type = 'button';
       const name = document.createElement('span'); name.className = 'campus-card-name'; name.textContent = clean(record.name) || 'Unnamed record';
-      const meta = document.createElement('span'); meta.className = 'campus-card-count'; meta.textContent = [clean(record.email), clean(record.program), clean(record.status)].filter(Boolean).join(' · ') || 'View dashboard';
+      const meta = document.createElement('span'); meta.className = 'campus-card-count'; meta.textContent = [clean(record.email), clean(record.program), clean(record.status), clean(record.app_status)].filter(Boolean).join(' · ') || 'View dashboard';
       button.append(name, meta); button.addEventListener('click', function () { showProfile(record, 'portal'); }); return button;
     }
 
@@ -297,13 +297,14 @@
     function renderRecordTable(records) {
       const body = document.getElementById('record-table'); body.replaceChildren();
       document.getElementById('record-count').textContent = records.length.toLocaleString() + ' record' + (records.length === 1 ? '' : 's');
-      if (!records.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 4; cell.appendChild(ui.emptyState('No records are available for this filter.')); return; }
+      if (!records.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No records are available for this filter.')); return; }
       records.forEach(function (record) {
         const row = body.insertRow(); row.className = 'record-row'; row.tabIndex = 0;
         const name = row.insertCell(); const nameText = document.createElement('span'); nameText.className = 'record-name'; nameText.textContent = clean(record.name) || 'Unnamed record'; name.appendChild(nameText);
         const contact = [clean(record.email), clean(record.phone)].filter(Boolean).join(' · '); if (contact) { const meta = document.createElement('span'); meta.className = 'record-contact'; meta.textContent = contact; name.appendChild(meta); }
         row.insertCell().textContent = clean(record.program) || '—';
         const status = row.insertCell(); const badge = document.createElement('span'); badge.className = 'badge badge-gold'; badge.textContent = clean(record.status) || '—'; status.appendChild(badge);
+        row.insertCell().textContent = clean(record.app_status) || '—';
         row.insertCell().textContent = clean(record.campus) || '—';
         row.addEventListener('click', function () { showProfile(record, 'records'); });
         row.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showProfile(record, 'records'); } });
@@ -327,6 +328,7 @@
       const grid = document.createElement('div'); grid.className = 'profile-grid';
       addProfileField(grid, 'Campus', clean(record.campus));
       addProfileField(grid, 'Status', clean(record.status));
+      addProfileField(grid, 'Application Status', clean(record.app_status));
       addProfileField(grid, 'Email', clean(record.email), 'email');
       addProfileField(grid, 'Phone', clean(record.phone), 'phone');
       addProfileField(grid, 'Program', clean(record.program));

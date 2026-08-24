@@ -48,7 +48,7 @@ The `site` parameter must filter each export by an exact match against the same 
 
 The `total_apps`, `total_inquiries` / `total_inq`, `total_prospects`, and `total_students` exports are fixed comparison populations used as percentage denominators. Do not apply the `term` or `year` URL parameters to those total exports.
 
-The Regional Campus wrapper expects one query export named `campus_records`. Export `campus`, `term`, `year`, `name`, `email`, `phone`, `status`, and `program`, and configure the query so the `campus`, `term`, `year`, and `status` URL parameters filter their matching fields. With no filters, the export should return the complete regional-campus population available to the signed-in portal user. The hosted interface derives campus totals and funnel stages from those records; choosing a campus or funnel stage reloads the Slate portal with the corresponding URL filter.
+The Regional Campus wrapper expects one query export named `campus_records`. Export `campus`, `term`, `year`, `name`, `email`, `phone`, `status`, `app_status`, and `program`, and configure the query so the `campus`, `term`, `year`, and `status` URL parameters filter their matching fields. The interface displays `app_status` as **Application Status**. With no filters, the export should return the complete regional-campus population available to the signed-in portal user. The hosted interface derives campus totals and funnel stages from those records; choosing a campus or funnel stage reloads the Slate portal with the corresponding URL filter.
 
 Both status dropdowns support `applicant`, `inquiry`, `prospect`, and `student`. Configure the Slate status filter so `?status=student` returns the intended student population.
 

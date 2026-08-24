@@ -3,7 +3,7 @@
 
   Query export: campus_records
   URL filters: campus, term, year, status
-  Exported fields: campus, term, year, name, email, phone, status, program
+  Exported fields: campus, term, year, name, email, phone, status, app_status, program
 
   Configure campus_records so each URL parameter filters the matching query
   field. With no parameter, the export should return the complete population
@@ -21,6 +21,7 @@
         <span class="email">{{ record.email | escape }}</span>
         <span class="phone">{{ record.phone | escape }}</span>
         <span class="status">{{ record.status | escape }}</span>
+        <span class="app_status">{{ record.app_status | escape }}</span>
         <span class="program">{{ record.program | escape }}</span>
       </div>
     {% endfor %}
@@ -52,6 +53,7 @@
       email: read(node, 'email'),
       phone: read(node, 'phone'),
       status: read(node, 'status'),
+      app_status: read(node, 'app_status'),
       program: read(node, 'program')
     }))
   };
