@@ -112,12 +112,9 @@
       return Math.min(100, Math.max(0, Math.round(value * 1000 / base) / 10));
     }
 
-    function reachedCounts(stages) {
-      let downstream = 0;
-      return stages.slice().reverse().map(function (stage) {
-        downstream += Math.max(0, stage.count);
-        return downstream;
-      }).reverse();
+    function conversionBase(stages, index, mode) {
+      const originIndex = mode === 'cumulative' ? 0 : index - 1;
+      return Math.max(0, stages[originIndex].count) + Math.max(0, stages[index].count);
     }
 
     function renderFunnel() {
@@ -127,10 +124,6 @@
         { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#c8952a' },
         { label:'Admitted', count:ui.number(data.counts.admitted), color:'#2a6b3c' }
       ];
-      // Each count is a current-state bucket. A downstream record previously
-      // passed through every earlier stage, so conversion populations are the
-      // current bucket plus every bucket below it in the funnel.
-      const reached = reachedCounts(stages);
       const root = document.getElementById('funnel'); root.replaceChildren();
       const maxWidth = 680;
       const minWidth = 220;
@@ -165,10 +158,14 @@
         const count = document.createElement('div'); count.className = 'stage-count'; count.textContent = stage.count.toLocaleString();
         label.append(name, count);
         if (index) {
-          const base = conversionMode === 'cumulative' ? reached[0] : reached[index - 1];
+          // Counts are current-state buckets. Compare the destination bucket
+          // with itself plus the selected origin bucket so people who advanced
+          // are represented in the origin population without double-counting
+          // unrelated intermediate buckets.
+          const base = conversionBase(stages, index, conversionMode);
           const rate = document.createElement('div'); rate.className = 'stage-rate';
-          rate.textContent = (conversionMode === 'cumulative' ? 'From Inquiries: ' : 'From Prev: ') + percent(reached[index], base) + '%';
-          rate.title = reached[index].toLocaleString() + ' of ' + base.toLocaleString() + ' people who reached the prior comparison stage';
+          rate.textContent = (conversionMode === 'cumulative' ? 'From Inquiries: ' : 'From Prev: ') + percent(stage.count, base) + '%';
+          rate.title = stage.count.toLocaleString() + ' of ' + base.toLocaleString() + ' people in the paired comparison population';
           label.appendChild(rate);
         }
         element.append(svg, label); root.appendChild(element);
