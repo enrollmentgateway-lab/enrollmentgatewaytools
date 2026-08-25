@@ -11,7 +11,6 @@
   <style>
     .regional-dashboard .container { max-width: 1040px; }
     .regional-dashboard .controls-row { justify-content: flex-start; }
-    .regional-dashboard .control-group:last-child { margin-left: auto; }
     .regional-dashboard .summary-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .regional-dashboard .summary-bar .stat-cell { text-align: center; }
     .regional-dashboard .summary-bar .stat-val { color: var(--gold-light); font-family: 'Playfair Display', Georgia, serif; }
@@ -63,7 +62,6 @@
     .profile-field-value a { color: #0f766e; }
 
     @media (max-width: 720px) {
-      .regional-dashboard .control-group:last-child { margin-left: 0; }
       .regional-dashboard .summary-bar { grid-template-columns: 1fr; }
       .regional-dashboard .summary-bar .stat-cell { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.14); }
       .regional-stage { max-width: 100%; }
@@ -88,10 +86,6 @@
       </div>
 
       <div class="controls-row">
-        <div class="control-group">
-          <label class="ctrl-label" for="campus">Campus</label>
-          <select id="campus" class="control-select"><option value="">All Regional Campuses</option></select>
-        </div>
         <div class="control-group">
           <label class="ctrl-label" for="period">Period</label>
           <select id="period" class="control-select"></select>
@@ -204,13 +198,6 @@
     }
 
     function populateControls() {
-      const select = document.getElementById('campus');
-      const selected = clean(data.filters.campus);
-      const campuses = unique(data.campuses.concat(data.records.map(function (record) { return clean(record.campus); }), selected ? [selected] : []));
-      select.replaceChildren();
-      const all = document.createElement('option'); all.value = ''; all.textContent = 'All Regional Campuses'; select.appendChild(all);
-      campuses.forEach(function (campus) { const option = document.createElement('option'); option.value = campus; option.textContent = campus; select.appendChild(option); });
-      select.value = selected;
       window.AcademicPeriods.populate(document.getElementById('period'), clean(data.filters.term), clean(data.filters.year));
     }
 
@@ -354,7 +341,6 @@
     function changePeriod(value) { const navigation = window.AcademicPeriods.navigation(value); bridge.navigate(navigation.set, navigation.remove); }
     function clearStatus() { bridge.navigate({}, ['status']); }
 
-    document.getElementById('campus').addEventListener('change', function (event) { const value = event.target.value; bridge.navigate(value ? { campus:value } : {}, value ? ['status'] : ['campus','status']); });
     document.getElementById('period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('lookup').addEventListener('input', function (event) { renderLookupResults(searchRecords(event.target.value, data.records)); });
     document.getElementById('record-search').addEventListener('input', function (event) { const value = event.target.value; renderRecordTable(value.trim() ? searchRecords(value, data.records) : data.records); });
