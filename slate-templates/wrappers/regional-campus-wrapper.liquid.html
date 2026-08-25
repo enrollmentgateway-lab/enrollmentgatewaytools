@@ -2,9 +2,10 @@
   Regional Campus Slate wrapper.
 
   The wrapper reads the campus values from Queryomatic's Slate
-  prompt/options service. It calls the records JSON service once per campus,
-  using the same campus, term, and year parameters for every request, then
-  normalizes and combines the rows before sending them to the iframe.
+  prompt/options service. It calls the records JSON service with campus, term,
+  and year for non-inquiries. Inquiries use a separate campus request with no
+  term/year and a person-created date range derived from the academic year.
+  The wrapper normalizes and combines the rows before sending them to the iframe.
 
   JSON fields: first, last, email, phone, program, status, app_status
 -->
@@ -95,18 +96,64 @@
     };
   }
 
-  async function fetchCampusRecords(campus) {
-    const url = new URL(recordsService);
-    url.searchParams.set('campus', campus);
-    url.searchParams.set('term', payload.filters.term);
-    url.searchParams.set('year', payload.filters.year);
+  function createdDateRange(year) {
+    const match = text(year).match(/^(\d{4})-(\d{4})$/);
+    return match
+      ? { start:match[1] + '-01-01', end:match[2] + '-12-31' }
+      : { start:'', end:'' };
+  }
+
+  async function fetchRecords(url) {
     const response = await fetch(url.toString().replace(/\+/g, '%20'), {
       credentials: 'same-origin',
       cache: 'no-store',
       headers: { Accept:'application/json' }
     });
     if (!response.ok) throw new Error('Regional campus query returned ' + response.status);
-    return rowsFrom(await response.json()).map(function (row) { return normalize(row, campus); });
+    return rowsFrom(await response.json());
+  }
+
+  async function fetchCampusGeneralRecords(campus) {
+    const url = new URL(recordsService);
+    url.searchParams.set('campus', campus);
+    url.searchParams.set('term', payload.filters.term);
+    url.searchParams.set('year', payload.filters.year);
+    return (await fetchRecords(url)).map(function (row) { return normalize(row, campus); }).filter(function (record) {
+      return text(record.status).toLowerCase() !== 'inquiry';
+    });
+  }
+
+  async function fetchCampusInquiries(campus) {
+    const range = createdDateRange(payload.filters.year);
+    const url = new URL(recordsService);
+    url.searchParams.set('campus', campus);
+    url.searchParams.delete('term');
+    url.searchParams.delete('year');
+    url.searchParams.set('person_created_date_start', range.start);
+    url.searchParams.set('person_created_date_end', range.end);
+    return (await fetchRecords(url)).map(function (row) { return normalize(row, campus); }).filter(function (record) {
+      return text(record.status).toLowerCase() === 'inquiry';
+    });
+  }
+
+  async function fetchCampusRecords(campus) {
+    const selectedStatus = text(payload.filters.status).toLowerCase();
+    const requests = [];
+    if (selectedStatus !== 'inquiry') requests.push({ type:'general', promise:fetchCampusGeneralRecords(campus) });
+    if (!selectedStatus || selectedStatus === 'inquiry') requests.push({ type:'inquiries', promise:fetchCampusInquiries(campus) });
+
+    const results = await Promise.all(requests.map(async function (request) {
+      try {
+        return { records:await request.promise };
+      } catch (error) {
+        console.error('Regional campus ' + request.type + ' query failed for ' + campus + '.', error);
+        return { records:[], error:true };
+      }
+    }));
+    return {
+      records: results.reduce(function (records, result) { return records.concat(result.records); }, []),
+      error: results.some(function (result) { return result.error; })
+    };
   }
 
   async function loadRecords(campuses) {
@@ -121,12 +168,8 @@
     }
 
     const results = await Promise.all(requestedCampuses.map(async function (campus) {
-      try {
-        return { campus:campus, records:await fetchCampusRecords(campus) };
-      } catch (error) {
-        console.error('Regional campus query failed for ' + campus + '.', error);
-        return { campus:campus, records:[], error:true };
-      }
+      const result = await fetchCampusRecords(campus);
+      return { campus:campus, records:result.records, error:result.error };
     }));
 
     payload.records = results.reduce(function (records, result) { return records.concat(result.records); }, []);
