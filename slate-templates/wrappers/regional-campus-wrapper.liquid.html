@@ -3,9 +3,8 @@
 
   The wrapper reads the campus values from Queryomatic's Slate
   prompt/options service. It calls the records JSON service with campus, term,
-  and year for non-inquiries. Inquiries use a separate request with campus,
-  status=inquiry, no term/year, and a person-created date range derived from
-  the academic year.
+  and year for applicants and students. Inquiries come from a separate,
+  inquiry-only JSON service that accepts campus.
   The wrapper normalizes and combines the rows before sending them to the iframe.
 
   JSON fields: first, last, email, phone, program, status, app_status
@@ -18,6 +17,7 @@
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
   const optionsService = 'https://enroll.gs.edu/manage/query/run?id=4f1e5d6f-2286-4100-9b40-2b33fa1882aa&cmd=service&output=json';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=5b1950b0-637e-4ea2-86ef-08e8dfb80ea4&cmd=service&output=json&h=028f12ce-8c87-4658-9bcb-f0ea69699583&campus=&term=&year=';
+  const inquiryService = 'https://enroll.gs.edu/manage/query/run?id=6f920b18-cda2-44cb-94db-edd8adbefb00&cmd=service&output=json&h=e3041f08-339d-4b3d-8559-0eb93760a4b3&campus=';
   const fallbackCampuses = [
     'Arizona Regional Campus',
     'Bay Area Campus',
@@ -102,13 +102,6 @@
     };
   }
 
-  function createdDateRange(year) {
-    const match = text(year).match(/^(\d{4})-(\d{4})$/);
-    return match
-      ? { start:match[1] + '-01-01', end:match[2] + '-12-31' }
-      : { start:'', end:'' };
-  }
-
   async function fetchRecords(url) {
     const response = await fetch(url.toString().replace(/\+/g, '%20'), {
       credentials: 'same-origin',
@@ -128,21 +121,12 @@
   }
 
   async function fetchCampusInquiries(campus) {
-    const range = createdDateRange(payload.filters.year);
-    const url = new URL(recordsService);
+    const url = new URL(inquiryService);
     url.searchParams.set('campus', campus);
-    url.searchParams.set('status', 'inquiry');
-    url.searchParams.delete('term');
-    url.searchParams.delete('year');
-    if (range.start && range.end) {
-      url.searchParams.set('person_created_date_start', range.start);
-      url.searchParams.set('person_created_date_end', range.end);
-    } else {
-      url.searchParams.delete('person_created_date_start');
-      url.searchParams.delete('person_created_date_end');
-    }
-    return (await fetchRecords(url)).map(function (row) { return normalize(row, campus); }).filter(function (record) {
-      return isInquiryStatus(record.status);
+    return (await fetchRecords(url)).map(function (row) {
+      const record = normalize(row, campus);
+      record.status = 'Inquiry';
+      return record;
     });
   }
 
