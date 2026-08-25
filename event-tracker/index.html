@@ -31,7 +31,17 @@
       <div class="stat-sub"><div id="blended-cost" class="stat-sub-val">—</div><div id="registrant-summary" class="stat-sub-lbl">blended cost per applicant</div></div>
     </div>
 
-    <div class="section-divider"><div class="section-eyebrow">Yield by Event</div><div class="section-heading">Applicants Generated per Event</div></div>
+    <div class="event-drilldown-heading">
+      <div class="section-divider"><div class="section-eyebrow">Yield by Event</div><div class="section-heading">Inquiry &amp; Applicant Drill-down</div></div>
+      <div class="control-group event-sort-control">
+        <label class="ctrl-label" for="event-sort">Rank events by</label>
+        <select id="event-sort" class="control-select">
+          <option value="applicants">Applicants: highest to lowest</option>
+          <option value="inquiries">Inquiries: highest to lowest</option>
+        </select>
+      </div>
+    </div>
+    <div class="event-bar-legend" aria-hidden="true"><span class="legend-inquiries">Inquiries</span><span class="legend-applicants">Applicants</span></div>
     <div id="event-bars" class="bar-chart"></div>
 
     <div class="section-divider"><div class="section-eyebrow">Detailed View</div><div class="section-heading">Spend &amp; Yield by Event</div></div>
@@ -40,6 +50,10 @@
         <thead><tr><th>Event</th><th>Dates</th><th class="align-right">Registrants</th><th class="align-right">Spend</th><th class="align-right">Inquiries</th><th class="align-right">Applicants</th><th class="align-right">Cost / Applicant</th></tr></thead>
         <tbody id="event-table"></tbody>
       </table>
+      <div id="event-pagination" class="pagination">
+        <span id="event-page-summary"></span>
+        <div id="event-page-buttons" class="pagination-buttons"></div>
+      </div>
     </div>
   </main>
 
@@ -49,6 +63,11 @@
     'use strict';
     const ui = window.DashboardUI;
     const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+    const pageSize = 10;
+    let currentPage = 1;
+    let sortMetric = 'applicants';
+    let eventRecords = [];
+    let blendedCost = 0;
     window.DashboardBridge.create('event-tracker', render);
 
     function numeric(value) {
@@ -64,41 +83,65 @@
         return {
           title: ui.text(event.title, ''), startdate: ui.text(event.startdate, ''), enddate: ui.text(event.enddate, ''),
           registrants: numeric(event.registrants), expenses: numeric(event.expenses),
-          inquiries: matches.filter(function (person) { return person.status === 'Inquiry'; }).length,
-          applicants: matches.filter(function (person) { return person.status === 'Applicant'; }).length
+          inquiries: matches.filter(function (person) { return /^inquir(?:y|ies)\b/i.test(ui.text(person.status, '')); }).length,
+          applicants: matches.filter(function (person) { return /^applicants?\b/i.test(ui.text(person.status, '')); }).length
         };
-      }).sort(function (a, b) { return b.expenses - a.expenses || a.title.localeCompare(b.title); });
+      });
     }
 
     function render(payload) {
-      const events = prepare(payload || {});
-      const totals = events.reduce(function (sum, event) {
+      eventRecords = prepare(payload || {});
+      currentPage = 1;
+      const totals = eventRecords.reduce(function (sum, event) {
         sum.spend += event.expenses; sum.registrants += event.registrants; sum.inquiries += event.inquiries; sum.applicants += event.applicants; return sum;
       }, { spend: 0, registrants: 0, inquiries: 0, applicants: 0 });
-      const blended = totals.applicants ? totals.spend / totals.applicants : 0;
+      blendedCost = totals.applicants ? totals.spend / totals.applicants : 0;
 
-      ui.setText('event-count', events.length.toLocaleString());
+      ui.setText('event-count', eventRecords.length.toLocaleString());
       document.getElementById('total-spend').textContent = currency.format(totals.spend);
       ui.setText('total-inquiries', totals.inquiries.toLocaleString());
       ui.setText('total-applicants', totals.applicants.toLocaleString());
-      document.getElementById('blended-cost').textContent = blended ? currency.format(blended) : '—';
+      document.getElementById('blended-cost').textContent = blendedCost ? currency.format(blendedCost) : '—';
       document.getElementById('registrant-summary').textContent = 'blended cost per applicant across all events (' + totals.registrants.toLocaleString() + ' total registrants)';
-      renderBars(events);
-      renderTable(events, blended);
+      renderDrilldown();
       ui.showApp();
+    }
+
+    function sortedEvents() {
+      const secondaryMetric = sortMetric === 'applicants' ? 'inquiries' : 'applicants';
+      return eventRecords.slice().sort(function (a, b) {
+        return b[sortMetric] - a[sortMetric] || b[secondaryMetric] - a[secondaryMetric] || a.title.localeCompare(b.title);
+      });
+    }
+
+    function renderDrilldown() {
+      const events = sortedEvents();
+      const totalPages = Math.max(1, Math.ceil(events.length / pageSize));
+      currentPage = Math.min(Math.max(1, currentPage), totalPages);
+      const start = (currentPage - 1) * pageSize;
+      const pageEvents = events.slice(start, start + pageSize);
+      renderBars(pageEvents);
+      renderTable(pageEvents, blendedCost);
+      renderPagination(events.length, totalPages, start, pageEvents.length);
     }
 
     function renderBars(events) {
       const root = document.getElementById('event-bars'); root.replaceChildren();
       if (!events.length) { root.appendChild(ui.emptyState('No event data available.')); return; }
-      const max = Math.max.apply(null, events.map(function (event) { return event.applicants; }).concat([1]));
+      const max = Math.max.apply(null, events.reduce(function (values, event) { return values.concat(event.inquiries, event.applicants); }, [1]));
       events.forEach(function (event) {
         const row = document.createElement('div'); row.className = 'bar-row';
         const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = event.title; label.title = event.title;
-        const track = document.createElement('div'); track.className = 'bar-track';
-        const fill = document.createElement('div'); fill.className = 'bar-fill'; fill.style.width = ((event.applicants / max) * 100) + '%'; track.appendChild(fill);
-        const value = document.createElement('div'); value.className = 'bar-value'; value.textContent = event.applicants.toLocaleString();
-        row.append(label, track, value); root.appendChild(row);
+        const series = document.createElement('div'); series.className = 'event-bar-series';
+        [['Inq.', 'inquiries'], ['Apps', 'applicants']].forEach(function (metric) {
+          const metricRow = document.createElement('div'); metricRow.className = 'event-bar-metric';
+          const metricLabel = document.createElement('span'); metricLabel.className = 'event-bar-metric-label'; metricLabel.textContent = metric[0];
+          const track = document.createElement('div'); track.className = 'bar-track';
+          const fill = document.createElement('div'); fill.className = 'bar-fill ' + metric[1] + '-fill'; fill.style.width = ((event[metric[1]] / max) * 100) + '%'; track.appendChild(fill);
+          const value = document.createElement('div'); value.className = 'bar-value'; value.textContent = event[metric[1]].toLocaleString();
+          metricRow.append(metricLabel, track, value); series.appendChild(metricRow);
+        });
+        row.append(label, series); root.appendChild(row);
       });
     }
 
@@ -125,6 +168,39 @@
       });
     }
 
+    function renderPagination(totalRecords, totalPages, start, visibleCount) {
+      const pagination = document.getElementById('event-pagination');
+      const summary = document.getElementById('event-page-summary');
+      const buttons = document.getElementById('event-page-buttons');
+      buttons.replaceChildren();
+
+      if (!totalRecords) {
+        summary.textContent = '0 events';
+        pagination.hidden = true;
+        return;
+      }
+
+      pagination.hidden = false;
+      summary.textContent = 'Showing ' + (start + 1).toLocaleString() + '–' + (start + visibleCount).toLocaleString() + ' of ' + totalRecords.toLocaleString() + ' events';
+
+      function addButton(label, page, disabled, active, ariaLabel) {
+        const button = document.createElement('button');
+        button.className = 'page-button' + (active ? ' active' : '');
+        button.type = 'button';
+        button.textContent = label;
+        button.disabled = disabled;
+        button.setAttribute('aria-label', ariaLabel);
+        if (active) button.setAttribute('aria-current', 'page');
+        button.addEventListener('click', function () { currentPage = page; renderDrilldown(); });
+        buttons.appendChild(button);
+      }
+
+      addButton('‹', currentPage - 1, currentPage === 1, false, 'Previous page');
+      for (let page = 1; page <= totalPages; page += 1) addButton(String(page), page, false, page === currentPage, 'Page ' + page);
+      addButton('›', currentPage + 1, currentPage === totalPages, false, 'Next page');
+    }
+
+    document.getElementById('event-sort').addEventListener('change', function (event) { sortMetric = event.target.value; currentPage = 1; renderDrilldown(); });
     document.getElementById('portal-home').addEventListener('click', function () { window.location.reload(); });
   }());
   </script>
