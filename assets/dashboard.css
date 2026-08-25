@@ -241,7 +241,7 @@ button, select { font: inherit; }
 .funnel-dashboard .stage-count { color: #fff; font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; font-weight: 700; line-height: 1; }
 .funnel-dashboard .stage-rate { margin-top: 4px; padding: 2px 8px; border-radius: 20px; color: rgba(255,255,255,.78); font-size: .7rem; font-weight: 600; background: rgba(0,0,0,.18); }
 
-.event-dashboard .container { max-width: 1000px; }
+.event-dashboard .container { max-width: 1240px; }
 .event-dashboard .event-stat-bar { margin-bottom: 32px; border-bottom: 4px solid var(--gold); }
 .event-dashboard .event-stat-bar .stat-cell { padding: 30px 20px 26px; text-align: center; }
 .event-dashboard .event-stat-bar .stat-val {
@@ -254,22 +254,14 @@ button, select { font: inherit; }
 .event-dashboard .event-stat-bar .stat-sub { justify-content: center; }
 .event-dashboard .event-stat-bar .stat-sub-val { font-family: 'Playfair Display', Georgia, serif; }
 .event-dashboard .section-divider { margin: 40px 0 20px; }
-.event-dashboard .event-drilldown-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; }
-.event-dashboard .event-drilldown-heading .section-divider { flex: 1; }
-.event-dashboard .event-sort-control { margin-bottom: 20px; }
-.event-dashboard .event-bar-legend { display: flex; justify-content: flex-end; gap: 18px; margin: -8px 0 10px; color: var(--muted); font-size: .7rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
-.event-dashboard .event-bar-legend span::before { content: ''; width: 10px; height: 10px; display: inline-block; margin-right: 6px; border-radius: 2px; vertical-align: -1px; }
-.event-dashboard .legend-inquiries::before { background: #4e97c2; }
-.event-dashboard .legend-applicants::before { background: var(--gold); }
-.event-dashboard .bar-chart { padding: 24px; }
-.event-dashboard .bar-row { grid-template-columns: 200px minmax(0, 1fr); margin-bottom: 5px; }
-.event-dashboard .event-bar-series { display: grid; gap: 5px; }
-.event-dashboard .event-bar-metric { display: grid; grid-template-columns: 36px minmax(0, 1fr) 55px; gap: 10px; align-items: center; }
-.event-dashboard .event-bar-metric-label { color: var(--muted); font-size: .65rem; font-weight: 750; text-transform: uppercase; }
-.event-dashboard .bar-track { height: 12px; border-radius: var(--radius); background: #ebe7df; }
-.event-dashboard .inquiries-fill { background: linear-gradient(90deg, #6fb4d8, #4e97c2); }
-.event-dashboard .applicants-fill { background: linear-gradient(90deg, var(--gold), #e1b654); }
-.event-dashboard .bar-value { font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; }
+.event-dashboard .panel { overflow-x: auto; }
+.event-dashboard .data-table { min-width: 1060px; }
+.event-dashboard .data-table th:first-child, .event-dashboard .event-title { min-width: 230px; }
+.event-dashboard .data-table th:nth-child(2), .event-dashboard .event-dates { min-width: 210px; }
+.event-dashboard .event-sort-button { width: calc(100% + 30px); min-height: 38px; display: inline-flex; align-items: center; gap: 5px; margin: -12px -15px; padding: 12px 15px; border: 0; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; text-transform: inherit; background: transparent; cursor: pointer; }
+.event-dashboard .event-sort-button-right { justify-content: flex-end; }
+.event-dashboard .event-sort-button:hover, .event-dashboard .event-sort-button:focus-visible { color: var(--gold-light); }
+.event-dashboard .sort-indicator { width: 11px; display: inline-block; color: var(--gold-light); text-align: center; }
 .event-dashboard .event-title { color: var(--navy); font-weight: 700; }
 .event-dashboard .event-dates { color: var(--muted); font-size: .8rem; white-space: nowrap; }
 .event-dashboard .badge-good { border: 1px solid rgba(42,107,60,.25); }
@@ -298,10 +290,5 @@ button, select { font: inherit; }
   .pipeline-dashboard .stat-cell { padding: 24px 14px; }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }
   .pipeline-dashboard .bar-row, .teaching-dashboard .bar-row { grid-template-columns: 110px 1fr 40px; }
-  .event-dashboard .event-drilldown-heading { display: block; }
-  .event-dashboard .event-sort-control { margin: -8px 0 20px; }
-  .event-dashboard .event-sort-control .control-select { width: 100%; }
-  .event-dashboard .bar-row { grid-template-columns: 92px minmax(0, 1fr); }
-  .event-dashboard .event-bar-metric { grid-template-columns: 30px minmax(0, 1fr) 38px; gap: 6px; }
   .funnel-dashboard .funnel-stage, .teaching-site-detail .funnel-stage { max-width: 100%; }
 }

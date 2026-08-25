@@ -31,23 +31,20 @@
       <div class="stat-sub"><div id="blended-cost" class="stat-sub-val">—</div><div id="registrant-summary" class="stat-sub-lbl">blended cost per applicant</div></div>
     </div>
 
-    <div class="event-drilldown-heading">
-      <div class="section-divider"><div class="section-eyebrow">Yield by Event</div><div class="section-heading">Inquiry &amp; Applicant Drill-down</div></div>
-      <div class="control-group event-sort-control">
-        <label class="ctrl-label" for="event-sort">Rank events by</label>
-        <select id="event-sort" class="control-select">
-          <option value="applicants">Applicants: highest to lowest</option>
-          <option value="inquiries">Inquiries: highest to lowest</option>
-        </select>
-      </div>
-    </div>
-    <div class="event-bar-legend" aria-hidden="true"><span class="legend-inquiries">Inquiries</span><span class="legend-applicants">Applicants</span></div>
-    <div id="event-bars" class="bar-chart"></div>
-
-    <div class="section-divider"><div class="section-eyebrow">Detailed View</div><div class="section-heading">Spend &amp; Yield by Event</div></div>
+    <div class="section-divider"><div class="section-eyebrow">Detailed View</div><div class="section-heading">Event Yield Drill-down</div></div>
     <div class="panel">
       <table class="data-table">
-        <thead><tr><th>Event</th><th>Dates</th><th class="align-right">Registrants</th><th class="align-right">Spend</th><th class="align-right">Inquiries</th><th class="align-right">Applicants</th><th class="align-right">Cost / Applicant</th></tr></thead>
+        <thead>
+          <tr>
+            <th id="event-sort-title-header" data-sort-column="title" aria-sort="none"><button id="event-sort-title" class="event-sort-button" type="button">Event <span class="sort-indicator">↕</span></button></th>
+            <th id="event-sort-dates-header" data-sort-column="dates" aria-sort="none"><button id="event-sort-dates" class="event-sort-button" type="button">Dates <span class="sort-indicator">↕</span></button></th>
+            <th id="event-sort-registrants-header" class="align-right" data-sort-column="registrants" aria-sort="none"><button id="event-sort-registrants" class="event-sort-button event-sort-button-right" type="button">Registrants <span class="sort-indicator">↕</span></button></th>
+            <th id="event-sort-expenses-header" class="align-right" data-sort-column="expenses" aria-sort="none"><button id="event-sort-expenses" class="event-sort-button event-sort-button-right" type="button">Spend <span class="sort-indicator">↕</span></button></th>
+            <th id="event-sort-inquiries-header" class="align-right" data-sort-column="inquiries" aria-sort="none"><button id="event-sort-inquiries" class="event-sort-button event-sort-button-right" type="button">Inquiries <span class="sort-indicator">↕</span></button></th>
+            <th id="event-sort-applicants-header" class="align-right" data-sort-column="applicants" aria-sort="descending"><button id="event-sort-applicants" class="event-sort-button event-sort-button-right" type="button">Applicants <span class="sort-indicator">↓</span></button></th>
+            <th id="event-sort-cost-header" class="align-right" data-sort-column="cost" aria-sort="none"><button id="event-sort-cost" class="event-sort-button event-sort-button-right" type="button">Cost / Applicant <span class="sort-indicator">↕</span></button></th>
+          </tr>
+        </thead>
         <tbody id="event-table"></tbody>
       </table>
       <div id="event-pagination" class="pagination">
@@ -63,9 +60,12 @@
     'use strict';
     const ui = window.DashboardUI;
     const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+    const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
     const pageSize = 10;
+    const sortColumns = ['title', 'dates', 'registrants', 'expenses', 'inquiries', 'applicants', 'cost'];
     let currentPage = 1;
-    let sortMetric = 'applicants';
+    let sortColumn = 'applicants';
+    let sortDirection = 'desc';
     let eventRecords = [];
     let blendedCost = 0;
     window.DashboardBridge.create('event-tracker', render);
@@ -76,15 +76,34 @@
       return ui.number(cleaned);
     }
 
+    function eventDate(value) {
+      const raw = ui.text(value, '');
+      if (!raw) return { label: '', value: null };
+      let parts = raw.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)/);
+      if (!parts) {
+        const usParts = raw.match(/^([01]?\d)[-\/]([0-3]?\d)[-\/](\d{4})/);
+        if (usParts) parts = [usParts[0], usParts[3], usParts[1], usParts[2]];
+      }
+      let date = parts ? new Date(Date.UTC(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]))) : new Date(raw);
+      if (Number.isNaN(date.getTime())) return { label: raw.replace(/[T\s]+\d{1,2}:\d{2}.*$/, ''), value: null };
+      return { label: dateFormatter.format(date), value: date.getTime() };
+    }
+
     function prepare(payload) {
       const people = Array.isArray(payload.people) ? payload.people : [];
       return (Array.isArray(payload.events) ? payload.events : []).map(function (event) {
         const matches = people.filter(function (person) { return person.title === event.title; });
+        const startdate = eventDate(event.startdate);
+        const enddate = eventDate(event.enddate);
+        const inquiries = matches.filter(function (person) { return /^inquir(?:y|ies)\b/i.test(ui.text(person.status, '')); }).length;
+        const applicants = matches.filter(function (person) { return /^applicants?\b/i.test(ui.text(person.status, '')); }).length;
+        const expenses = numeric(event.expenses);
         return {
-          title: ui.text(event.title, ''), startdate: ui.text(event.startdate, ''), enddate: ui.text(event.enddate, ''),
-          registrants: numeric(event.registrants), expenses: numeric(event.expenses),
-          inquiries: matches.filter(function (person) { return /^inquir(?:y|ies)\b/i.test(ui.text(person.status, '')); }).length,
-          applicants: matches.filter(function (person) { return /^applicants?\b/i.test(ui.text(person.status, '')); }).length
+          title: ui.text(event.title, ''), startdate: startdate.label, enddate: enddate.label,
+          startdateValue: startdate.value, enddateValue: enddate.value,
+          registrants: numeric(event.registrants), expenses: expenses,
+          inquiries: inquiries, applicants: applicants,
+          cost: applicants ? expenses / applicants : null
         };
       });
     }
@@ -107,10 +126,34 @@
       ui.showApp();
     }
 
+    function sortValue(event, column) {
+      if (column === 'dates') return event.startdateValue == null ? event.enddateValue : event.startdateValue;
+      return event[column];
+    }
+
     function sortedEvents() {
-      const secondaryMetric = sortMetric === 'applicants' ? 'inquiries' : 'applicants';
       return eventRecords.slice().sort(function (a, b) {
-        return b[sortMetric] - a[sortMetric] || b[secondaryMetric] - a[secondaryMetric] || a.title.localeCompare(b.title);
+        const aValue = sortValue(a, sortColumn);
+        const bValue = sortValue(b, sortColumn);
+        if (aValue == null && bValue != null) return 1;
+        if (bValue == null && aValue != null) return -1;
+        let comparison = 0;
+        if (typeof aValue === 'string') comparison = aValue.localeCompare(bValue);
+        else comparison = aValue - bValue;
+        if (comparison) return sortDirection === 'asc' ? comparison : -comparison;
+        return a.title.localeCompare(b.title);
+      });
+    }
+
+    function updateSortHeaders() {
+      sortColumns.forEach(function (column) {
+        const active = column === sortColumn;
+        const header = document.getElementById('event-sort-' + column + '-header');
+        const button = document.getElementById('event-sort-' + column);
+        const indicator = button.querySelector('.sort-indicator');
+        header.setAttribute('aria-sort', active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none');
+        indicator.textContent = active ? (sortDirection === 'asc' ? '↑' : '↓') : '↕';
+        button.title = active ? 'Sorted ' + sortDirection + '; click to reverse' : 'Sort by ' + button.firstChild.textContent.trim();
       });
     }
 
@@ -120,29 +163,9 @@
       currentPage = Math.min(Math.max(1, currentPage), totalPages);
       const start = (currentPage - 1) * pageSize;
       const pageEvents = events.slice(start, start + pageSize);
-      renderBars(pageEvents);
       renderTable(pageEvents, blendedCost);
       renderPagination(events.length, totalPages, start, pageEvents.length);
-    }
-
-    function renderBars(events) {
-      const root = document.getElementById('event-bars'); root.replaceChildren();
-      if (!events.length) { root.appendChild(ui.emptyState('No event data available.')); return; }
-      const max = Math.max.apply(null, events.reduce(function (values, event) { return values.concat(event.inquiries, event.applicants); }, [1]));
-      events.forEach(function (event) {
-        const row = document.createElement('div'); row.className = 'bar-row';
-        const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = event.title; label.title = event.title;
-        const series = document.createElement('div'); series.className = 'event-bar-series';
-        [['Inq.', 'inquiries'], ['Apps', 'applicants']].forEach(function (metric) {
-          const metricRow = document.createElement('div'); metricRow.className = 'event-bar-metric';
-          const metricLabel = document.createElement('span'); metricLabel.className = 'event-bar-metric-label'; metricLabel.textContent = metric[0];
-          const track = document.createElement('div'); track.className = 'bar-track';
-          const fill = document.createElement('div'); fill.className = 'bar-fill ' + metric[1] + '-fill'; fill.style.width = ((event[metric[1]] / max) * 100) + '%'; track.appendChild(fill);
-          const value = document.createElement('div'); value.className = 'bar-value'; value.textContent = event[metric[1]].toLocaleString();
-          metricRow.append(metricLabel, track, value); series.appendChild(metricRow);
-        });
-        row.append(label, series); root.appendChild(row);
-      });
+      updateSortHeaders();
     }
 
     function renderTable(events, blended) {
@@ -153,16 +176,16 @@
       events.forEach(function (event) {
         const row = body.insertRow();
         const title = row.insertCell(); title.className = 'event-title'; title.textContent = event.title;
-        const dates = row.insertCell(); dates.className = 'event-dates'; dates.textContent = [event.startdate, event.enddate].filter(Boolean).join(' – ');
+        const dates = row.insertCell(); dates.className = 'event-dates'; dates.textContent = event.startdate === event.enddate ? event.startdate : [event.startdate, event.enddate].filter(Boolean).join(' – ');
         [event.registrants.toLocaleString(), currency.format(event.expenses), event.inquiries.toLocaleString(), event.applicants.toLocaleString()].forEach(function (value) {
           const cell = row.insertCell(); cell.className = 'align-right number'; cell.textContent = value;
         });
         const costCell = row.insertCell(); costCell.className = 'align-right';
         const badge = document.createElement('span'); badge.className = 'badge';
-        if (!event.applicants) { badge.textContent = 'No applicants'; }
+        if (event.cost == null) { badge.textContent = 'No applicants'; }
         else {
-          const cost = event.expenses / event.applicants; badge.textContent = currency.format(cost);
-          badge.classList.add(blended && cost <= blended ? 'badge-good' : 'badge-bad');
+          badge.textContent = currency.format(event.cost);
+          badge.classList.add(blended && event.cost <= blended ? 'badge-good' : 'badge-bad');
         }
         costCell.appendChild(badge);
       });
@@ -200,7 +223,17 @@
       addButton('›', currentPage + 1, currentPage === totalPages, false, 'Next page');
     }
 
-    document.getElementById('event-sort').addEventListener('change', function (event) { sortMetric = event.target.value; currentPage = 1; renderDrilldown(); });
+    sortColumns.forEach(function (column) {
+      document.getElementById('event-sort-' + column).addEventListener('click', function () {
+        if (sortColumn === column) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        else {
+          sortColumn = column;
+          sortDirection = column === 'title' ? 'asc' : 'desc';
+        }
+        currentPage = 1;
+        renderDrilldown();
+      });
+    });
     document.getElementById('portal-home').addEventListener('click', function () { window.location.reload(); });
   }());
   </script>
