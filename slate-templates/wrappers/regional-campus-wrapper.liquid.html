@@ -1,7 +1,7 @@
 <!--
   Regional Campus Slate wrapper.
 
-  The wrapper reads the teaching-site values from Queryomatic's Slate
+  The wrapper reads the campus values from Queryomatic's Slate
   prompt/options service. It calls the records JSON service once per campus,
   using the same campus, term, and year parameters for every request, then
   normalizes and combines the rows before sending them to the iframe.
@@ -17,18 +17,14 @@
   const optionsService = 'https://enroll.gs.edu/manage/query/run?id=4f1e5d6f-2286-4100-9b40-2b33fa1882aa&cmd=service&output=json';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=5b1950b0-637e-4ea2-86ef-08e8dfb80ea4&cmd=service&output=json&h=028f12ce-8c87-4658-9bcb-f0ea69699583&campus=&term=&year=';
   const fallbackCampuses = [
-    'Bakersfield Site at Kern Country Southern Baptist Association',
-    'Burbank Site at Story City Church',
-    'Fort Collins Site at Gateway Seminary Northern Colorado',
-    'Fountain Valley Site at First Chinese Baptist Church',
-    'Fresno Site at Woodward Park Baptist Church',
-    'Honk Kong Site at Saddleback Church',
-    'Honolulu Site at Hawaii Pacific School of Theology',
-    'Lake Havasu Site at Calvary Baptist Church',
-    'Lviv Site at Ukrainian Baptist Theological Seminary',
-    'Sacramento Site at SOL Bible Academy',
-    'Salt Lake School of Theology',
-    'San Diego Site at Grace Church'
+    'Arizona Regional Campus',
+    'Bay Area Campus',
+    'Boston',
+    'Hawaii Campus',
+    'Online Campus',
+    'Ontario Campus',
+    'Pacific Northwest Campus',
+    'Rocky Mountain Campus'
   ];
   const frame = document.getElementById('regionalCampusFrame');
   const pageUrl = new URL(window.location.href);
@@ -69,12 +65,14 @@
       });
       if (!response.ok) throw new Error('Queryomatic options query returned ' + response.status);
       const campuses = rowsFrom(await response.json()).filter(function (row) {
-        return text(row && row.key).toLowerCase() === 'teachingsites';
-      }).map(function (row) { return text(row && row.value); }).filter(Boolean);
-      if (!campuses.length) throw new Error('Queryomatic options did not return any teaching sites.');
+        return text(row && row.key).toLowerCase() === 'campus';
+      }).map(function (row) { return text(row && row.value); }).filter(function (campus) {
+        return campus && campus.toLowerCase() !== 'doctor of ministry';
+      });
+      if (!campuses.length) throw new Error('Queryomatic options did not return any campus values.');
       return campuses;
     } catch (error) {
-      console.warn('Unable to load teaching sites from Queryomatic; using the wrapper fallback list.', error);
+      console.warn('Unable to load campuses from Queryomatic; using the wrapper fallback list.', error);
       return fallbackCampuses.slice();
     } finally {
       window.clearTimeout(timeout);
