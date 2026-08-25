@@ -110,7 +110,7 @@
 
       <div class="section-divider"><div class="section-eyebrow">Individual Lookup</div><div class="section-heading">Find a Record</div></div>
       <div class="panel lookup-panel">
-        <label class="lookup-label" for="lookup">Name, email, phone, status, application status, or program</label>
+        <label class="lookup-label" for="lookup">Name, student ID, email, phone, status, application status, or program</label>
         <input id="lookup" class="lookup-input" type="search" autocomplete="off" placeholder="Start typing to find a record">
         <p class="lookup-help">Choose a match to open the individual dashboard.</p>
         <div id="lookup-results" class="results"></div>
@@ -129,7 +129,7 @@
       </div>
       <div class="panel lookup-panel">
         <label class="lookup-label" for="record-search">Search within these records</label>
-        <input id="record-search" class="lookup-input" type="search" autocomplete="off" placeholder="Name, email, phone, application status, or program">
+        <input id="record-search" class="lookup-input" type="search" autocomplete="off" placeholder="Name, student ID, email, phone, application status, or program">
         <div id="record-count" class="record-count"></div>
         <div class="panel">
           <table class="data-table">
@@ -154,6 +154,7 @@
     const bridge = window.DashboardBridge.create('regional-campus', render);
     const colors = ['#0f766e', '#2563eb', '#7c3aed', '#c8952a', '#d95d39', '#2a6b3c', '#1a2b4a'];
     const statusOrder = ['inquiry', 'prospect', 'applicant', 'application', 'awaiting approval', 'admitted', 'student', 'enrolled'];
+    const minimumCampusRecords = 20;
     let data = { filters:{}, campuses:[], records:[] };
     let lastView = 'portal';
 
@@ -178,7 +179,7 @@
       const terms = clean(value).toLowerCase().split(/\s+/).filter(Boolean);
       if (!terms.length) return [];
       return records.filter(function (record) {
-        const haystack = [record.name, record.email, record.phone, record.status, record.app_status, record.program, record.campus].map(clean).join(' ').toLowerCase();
+        const haystack = [record.name, record.sisid, record.email, record.phone, record.status, record.app_status, record.program, record.campus].map(clean).join(' ').toLowerCase();
         return terms.every(function (term) { return haystack.includes(term); });
       });
     }
@@ -218,7 +219,9 @@
       document.getElementById('portal-subtitle').textContent = campus ? 'Review the campus funnel or look up an individual record.' : 'Select a campus, explore the combined funnel, or look up an individual record.';
       const campusCounts = new Map(countBy(data.records, 'campus').map(function (item) { return [item.label, item.count]; }));
       const campusNames = unique(data.campuses.concat(data.records.map(function (record) { return clean(record.campus); })));
-      const campuses = campusNames.map(function (name) { return { label:name, count:campusCounts.get(name) || 0 }; }).sort(function (a, b) { return b.count - a.count || a.label.localeCompare(b.label); });
+      const campuses = campusNames.map(function (name) { return { label:name, count:campusCounts.get(name) || 0 }; }).filter(function (item) {
+        return item.count >= minimumCampusRecords;
+      }).sort(function (a, b) { return b.count - a.count || a.label.localeCompare(b.label); });
       ui.setText('record-total', data.records.length.toLocaleString());
       ui.setText('campus-total', (campus ? 1 : campuses.length).toLocaleString());
       ui.setText('program-total', unique(data.records.map(function (record) { return clean(record.program); })).length.toLocaleString());
@@ -271,7 +274,7 @@
     function recordButton(record) {
       const button = document.createElement('button'); button.className = 'campus-card'; button.type = 'button';
       const name = document.createElement('span'); name.className = 'campus-card-name'; name.textContent = clean(record.name) || 'Unnamed record';
-      const meta = document.createElement('span'); meta.className = 'campus-card-count'; meta.textContent = [clean(record.email), clean(record.program), clean(record.status), clean(record.app_status)].filter(Boolean).join(' · ') || 'View dashboard';
+      const meta = document.createElement('span'); meta.className = 'campus-card-count'; meta.textContent = [clean(record.sisid), clean(record.email), clean(record.program), clean(record.status), clean(record.app_status)].filter(Boolean).join(' · ') || 'View dashboard';
       button.append(name, meta); button.addEventListener('click', function () { showProfile(record, 'portal'); }); return button;
     }
 
@@ -321,6 +324,7 @@
       addProfileField(grid, 'Campus', clean(record.campus));
       addProfileField(grid, 'Status', clean(record.status));
       addProfileField(grid, 'Application Status', clean(record.app_status));
+      addProfileField(grid, 'Student ID', clean(record.sisid), 'record', clean(record.record_url));
       addProfileField(grid, 'Email', clean(record.email), 'email');
       addProfileField(grid, 'Phone', clean(record.phone), 'phone');
       addProfileField(grid, 'Program', clean(record.program));
@@ -328,12 +332,21 @@
       card.append(hero, grid); bridge.resize();
     }
 
-    function addProfileField(root, labelText, value, linkType) {
+    function addProfileField(root, labelText, value, linkType, linkUrl) {
       const field = document.createElement('div'); field.className = 'profile-field';
       const label = document.createElement('span'); label.className = 'profile-field-label'; label.textContent = labelText;
       const display = document.createElement('span'); display.className = 'profile-field-value';
       if (value && linkType === 'email' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) { const link = document.createElement('a'); link.href = 'mailto:' + value; link.textContent = value; display.appendChild(link); }
       else if (value && linkType === 'phone') { const link = document.createElement('a'); link.href = 'tel:' + value.replace(/[^\d+]/g, ''); link.textContent = value; display.appendChild(link); }
+      else if (value && linkType === 'record' && linkUrl) {
+        try {
+          const url = new URL(linkUrl);
+          if (url.origin === 'https://enroll.gs.edu') {
+            const link = document.createElement('a'); link.href = url.href; link.target = '_blank'; link.rel = 'noopener'; link.textContent = value; link.title = 'Open Slate record'; display.appendChild(link);
+            link.addEventListener('click', function (event) { if (window.parent !== window) { event.preventDefault(); bridge.openRecord(url.href); } });
+          } else display.textContent = value;
+        } catch (_) { display.textContent = value; }
+      }
       else display.textContent = value || '—';
       field.append(label, display); root.appendChild(field);
     }
