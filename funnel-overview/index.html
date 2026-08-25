@@ -112,9 +112,21 @@
       return Math.min(100, Math.max(0, Math.round(value * 1000 / base) / 10));
     }
 
-    function conversionBase(stages, index, mode) {
-      const originIndex = mode === 'cumulative' ? 0 : index - 1;
-      return Math.max(0, stages[originIndex].count) + Math.max(0, stages[index].count);
+    function reachedCounts(stages) {
+      let downstream = 0;
+      return stages.slice().reverse().map(function (stage) {
+        downstream += Math.max(0, stage.count);
+        return downstream;
+      }).reverse();
+    }
+
+    function conversionValues(stages, index, mode) {
+      const reached = reachedCounts(stages);
+      const value = reached[index];
+      const base = mode === 'cumulative'
+        ? Math.max(0, stages[0].count) + value
+        : reached[index - 1];
+      return { value:value, base:base };
     }
 
     function renderFunnel() {
@@ -158,14 +170,13 @@
         const count = document.createElement('div'); count.className = 'stage-count'; count.textContent = stage.count.toLocaleString();
         label.append(name, count);
         if (index) {
-          // Counts are current-state buckets. Compare the destination bucket
-          // with itself plus the selected origin bucket so people who advanced
-          // are represented in the origin population without double-counting
-          // unrelated intermediate buckets.
-          const base = conversionBase(stages, index, conversionMode);
+          // Anyone in a downstream bucket previously reached this destination.
+          // Cumulative mode pairs that reached population with current inquiries;
+          // sequential mode compares adjacent reached populations.
+          const conversion = conversionValues(stages, index, conversionMode);
           const rate = document.createElement('div'); rate.className = 'stage-rate';
-          rate.textContent = (conversionMode === 'cumulative' ? 'From Inquiries: ' : 'From Prev: ') + percent(stage.count, base) + '%';
-          rate.title = stage.count.toLocaleString() + ' of ' + base.toLocaleString() + ' people in the paired comparison population';
+          rate.textContent = (conversionMode === 'cumulative' ? 'From Inquiries: ' : 'From Prev: ') + percent(conversion.value, conversion.base) + '%';
+          rate.title = conversion.value.toLocaleString() + ' of ' + conversion.base.toLocaleString() + ' people in the comparison population';
           label.appendChild(rate);
         }
         element.append(svg, label); root.appendChild(element);
