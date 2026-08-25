@@ -3,8 +3,9 @@
 
   The wrapper reads the campus values from Queryomatic's Slate
   prompt/options service. It calls the records JSON service with campus, term,
-  and year for non-inquiries. Inquiries use a separate campus request with no
-  term/year and a person-created date range derived from the academic year.
+  and year for non-inquiries. Inquiries use a separate request with campus,
+  status=inquiry, no term/year, and a person-created date range derived from
+  the academic year.
   The wrapper normalizes and combines the rows before sending them to the iframe.
 
   JSON fields: first, last, email, phone, program, status, app_status
@@ -130,6 +131,7 @@
     const range = createdDateRange(payload.filters.year);
     const url = new URL(recordsService);
     url.searchParams.set('campus', campus);
+    url.searchParams.set('status', 'inquiry');
     url.searchParams.delete('term');
     url.searchParams.delete('year');
     if (range.start && range.end) {
