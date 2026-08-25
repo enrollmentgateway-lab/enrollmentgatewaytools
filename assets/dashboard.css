@@ -242,6 +242,14 @@ button, select { font: inherit; }
 .funnel-dashboard .stage-rate { margin-top: 4px; padding: 2px 8px; border-radius: 20px; color: rgba(255,255,255,.78); font-size: .7rem; font-weight: 600; background: rgba(0,0,0,.18); }
 
 .event-dashboard .container { max-width: 1240px; }
+.event-dashboard .event-filter-controls { justify-content: flex-start; align-items: center; gap: 18px 28px; margin-bottom: 24px; }
+.event-dashboard .adjustment-toggle { display: inline-flex; align-items: center; gap: 9px; color: var(--navy); font-size: .82rem; font-weight: 700; cursor: pointer; }
+.event-dashboard .adjustment-toggle input { width: 17px; height: 17px; margin: 0; accent-color: var(--navy); }
+.event-dashboard .percentage-input { display: inline-flex; overflow: hidden; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); }
+.event-dashboard .percentage-input:focus-within { outline: 3px solid rgba(200,149,42,.35); outline-offset: 2px; }
+.event-dashboard .percentage-input input { width: 78px; padding: 8px 10px; border: 0; color: var(--navy); font: 650 .86rem Inter, sans-serif; background: transparent; outline: 0; }
+.event-dashboard .percentage-input span { display: grid; place-items: center; padding: 0 11px; border-left: 1px solid var(--border); color: var(--muted); font-size: .78rem; font-weight: 750; background: #f0ede8; }
+.event-dashboard .adjustment-note { margin: -12px 0 24px; color: var(--muted); font-size: .78rem; line-height: 1.5; }
 .event-dashboard .event-stat-bar { margin-bottom: 32px; border-bottom: 4px solid var(--gold); }
 .event-dashboard .event-stat-bar .stat-cell { padding: 30px 20px 26px; text-align: center; }
 .event-dashboard .event-stat-bar .stat-val {
@@ -290,5 +298,9 @@ button, select { font: inherit; }
   .pipeline-dashboard .stat-cell { padding: 24px 14px; }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }
   .pipeline-dashboard .bar-row, .teaching-dashboard .bar-row { grid-template-columns: 110px 1fr 40px; }
+  .event-dashboard .event-filter-controls { align-items: stretch; }
+  .event-dashboard .adjustment-toggle { width: 100%; }
+  .event-dashboard .percentage-input { width: 100%; }
+  .event-dashboard .percentage-input input { flex: 1; width: auto; }
   .funnel-dashboard .funnel-stage, .teaching-site-detail .funnel-stage { max-width: 100%; }
 }
