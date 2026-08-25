@@ -328,6 +328,26 @@
   let lastParams = null;
   let currentData = [];
 
+  function decodeEntities(value) {
+    const named = { amp: "&", apos: "'", quot: '"', lt: "<", gt: ">", nbsp: "\u00a0", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", ndash: "–", mdash: "—" };
+    let decoded = String(value == null ? "" : value);
+    for (let pass = 0; pass < 3; pass += 1) {
+      const next = decoded
+        .replace(/&#x([0-9a-f]+);/gi, (match, digits) => {
+          const code = parseInt(digits, 16);
+          return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+        })
+        .replace(/&#(\d+);/g, (match, digits) => {
+          const code = parseInt(digits, 10);
+          return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+        })
+        .replace(/&([a-z]+);/gi, (match, name) => Object.prototype.hasOwnProperty.call(named, name.toLowerCase()) ? named[name.toLowerCase()] : match);
+      if (next === decoded) break;
+      decoded = next;
+    }
+    return decoded;
+  }
+
   function setStatus(el, msg, isError = false) {
     el.textContent = msg;
     el.className = "status" + (isError ? " error" : "");
@@ -483,7 +503,10 @@
       const tag = document.createElement("span");
       tag.className = "tag";
       tag.style.animationDelay = `${i * 40}ms`;
-      tag.innerHTML = `${PARAM_LABELS[key] || key}: <b>${value}</b>`;
+      tag.append(document.createTextNode(`${PARAM_LABELS[key] || key}: `));
+      const selected = document.createElement("b");
+      selected.textContent = decodeEntities(value);
+      tag.appendChild(selected);
       row.appendChild(tag);
     });
   }
@@ -517,7 +540,7 @@
       const tr = document.createElement("tr");
       columns.forEach((col) => {
         const td = document.createElement("td");
-        td.textContent = row[col] ?? "";
+        td.textContent = decodeEntities(row[col]);
         tr.appendChild(td);
       });
       body.appendChild(tr);
@@ -556,7 +579,7 @@
       const chip = document.createElement("span");
       chip.className = "chip";
       chip.style.animationDelay = `${i * 40}ms`;
-      chip.innerHTML = `${PARAM_LABELS[key] || key}: ${value}`;
+      chip.appendChild(document.createTextNode(`${PARAM_LABELS[key] || key}: ${decodeEntities(value)}`));
       const removeBtn = document.createElement("button");
       removeBtn.textContent = "Remove";
       removeBtn.addEventListener("click", () => removeParamAndRerun(key));

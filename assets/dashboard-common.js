@@ -92,8 +92,22 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
+  function decodeEntities(value) {
+    const named = { amp:'&', apos:"'", quot:'"', lt:'<', gt:'>', nbsp:'\u00a0', rsquo:'’', lsquo:'‘', rdquo:'”', ldquo:'“', ndash:'–', mdash:'—' };
+    let decoded = String(value == null ? '' : value);
+    for (let pass = 0; pass < 3; pass += 1) {
+      const next = decoded
+        .replace(/&#x([0-9a-f]+);/gi, function (match, digits) { const code = parseInt(digits, 16); return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match; })
+        .replace(/&#(\d+);/g, function (match, digits) { const code = parseInt(digits, 10); return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match; })
+        .replace(/&([a-z]+);/gi, function (match, name) { return Object.prototype.hasOwnProperty.call(named, name.toLowerCase()) ? named[name.toLowerCase()] : match; });
+      if (next === decoded) break;
+      decoded = next;
+    }
+    return decoded;
+  }
+
   function text(value, fallback) {
-    return value == null || value === '' ? (fallback == null ? '—' : fallback) : String(value);
+    return decodeEntities(value == null || value === '' ? (fallback == null ? '—' : fallback) : value);
   }
 
   function setText(id, value) {
@@ -129,6 +143,7 @@
   window.DashboardBridge = Object.freeze({ create: createBridge });
   window.DashboardUI = Object.freeze({
     number: number,
+    decodeEntities: decodeEntities,
     text: text,
     setText: setText,
     showApp: showApp,

@@ -117,14 +117,15 @@
     function prepare(payload) {
       const people = Array.isArray(payload.people) ? payload.people : [];
       return (Array.isArray(payload.events) ? payload.events : []).map(function (event) {
-        const matches = people.filter(function (person) { return person.title === event.title; });
+        const eventTitle = ui.text(event.title, '');
+        const matches = people.filter(function (person) { return ui.text(person.title, '') === eventTitle; });
         const startdate = eventDate(event.startdate);
         const enddate = eventDate(event.enddate);
         const inquiries = matches.filter(function (person) { return /^inquir(?:y|ies)\b/i.test(ui.text(person.status, '')); }).length;
         const applicants = matches.filter(function (person) { return /^applicants?\b/i.test(ui.text(person.status, '')); }).length;
         const expenses = numeric(event.expenses);
         return {
-          title: ui.text(event.title, ''), startdate: startdate.label, enddate: enddate.label,
+          title: eventTitle, startdate: startdate.label, enddate: enddate.label,
           startdateValue: startdate.value, enddateValue: enddate.value,
           year: startdate.year || enddate.year,
           registrants: numeric(event.registrants), expenses: expenses,

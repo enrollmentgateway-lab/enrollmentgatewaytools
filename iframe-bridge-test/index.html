@@ -33,6 +33,26 @@
       window.parent.postMessage({ type: 'slate-iframe-resize', height }, '*');
     }
 
+    function decodeEntities(value) {
+      const named = { amp: '&', apos: "'", quot: '"', lt: '<', gt: '>', nbsp: '\u00a0', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', ndash: '–', mdash: '—' };
+      let decoded = String(value == null ? '' : value);
+      for (let pass = 0; pass < 3; pass += 1) {
+        const next = decoded
+          .replace(/&#x([0-9a-f]+);/gi, (match, digits) => {
+            const code = parseInt(digits, 16);
+            return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+          })
+          .replace(/&#(\d+);/g, (match, digits) => {
+            const code = parseInt(digits, 10);
+            return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+          })
+          .replace(/&([a-z]+);/gi, (match, name) => Object.prototype.hasOwnProperty.call(named, name.toLowerCase()) ? named[name.toLowerCase()] : match);
+        if (next === decoded) break;
+        decoded = next;
+      }
+      return decoded;
+    }
+
     console.info('[iframe bridge] receiver loaded', {
       origin: window.location.origin,
       embedded: window.self !== window.top
@@ -71,7 +91,7 @@
         const row = document.createElement('tr');
         ['first', 'last', 'email'].forEach((field) => {
           const cell = document.createElement('td');
-          cell.textContent = person[field] || '';
+          cell.textContent = decodeEntities(person[field]);
           row.appendChild(cell);
         });
         body.appendChild(row);

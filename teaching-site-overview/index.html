@@ -182,7 +182,7 @@
       const empty = document.getElementById('site-funnel-empty');
       if (data.funnelError) {
         root.hidden = true;
-        empty.textContent = data.funnelError;
+        empty.textContent = ui.text(data.funnelError, '');
         empty.hidden = false;
         return;
       }

@@ -54,7 +54,17 @@
     const allowedOrigin = 'https://enroll.gs.edu';
 
     function resize() { window.parent.postMessage({ type:'student-lookup-resize', height:Math.ceil(document.documentElement.scrollHeight) }, '*'); }
-    function text(value) { return value == null || value === '' ? '—' : String(value); }
+    function decodeEntities(value) {
+      const named = { amp:'&', apos:"'", quot:'"', lt:'<', gt:'>', nbsp:'\u00a0', rsquo:'’', lsquo:'‘', rdquo:'”', ldquo:'“', ndash:'–', mdash:'—' };
+      let decoded = String(value == null ? '' : value);
+      for (let pass = 0; pass < 3; pass += 1) {
+        const next = decoded.replace(/&#x([0-9a-f]+);/gi, (match, digits) => { const code = parseInt(digits, 16); return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match; }).replace(/&#(\d+);/g, (match, digits) => { const code = parseInt(digits, 10); return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match; }).replace(/&([a-z]+);/gi, (match, name) => Object.prototype.hasOwnProperty.call(named, name.toLowerCase()) ? named[name.toLowerCase()] : match);
+        if (next === decoded) break;
+        decoded = next;
+      }
+      return decoded;
+    }
+    function text(value) { const decoded = decodeEntities(value); return decoded === '' ? '—' : decoded; }
     function showResultsLayout() { document.body.classList.remove('search-start'); }
     function renderProfile(record) {
       profile.innerHTML = '';
@@ -65,7 +75,7 @@
     }
     function renderResults(candidates) {
       showResultsLayout(); document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true;
-      candidates.forEach(person => { const button=document.createElement('button'); button.className='result'; button.type='button'; button.innerHTML='<span class="result-name"></span><span class="result-meta"></span>'; button.querySelector('.result-name').textContent=`${text(person.first)} ${text(person.last)}`; button.querySelector('.result-meta').textContent=[person.SIS_ID, person.email, person.program, person.status].filter(Boolean).join(' · '); button.addEventListener('click', () => window.parent.postMessage({ type:'student-lookup-select', studentId:person.SIS_ID }, '*')); results.appendChild(button); });
+      candidates.forEach(person => { const button=document.createElement('button'); button.className='result'; button.type='button'; button.innerHTML='<span class="result-name"></span><span class="result-meta"></span>'; button.querySelector('.result-name').textContent=`${text(person.first)} ${text(person.last)}`; button.querySelector('.result-meta').textContent=[person.SIS_ID, person.email, person.program, person.status].filter(Boolean).map(decodeEntities).join(' · '); button.addEventListener('click', () => window.parent.postMessage({ type:'student-lookup-select', studentId:person.SIS_ID }, '*')); results.appendChild(button); });
       summary.textContent=`${candidates.length} matching students — select one to view the profile.`;
     }
     window.addEventListener('message', (event) => {
