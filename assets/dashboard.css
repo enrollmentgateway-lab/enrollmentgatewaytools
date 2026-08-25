@@ -47,6 +47,9 @@ button, select { font: inherit; }
 .wordmark span { display: block; margin-top: 3px; font: 600 .62rem/1.2 Inter, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #d8dfeb; }
 .header-divider { width: 1px; height: 36px; background: rgba(255,255,255,.28); }
 .header-title { font-weight: 650; letter-spacing: .02em; }
+.header-home { text-decoration: none; }
+.header-home:hover { color: #fff; }
+.header-home:focus-visible { outline: 3px solid rgba(232,184,75,.6); outline-offset: 5px; border-radius: 2px; }
 .header-spacer { flex: 1; }
 
 .container { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 56px; }

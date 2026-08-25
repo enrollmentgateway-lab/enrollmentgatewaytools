@@ -75,7 +75,7 @@
   <header class="gs-header">
     <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Regional Campus Portal">Gateway Seminary<span>Admissions &middot; Enrollment Intelligence</span></button>
     <div class="header-divider"></div>
-    <div id="header-title" class="header-title">Regional Campus Portal</div>
+    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Enrollment Intelligence Hub">Home</a>
   </header>
 
   <div id="loading" class="loading">Waiting for regional campus data from Slate&hellip;</div>
@@ -227,7 +227,6 @@
       showOnly('portal');
       const campus = clean(data.filters.campus);
       document.title = campus ? campus + ' — Regional Campus Portal' : 'Regional Campus Portal';
-      document.getElementById('header-title').textContent = campus || 'Regional Campus Portal';
       document.getElementById('portal-title').textContent = campus || 'Regional Campus Portal';
       document.getElementById('portal-subtitle').textContent = campus ? 'Review the campus funnel or look up an individual record.' : 'Select a campus, explore the combined funnel, or look up an individual record.';
       const campusCounts = new Map(countBy(data.records, 'campus').map(function (item) { return [item.label, item.count]; }));
@@ -294,7 +293,6 @@
       const status = clean(data.filters.status);
       const campus = clean(data.filters.campus);
       document.title = status + ' — Regional Campus Records';
-      document.getElementById('header-title').textContent = 'Funnel Drilldown';
       document.getElementById('active-filter').querySelector('span').textContent = status;
       document.getElementById('records-title').textContent = status + ' Records';
       document.getElementById('records-subtitle').textContent = (campus ? campus + ' · ' : '') + data.records.length.toLocaleString() + ' matching record' + (data.records.length === 1 ? '' : 's') + '.';
@@ -325,7 +323,6 @@
       document.getElementById('portal-view').hidden = true;
       document.getElementById('records-view').hidden = true;
       document.getElementById('profile-view').hidden = false;
-      document.getElementById('header-title').textContent = 'Record Dashboard';
       document.title = (clean(record.name) || 'Record') + ' — Regional Campus Portal';
       const card = document.getElementById('profile-card'); card.replaceChildren();
       const hero = document.createElement('div'); hero.className = 'profile-hero';

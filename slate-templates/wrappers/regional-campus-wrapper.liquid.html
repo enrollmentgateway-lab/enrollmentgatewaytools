@@ -48,6 +48,10 @@
     return value == null ? '' : String(value).trim();
   }
 
+  function isInquiryStatus(value) {
+    return /^inquir(?:y|ies)\b/i.test(text(value));
+  }
+
   function rowsFrom(response) {
     if (Array.isArray(response)) return response;
     if (response && Array.isArray(response.row)) return response.row;
@@ -83,6 +87,7 @@
   function normalize(row, campus) {
     const first = text(row && row.first);
     const last = text(row && row.last);
+    const status = text(row && row.status);
     return {
       campus: campus,
       term: text(row && row.term) || payload.filters.term,
@@ -90,7 +95,7 @@
       name: text(row && row.name) || [first, last].filter(Boolean).join(' '),
       email: text(row && row.email),
       phone: text(row && row.phone),
-      status: text(row && row.status),
+      status: isInquiryStatus(status) ? 'Inquiry' : status,
       app_status: text(row && row.app_status),
       program: text(row && row.program)
     };
@@ -118,9 +123,7 @@
     url.searchParams.set('campus', campus);
     url.searchParams.set('term', payload.filters.term);
     url.searchParams.set('year', payload.filters.year);
-    return (await fetchRecords(url)).map(function (row) { return normalize(row, campus); }).filter(function (record) {
-      return text(record.status).toLowerCase() !== 'inquiry';
-    });
+    return (await fetchRecords(url)).map(function (row) { return normalize(row, campus); });
   }
 
   async function fetchCampusInquiries(campus) {
@@ -129,30 +132,48 @@
     url.searchParams.set('campus', campus);
     url.searchParams.delete('term');
     url.searchParams.delete('year');
-    url.searchParams.set('person_created_date_start', range.start);
-    url.searchParams.set('person_created_date_end', range.end);
+    if (range.start && range.end) {
+      url.searchParams.set('person_created_date_start', range.start);
+      url.searchParams.set('person_created_date_end', range.end);
+    } else {
+      url.searchParams.delete('person_created_date_start');
+      url.searchParams.delete('person_created_date_end');
+    }
     return (await fetchRecords(url)).map(function (row) { return normalize(row, campus); }).filter(function (record) {
-      return text(record.status).toLowerCase() === 'inquiry';
+      return isInquiryStatus(record.status);
     });
   }
 
   async function fetchCampusRecords(campus) {
     const selectedStatus = text(payload.filters.status).toLowerCase();
-    const requests = [];
-    if (selectedStatus !== 'inquiry') requests.push({ type:'general', promise:fetchCampusGeneralRecords(campus) });
-    if (!selectedStatus || selectedStatus === 'inquiry') requests.push({ type:'inquiries', promise:fetchCampusInquiries(campus) });
+    const requests = [{ type:'general', promise:fetchCampusGeneralRecords(campus) }];
+    if (!selectedStatus || selectedStatus === 'inquiry') {
+      requests.push({ type:'inquiries', promise:fetchCampusInquiries(campus) });
+    }
 
     const results = await Promise.all(requests.map(async function (request) {
       try {
-        return { records:await request.promise };
+        return { type:request.type, records:await request.promise, error:false };
       } catch (error) {
         console.error('Regional campus ' + request.type + ' query failed for ' + campus + '.', error);
-        return { records:[], error:true };
+        return { type:request.type, records:[], error:true };
       }
     }));
+
+    const general = results.find(function (result) { return result.type === 'general'; }) || { records:[], error:true };
+    const inquiries = results.find(function (result) { return result.type === 'inquiries'; });
+    const generalInquiries = general.records.filter(function (record) { return isInquiryStatus(record.status); });
+    const generalNonInquiries = general.records.filter(function (record) { return !isInquiryStatus(record.status); });
+    const resolvedInquiries = inquiries && inquiries.records.length ? inquiries.records : generalInquiries;
+    const records = selectedStatus === 'inquiry'
+      ? resolvedInquiries
+      : generalNonInquiries.concat(selectedStatus ? [] : resolvedInquiries);
+
+    const generalUnavailable = general.error && selectedStatus !== 'inquiry';
+    const inquiryUnavailable = inquiries && inquiries.error && !generalInquiries.length;
     return {
-      records: results.reduce(function (records, result) { return records.concat(result.records); }, []),
-      error: results.some(function (result) { return result.error; })
+      records: records,
+      error: Boolean(generalUnavailable || inquiryUnavailable)
     };
   }
 

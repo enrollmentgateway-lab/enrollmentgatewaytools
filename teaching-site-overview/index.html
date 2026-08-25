@@ -13,7 +13,7 @@
   <header class="gs-header">
     <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Teaching Sites Overview">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></button>
     <div class="header-divider"></div>
-    <div id="header-title" class="header-title">Teaching Sites Overview</div>
+    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Enrollment Intelligence Hub">Home</a>
   </header>
 
   <div id="loading" class="loading">Waiting for Teaching Sites data from Slate…</div>
@@ -117,7 +117,6 @@
 
       document.getElementById('overview-view').hidden = detailActive;
       document.getElementById('site-detail-view').hidden = !detailActive;
-      document.getElementById('header-title').textContent = detailActive ? 'Teaching Site Funnel' : 'Teaching Sites Overview';
       document.body.classList.toggle('site-detail-active', detailActive);
 
       if (detailActive) renderSiteDetail();
