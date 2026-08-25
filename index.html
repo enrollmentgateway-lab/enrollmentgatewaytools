@@ -210,6 +210,40 @@
       transform: translateX(6px);
     }
 
+    .card-under-construction {
+      background: linear-gradient(145deg, #fff9df, #fff2b8);
+      border-color: #d6a72f;
+    }
+
+    .card-under-construction::before {
+      background: #d6a72f;
+      transform: scaleX(1);
+    }
+
+    .card-under-construction:hover {
+      border-color: #b7830c;
+      box-shadow: 0 8px 28px rgba(183,131,12,0.22);
+    }
+
+    .card-notice {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 5px 9px;
+      border: 1px solid #d6a72f;
+      border-radius: 999px;
+      color: #6d4c00;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      background: #ffe89a;
+    }
+
+    .card-under-construction .card-footer {
+      color: #7a5600;
+    }
+
     /* =============================
        SECTION DIVIDER
     ============================= */
@@ -356,13 +390,13 @@
           </div>
         </a>
         <!-- Pipeline Overview Link -->
-        <a href="https://enroll.gs.edu/portal/pipeline_overview" target="_blank" class="card">
+        <a href="https://enroll.gs.edu/portal/pipeline_overview" target="_blank" class="card card-under-construction" aria-label="Pipeline Overview — Under Construction">
+          <div class="card-notice">Under Construction</div>
           <div class="card-icon">🤜🤛</div>
           <h2 class="card-title">Pipeline Overview</h2>
           <p class="card-description">Track applications by source. See which locations and groups are generating the most student interest.</p>
           <div class="card-footer">
-            <span>View</span>
-            <span class="card-arrow">→</span>
+            <span>Under Construction</span>
           </div>
         </a>
         <!-- Student Lookup -->

@@ -1,42 +1,36 @@
 <!--
   Regional Campus Slate wrapper.
 
-  Query export: campus_records
-  URL filters: campus, term, year, status
-  Exported fields: campus, term, year, name, email, phone, status, app_status, program
+  The wrapper reads the teaching-site values from Queryomatic's Slate
+  prompt/options service. It calls the records JSON service once per campus,
+  using the same campus, term, and year parameters for every request, then
+  normalizes and combines the rows before sending them to the iframe.
 
-  Configure campus_records so each URL parameter filters the matching query
-  field. With no parameter, the export should return the complete population
-  that the signed-in portal user is permitted to view.
+  JSON fields: first, last, email, phone, program, status, app_status
 -->
-<div id="regionalCampusData" style="display:none">
-  <span class="record-count">{{ campus_records.size }}</span>
-  <div class="records">
-    {% for record in campus_records %}
-      <div class="record">
-        <span class="campus">{{ record.campus | escape }}</span>
-        <span class="term">{{ record.term | escape }}</span>
-        <span class="year">{{ record.year | escape }}</span>
-        <span class="name">{{ record.name | escape }}</span>
-        <span class="email">{{ record.email | escape }}</span>
-        <span class="phone">{{ record.phone | escape }}</span>
-        <span class="status">{{ record.status | escape }}</span>
-        <span class="app_status">{{ record.app_status | escape }}</span>
-        <span class="program">{{ record.program | escape }}</span>
-      </div>
-    {% endfor %}
-  </div>
-</div>
-
-<iframe id="regionalCampusFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/regional-campus/" title="Regional Campus Portal" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<iframe id="regionalCampusFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/regional-campus/?v=regional-campus-v2" title="Regional Campus Portal" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
   const dashboard = 'regional-campus';
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const optionsService = 'https://enroll.gs.edu/manage/query/run?id=4f1e5d6f-2286-4100-9b40-2b33fa1882aa&cmd=service&output=json';
+  const recordsService = 'https://enroll.gs.edu/manage/query/run?id=5b1950b0-637e-4ea2-86ef-08e8dfb80ea4&cmd=service&output=json&h=028f12ce-8c87-4658-9bcb-f0ea69699583&campus=&term=&year=';
+  const fallbackCampuses = [
+    'Bakersfield Site at Kern Country Southern Baptist Association',
+    'Burbank Site at Story City Church',
+    'Fort Collins Site at Gateway Seminary Northern Colorado',
+    'Fountain Valley Site at First Chinese Baptist Church',
+    'Fresno Site at Woodward Park Baptist Church',
+    'Honk Kong Site at Saddleback Church',
+    'Honolulu Site at Hawaii Pacific School of Theology',
+    'Lake Havasu Site at Calvary Baptist Church',
+    'Lviv Site at Ukrainian Baptist Theological Seminary',
+    'Sacramento Site at SOL Bible Academy',
+    'Salt Lake School of Theology',
+    'San Diego Site at Grace Church'
+  ];
   const frame = document.getElementById('regionalCampusFrame');
-  const root = document.getElementById('regionalCampusData');
-  const read = (node, key) => { const element = node && node.querySelector('.' + key); return element ? element.textContent.trim() : ''; };
   const pageUrl = new URL(window.location.href);
   const payload = {
     filters: {
@@ -45,40 +39,147 @@
       year: pageUrl.searchParams.get('year') || '',
       status: pageUrl.searchParams.get('status') || ''
     },
-    records: Array.from(root.querySelectorAll('.record')).map(node => ({
-      campus: read(node, 'campus'),
-      term: read(node, 'term'),
-      year: read(node, 'year'),
-      name: read(node, 'name'),
-      email: read(node, 'email'),
-      phone: read(node, 'phone'),
-      status: read(node, 'status'),
-      app_status: read(node, 'app_status'),
-      program: read(node, 'program')
-    }))
+    campuses: [],
+    records: []
   };
   const allowedParams = new Set(['campus', 'term', 'year', 'status']);
+  let frameReady = false;
+  let sendStarted = false;
+  let dataPromise;
 
-  function sendData() {
-    if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload }, frameOrigin);
+  function text(value) {
+    return value == null ? '' : String(value).trim();
+  }
+
+  function rowsFrom(response) {
+    if (Array.isArray(response)) return response;
+    if (response && Array.isArray(response.row)) return response.row;
+    return response && response.row ? [response.row] : [];
+  }
+
+  async function loadCampusValues() {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(function () { controller.abort(); }, 10000);
+    try {
+      const response = await fetch(optionsService, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: { Accept:'application/json' }
+      });
+      if (!response.ok) throw new Error('Queryomatic options query returned ' + response.status);
+      const campuses = rowsFrom(await response.json()).filter(function (row) {
+        return text(row && row.key).toLowerCase() === 'teachingsites';
+      }).map(function (row) { return text(row && row.value); }).filter(Boolean);
+      if (!campuses.length) throw new Error('Queryomatic options did not return any teaching sites.');
+      return campuses;
+    } catch (error) {
+      console.warn('Unable to load teaching sites from Queryomatic; using the wrapper fallback list.', error);
+      return fallbackCampuses.slice();
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  function normalize(row, campus) {
+    const first = text(row && row.first);
+    const last = text(row && row.last);
+    return {
+      campus: campus,
+      term: text(row && row.term) || payload.filters.term,
+      year: text(row && row.year) || payload.filters.year,
+      name: text(row && row.name) || [first, last].filter(Boolean).join(' '),
+      email: text(row && row.email),
+      phone: text(row && row.phone),
+      status: text(row && row.status),
+      app_status: text(row && row.app_status),
+      program: text(row && row.program)
+    };
+  }
+
+  async function fetchCampusRecords(campus) {
+    const url = new URL(recordsService);
+    url.searchParams.set('campus', campus);
+    url.searchParams.set('term', payload.filters.term);
+    url.searchParams.set('year', payload.filters.year);
+    const response = await fetch(url.toString().replace(/\+/g, '%20'), {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { Accept:'application/json' }
+    });
+    if (!response.ok) throw new Error('Regional campus query returned ' + response.status);
+    return rowsFrom(await response.json()).map(function (row) { return normalize(row, campus); });
+  }
+
+  async function loadRecords(campuses) {
+    const selectedCampus = text(payload.filters.campus);
+    payload.campuses = Array.from(new Set(campuses.map(text).filter(Boolean))).sort(function (a, b) { return a.localeCompare(b); });
+    if (selectedCampus && !payload.campuses.includes(selectedCampus)) payload.campuses.push(selectedCampus);
+    const requestedCampuses = selectedCampus ? [selectedCampus] : payload.campuses;
+
+    if (!requestedCampuses.length) {
+      payload.loadError = 'Unable to load the regional campus list.';
+      return payload;
+    }
+
+    const results = await Promise.all(requestedCampuses.map(async function (campus) {
+      try {
+        return { campus:campus, records:await fetchCampusRecords(campus) };
+      } catch (error) {
+        console.error('Regional campus query failed for ' + campus + '.', error);
+        return { campus:campus, records:[], error:true };
+      }
+    }));
+
+    payload.records = results.reduce(function (records, result) { return records.concat(result.records); }, []);
+    const failedCampuses = results.filter(function (result) { return result.error; }).map(function (result) { return result.campus; });
+    if (failedCampuses.length) {
+      payload.loadError = failedCampuses.length === requestedCampuses.length
+        ? 'Unable to load regional campus records from Slate. Please try again.'
+        : 'Some campus records could not be loaded: ' + failedCampuses.join(', ') + '.';
+    }
+
+    const selectedStatus = text(payload.filters.status).toLowerCase();
+    if (selectedStatus) {
+      payload.records = payload.records.filter(function (record) { return text(record.status).toLowerCase() === selectedStatus; });
+    }
+    return payload;
+  }
+
+  async function loadData() {
+    return loadRecords(await loadCampusValues());
+  }
+
+  async function sendData() {
+    if (!frameReady || sendStarted) return;
+    sendStarted = true;
+    const resolvedPayload = await dataPromise;
+    if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard:dashboard, payload:resolvedPayload }, frameOrigin);
   }
 
   function navigate(message) {
     const url = new URL(window.location.href);
-    Object.keys(message.set || {}).forEach(key => {
-      const value = String(message.set[key] || '').trim();
+    Object.keys(message.set || {}).forEach(function (key) {
+      const value = text(message.set[key]);
       if (allowedParams.has(key) && value.length <= 100) url.searchParams.set(key, value);
     });
-    (message.remove || []).forEach(key => { if (allowedParams.has(key)) url.searchParams.delete(key); });
-    window.location.assign(url.toString());
+    (message.remove || []).forEach(function (key) { if (allowedParams.has(key)) url.searchParams.delete(key); });
+    window.location.assign(url.toString().replace(/\+/g, '%20'));
   }
 
   window.addEventListener('message', function (event) {
     if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data || event.data.dashboard !== dashboard) return;
-    if (event.data.type === 'enrollment-dashboard-ready') sendData();
+    if (event.data.type === 'enrollment-dashboard-ready') {
+      frameReady = true;
+      sendData();
+    }
     if (event.data.type === 'enrollment-dashboard-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
     if (event.data.type === 'enrollment-dashboard-navigate') navigate(event.data);
   });
-  frame.addEventListener('load', sendData);
+  frame.addEventListener('load', function () {
+    frameReady = true;
+    sendData();
+  });
+  dataPromise = loadData();
 }());
 </script>

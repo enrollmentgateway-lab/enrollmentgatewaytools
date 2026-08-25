@@ -42,6 +42,7 @@
     .lookup-input { width: 100%; min-height: 44px; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--navy); font: inherit; background: #fff; }
     .lookup-input:focus { outline: 3px solid rgba(200,149,42,.28); border-color: var(--gold); }
     .lookup-help { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
+    .data-warning { margin: 0 0 18px; padding: 12px 14px; border: 1px solid #e5b94c; border-radius: var(--radius); color: #765410; font-size: .82rem; font-weight: 650; background: #fff7dc; }
     #lookup-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
     #lookup-results .empty-state { grid-column: 1 / -1; }
     .record-count { margin: 18px 0 9px; color: var(--muted); font-size: .78rem; font-weight: 700; }
@@ -79,6 +80,7 @@
 
   <div id="loading" class="loading">Waiting for regional campus data from Slate&hellip;</div>
   <main id="app" class="container" hidden>
+    <div id="data-warning" class="data-warning" role="status" hidden></div>
     <section id="portal-view">
       <div class="page-intro">
         <h1 id="portal-title" class="intro-heading">Regional Campus Portal</h1>
@@ -158,7 +160,7 @@
     const bridge = window.DashboardBridge.create('regional-campus', render);
     const colors = ['#0f766e', '#2563eb', '#7c3aed', '#c8952a', '#d95d39', '#2a6b3c', '#1a2b4a'];
     const statusOrder = ['inquiry', 'prospect', 'applicant', 'application', 'awaiting approval', 'admitted', 'student', 'enrolled'];
-    let data = { filters:{}, records:[] };
+    let data = { filters:{}, campuses:[], records:[] };
     let lastView = 'portal';
 
     function clean(value) { return ui.text(value, '').trim(); }
@@ -190,7 +192,11 @@
     function render(payload) {
       data = payload || {};
       data.filters = data.filters || {};
+      data.campuses = Array.isArray(data.campuses) ? data.campuses : [];
       data.records = Array.isArray(data.records) ? data.records : [];
+      const warning = document.getElementById('data-warning');
+      warning.textContent = clean(data.loadError);
+      warning.hidden = !warning.textContent;
       populateControls();
       if (clean(data.filters.status)) showRecords();
       else showPortal();
@@ -200,7 +206,7 @@
     function populateControls() {
       const select = document.getElementById('campus');
       const selected = clean(data.filters.campus);
-      const campuses = unique(data.records.map(function (record) { return clean(record.campus); }).concat(selected ? [selected] : []));
+      const campuses = unique(data.campuses.concat(data.records.map(function (record) { return clean(record.campus); }), selected ? [selected] : []));
       select.replaceChildren();
       const all = document.createElement('option'); all.value = ''; all.textContent = 'All Regional Campuses'; select.appendChild(all);
       campuses.forEach(function (campus) { const option = document.createElement('option'); option.value = campus; option.textContent = campus; select.appendChild(option); });
@@ -224,9 +230,11 @@
       document.getElementById('header-title').textContent = campus || 'Regional Campus Portal';
       document.getElementById('portal-title').textContent = campus || 'Regional Campus Portal';
       document.getElementById('portal-subtitle').textContent = campus ? 'Review the campus funnel or look up an individual record.' : 'Select a campus, explore the combined funnel, or look up an individual record.';
-      const campuses = countBy(data.records, 'campus').filter(function (item) { return item.label !== 'Not specified'; }).sort(function (a, b) { return b.count - a.count || a.label.localeCompare(b.label); });
+      const campusCounts = new Map(countBy(data.records, 'campus').map(function (item) { return [item.label, item.count]; }));
+      const campusNames = unique(data.campuses.concat(data.records.map(function (record) { return clean(record.campus); })));
+      const campuses = campusNames.map(function (name) { return { label:name, count:campusCounts.get(name) || 0 }; }).sort(function (a, b) { return b.count - a.count || a.label.localeCompare(b.label); });
       ui.setText('record-total', data.records.length.toLocaleString());
-      ui.setText('campus-total', campuses.length.toLocaleString());
+      ui.setText('campus-total', (campus ? 1 : campuses.length).toLocaleString());
       ui.setText('program-total', unique(data.records.map(function (record) { return clean(record.program); })).length.toLocaleString());
       renderCampusCards(campuses, campus);
       renderFunnel();
