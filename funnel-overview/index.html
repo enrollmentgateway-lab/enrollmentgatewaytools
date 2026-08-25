@@ -124,7 +124,7 @@
       const reached = reachedCounts(stages);
       const value = reached[index];
       const base = mode === 'cumulative'
-        ? Math.max(0, stages[0].count) + value
+        ? reached[0]
         : reached[index - 1];
       return { value:value, base:base };
     }
@@ -170,9 +170,9 @@
         const count = document.createElement('div'); count.className = 'stage-count'; count.textContent = stage.count.toLocaleString();
         label.append(name, count);
         if (index) {
-          // Anyone in a downstream bucket previously reached this destination.
-          // Cumulative mode pairs that reached population with current inquiries;
-          // sequential mode compares adjacent reached populations.
+          // The live counts are mutually exclusive current-state buckets.
+          // Cumulative mode compares reached populations with everyone who ever
+          // reached Stage 1; sequential mode compares adjacent reached populations.
           const conversion = conversionValues(stages, index, conversionMode);
           const rate = document.createElement('div'); rate.className = 'stage-rate';
           rate.textContent = (conversionMode === 'cumulative' ? 'From Inquiries: ' : 'From Prev: ') + percent(conversion.value, conversion.base) + '%';
