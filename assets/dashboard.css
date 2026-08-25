@@ -31,7 +31,19 @@ button, select { font: inherit; }
   color: #fff;
   background: linear-gradient(120deg, var(--navy), var(--navy-mid));
 }
-.wordmark { font-family: Georgia, serif; font-size: 1.2rem; font-weight: 700; }
+.wordmark {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font-family: Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: left;
+  background: transparent;
+}
+.portal-home { cursor: pointer; }
+.portal-home:hover { color: #fff; }
+.portal-home:focus-visible { outline: 3px solid rgba(232,184,75,.6); outline-offset: 5px; border-radius: 2px; }
 .wordmark span { display: block; margin-top: 3px; font: 600 .62rem/1.2 Inter, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #d8dfeb; }
 .header-divider { width: 1px; height: 36px; background: rgba(255,255,255,.28); }
 .header-title { font-weight: 650; letter-spacing: .02em; }
@@ -226,6 +238,28 @@ button, select { font: inherit; }
 .funnel-dashboard .stage-count { color: #fff; font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; font-weight: 700; line-height: 1; }
 .funnel-dashboard .stage-rate { margin-top: 4px; padding: 2px 8px; border-radius: 20px; color: rgba(255,255,255,.78); font-size: .7rem; font-weight: 600; background: rgba(0,0,0,.18); }
 
+.event-dashboard .container { max-width: 1000px; }
+.event-dashboard .event-stat-bar { margin-bottom: 32px; border-bottom: 4px solid var(--gold); }
+.event-dashboard .event-stat-bar .stat-cell { padding: 30px 20px 26px; text-align: center; }
+.event-dashboard .event-stat-bar .stat-val {
+  color: var(--gold-light);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.6rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+.event-dashboard .event-stat-bar .stat-lbl { letter-spacing: .14em; }
+.event-dashboard .event-stat-bar .stat-sub { justify-content: center; }
+.event-dashboard .event-stat-bar .stat-sub-val { font-family: 'Playfair Display', Georgia, serif; }
+.event-dashboard .section-divider { margin: 40px 0 20px; }
+.event-dashboard .bar-chart { padding: 24px; }
+.event-dashboard .bar-row { grid-template-columns: 200px 1fr 70px; margin-bottom: 3px; }
+.event-dashboard .bar-track { height: 20px; border-radius: var(--radius); background: #ebe7df; }
+.event-dashboard .bar-value { font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; }
+.event-dashboard .event-title { color: var(--navy); font-weight: 700; }
+.event-dashboard .event-dates { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+.event-dashboard .badge-good { border: 1px solid rgba(42,107,60,.25); }
+.event-dashboard .badge-bad { border: 1px solid rgba(164,59,59,.25); }
+
 @media (max-width: 720px) {
   .gs-header { gap: 12px; padding: 13px 16px; }
   .header-divider { display: none; }
@@ -249,5 +283,6 @@ button, select { font: inherit; }
   .pipeline-dashboard .stat-cell { padding: 24px 14px; }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }
   .pipeline-dashboard .bar-row, .teaching-dashboard .bar-row { grid-template-columns: 110px 1fr 40px; }
+  .event-dashboard .bar-row { grid-template-columns: 110px 1fr 40px; }
   .funnel-dashboard .funnel-stage, .teaching-site-detail .funnel-stage { max-width: 100%; }
 }

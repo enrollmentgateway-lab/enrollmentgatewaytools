@@ -11,7 +11,7 @@
 </head>
 <body class="classic-dashboard funnel-dashboard">
   <header class="gs-header">
-    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Funnel Overview">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></button>
     <div class="header-divider"></div>
     <div class="header-title">Funnel Overview</div>
     <div class="header-spacer"></div>
@@ -230,6 +230,10 @@
     });
     document.getElementById('cumulative').addEventListener('click', function () { setMode('cumulative'); });
     document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
+    document.getElementById('portal-home').addEventListener('click', function () {
+      sessionStorage.removeItem('funnel-conversion-mode');
+      bridge.navigate({}, ['start_date', 'end_date', 'term_app', 'year_app', 'conv_mode']);
+    });
     document.getElementById('sort-status').addEventListener('click', function () { statusDirection = statusDirection === 1 ? -1 : 1; currentPage = 1; renderAwaiting(); });
     document.getElementById('per-page').addEventListener('change', function (event) { perPage = Number(event.target.value) || 25; currentPage = 1; renderAwaiting(); });
     document.getElementById('action-toggle').addEventListener('click', function () { setDrawer(true); });

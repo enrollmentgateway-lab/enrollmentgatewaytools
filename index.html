@@ -50,6 +50,7 @@
     }
 
     .gs-header .wordmark {
+      text-decoration: none;
       font-family: 'Playfair Display', serif;
       font-size: 1.25rem;
       color: var(--white);
@@ -66,6 +67,12 @@
       text-transform: uppercase;
       color: var(--gold-light);
       margin-top: 2px;
+    }
+
+    .gs-header .wordmark:focus-visible {
+      outline: 3px solid rgba(232,184,75,0.6);
+      outline-offset: 5px;
+      border-radius: 2px;
     }
 
     .gs-header .divider {
@@ -329,9 +336,9 @@
      HEADER
 ========================= -->
     <header class="gs-header">
-      <div class="wordmark">
+      <a class="wordmark" href="./" aria-label="Return to Enrollment Intelligence Hub">
         Gateway Seminary <span>Admissions · Enrollment Intelligence</span>
-      </div>
+      </a>
       <div class="divider"></div>
       <div class="page-title">Home</div>
     </header>

@@ -67,6 +67,17 @@
 
     return Object.freeze({
       navigate: function (set, remove) {
+        if (window.parent === window) {
+          const url = new URL(window.location.href);
+          Object.keys(set || {}).forEach(function (key) {
+            const value = String(set[key] == null ? '' : set[key]).trim();
+            if (value) url.searchParams.set(key, value);
+            else url.searchParams.delete(key);
+          });
+          (remove || []).forEach(function (key) { url.searchParams.delete(key); });
+          window.location.assign(url.toString());
+          return;
+        }
         post('enrollment-dashboard-navigate', { set: set || {}, remove: remove || [] });
       },
       openRecord: function (url) {

@@ -11,7 +11,7 @@
 </head>
 <body class="classic-dashboard pipeline-dashboard">
   <header class="gs-header">
-    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Pipeline Overview">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></button>
     <div class="header-divider"></div>
     <div class="header-title">Pipeline Overview</div>
   </header>
@@ -134,6 +134,9 @@
     document.getElementById('period').addEventListener('change', function (event) {
       const navigation = window.AcademicPeriods.navigation(event.target.value);
       bridge.navigate(navigation.set, navigation.remove);
+    });
+    document.getElementById('portal-home').addEventListener('click', function () {
+      bridge.navigate({}, ['status', 'term', 'year']);
     });
   }());
   </script>

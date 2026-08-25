@@ -6,12 +6,12 @@
   <title>Event Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
 </head>
-<body>
+<body class="classic-dashboard event-dashboard">
   <header class="gs-header">
-    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Event Tracker">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></button>
     <div class="header-divider"></div>
     <div class="header-title">Event Tracker</div>
   </header>
@@ -109,8 +109,8 @@
       }
       events.forEach(function (event) {
         const row = body.insertRow();
-        const title = row.insertCell(); title.textContent = event.title; title.style.fontWeight = '700';
-        row.insertCell().textContent = [event.startdate, event.enddate].filter(Boolean).join(' – ');
+        const title = row.insertCell(); title.className = 'event-title'; title.textContent = event.title;
+        const dates = row.insertCell(); dates.className = 'event-dates'; dates.textContent = [event.startdate, event.enddate].filter(Boolean).join(' – ');
         [event.registrants.toLocaleString(), currency.format(event.expenses), event.inquiries.toLocaleString(), event.applicants.toLocaleString()].forEach(function (value) {
           const cell = row.insertCell(); cell.className = 'align-right number'; cell.textContent = value;
         });
@@ -124,6 +124,8 @@
         costCell.appendChild(badge);
       });
     }
+
+    document.getElementById('portal-home').addEventListener('click', function () { window.location.reload(); });
   }());
   </script>
 </body>

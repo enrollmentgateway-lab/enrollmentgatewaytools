@@ -11,7 +11,7 @@
 </head>
 <body class="classic-dashboard teaching-dashboard">
   <header class="gs-header">
-    <div class="wordmark">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></div>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Teaching Sites Overview">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></button>
     <div class="header-divider"></div>
     <div id="header-title" class="header-title">Teaching Sites Overview</div>
   </header>
@@ -238,6 +238,9 @@
     document.getElementById('overview-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('detail-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('site-back').addEventListener('click', function () { bridge.navigate({}, ['site']); });
+    document.getElementById('portal-home').addEventListener('click', function () {
+      bridge.navigate({}, ['status', 'term', 'year', 'site']);
+    });
     document.getElementById('inactive-toggle').addEventListener('click', function () {
       const list = document.getElementById('inactive-list'); const expanded = list.hidden;
       list.hidden = !expanded; this.setAttribute('aria-expanded', String(expanded)); bridge.resize();

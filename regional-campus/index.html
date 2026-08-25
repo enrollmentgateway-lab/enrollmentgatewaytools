@@ -73,7 +73,7 @@
 </head>
 <body class="classic-dashboard regional-dashboard">
   <header class="gs-header">
-    <div class="wordmark">Gateway Seminary<span>Admissions &middot; Enrollment Intelligence</span></div>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Regional Campus Portal">Gateway Seminary<span>Admissions &middot; Enrollment Intelligence</span></button>
     <div class="header-divider"></div>
     <div id="header-title" class="header-title">Regional Campus Portal</div>
   </header>
@@ -361,6 +361,7 @@
     document.getElementById('period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('lookup').addEventListener('input', function (event) { renderLookupResults(searchRecords(event.target.value, data.records)); });
     document.getElementById('record-search').addEventListener('input', function (event) { const value = event.target.value; renderRecordTable(value.trim() ? searchRecords(value, data.records) : data.records); });
+    document.getElementById('portal-home').addEventListener('click', function () { bridge.navigate({}, ['campus', 'term', 'year', 'status']); });
     document.getElementById('records-back').addEventListener('click', clearStatus);
     document.getElementById('active-filter').querySelector('button').addEventListener('click', clearStatus);
     document.getElementById('profile-back').addEventListener('click', function () {
