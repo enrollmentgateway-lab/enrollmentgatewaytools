@@ -24,17 +24,22 @@
     </div>
 
     <div class="controls-row event-filter-controls">
-      <div class="control-group">
-        <label class="ctrl-label" for="event-year">Event year</label>
-        <select id="event-year" class="control-select"><option value="all">All years</option></select>
-      </div>
-      <label class="adjustment-toggle" for="use-adjusted-applicants"><input id="use-adjusted-applicants" type="checkbox"> Account for adjusted applicants*</label>
-      <div id="adjustment-percentage-group" class="control-group" hidden>
-        <label class="ctrl-label" for="adjustment-percentage">Inquiry-to-applicant estimate</label>
-        <div class="percentage-input"><input id="adjustment-percentage" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-describedby="adjustment-note"><span>%</span></div>
+      <label class="adjustment-toggle" for="use-adjusted-applicants"><input id="use-adjusted-applicants" type="checkbox"> Advanced</label>
+      <div id="event-advanced-controls" class="event-advanced-controls" hidden>
+        <div class="control-group">
+          <span class="ctrl-label">Event date range</span>
+          <div class="date-range-inputs">
+            <label for="event-date-start"><span>From</span><input id="event-date-start" class="control-date" type="date"></label>
+            <label for="event-date-end"><span>To</span><input id="event-date-end" class="control-date" type="date"></label>
+          </div>
+        </div>
+        <div id="adjustment-percentage-group" class="control-group">
+          <label class="ctrl-label" for="adjustment-percentage">Inquiry-to-applicant estimate</label>
+          <div class="percentage-input"><input id="adjustment-percentage" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-describedby="adjustment-note"><span>%</span></div>
+        </div>
+        <p id="adjustment-note" class="adjustment-note">* Adjusted applicants equal actual applicants plus the selected percentage of inquiries.</p>
       </div>
     </div>
-    <p id="adjustment-note" class="adjustment-note" hidden>* Adjusted applicants equal actual applicants plus the selected percentage of inquiries.</p>
 
     <div class="stat-bar event-stat-bar">
       <div class="stat-cell"><div id="event-count" class="stat-val">0</div><div class="stat-lbl">Events Tracked</div></div>
@@ -81,7 +86,8 @@
     let sortDirection = 'desc';
     let eventRecords = [];
     let blendedCost = 0;
-    let selectedYear = 'all';
+    let selectedStartDate = '';
+    let selectedEndDate = '';
     let useAdjustedApplicants = false;
     let adjustmentPercentage = 0;
     window.DashboardBridge.create('event-tracker', render);
@@ -129,27 +135,37 @@
 
     function render(payload) {
       eventRecords = prepare(payload || {});
-      populateYearFilter();
       currentPage = 1;
       renderView();
       ui.showApp();
     }
 
-    function populateYearFilter() {
-      const select = document.getElementById('event-year');
-      const years = Array.from(new Set(eventRecords.map(function (event) { return event.year; }).filter(Boolean))).sort(function (a, b) { return Number(b) - Number(a); });
-      select.replaceChildren();
-      const allYears = document.createElement('option'); allYears.value = 'all'; allYears.textContent = 'All years'; select.appendChild(allYears);
-      years.forEach(function (year) {
-        const option = document.createElement('option'); option.value = year; option.textContent = year; select.appendChild(option);
-      });
-      if (selectedYear !== 'all' && !years.includes(selectedYear)) selectedYear = 'all';
-      select.value = selectedYear;
+    function dateBoundary(value, endOfDay) {
+      const parts = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!parts) return null;
+      return Date.UTC(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3])) + (endOfDay ? 86399999 : 0);
     }
 
     function filteredEvents() {
-      if (selectedYear === 'all') return eventRecords.slice();
-      return eventRecords.filter(function (event) { return event.year === selectedYear; });
+      if (!useAdjustedApplicants) return eventRecords.slice();
+      const start = dateBoundary(selectedStartDate, false);
+      const end = dateBoundary(selectedEndDate, true);
+      if (start == null && end == null) return eventRecords.slice();
+      return eventRecords.filter(function (event) {
+        const eventStart = event.startdateValue == null ? event.enddateValue : event.startdateValue;
+        const eventEnd = event.enddateValue == null ? event.startdateValue : event.enddateValue;
+        if (eventStart == null || eventEnd == null) return false;
+        return (start == null || eventEnd >= start) && (end == null || eventStart <= end);
+      });
+    }
+
+    function dateRangeSummary() {
+      if (!useAdjustedApplicants || (!selectedStartDate && !selectedEndDate)) return 'all events';
+      const start = dateBoundary(selectedStartDate, false);
+      const end = dateBoundary(selectedEndDate, false);
+      if (start != null && end != null) return dateFormatter.format(new Date(start)) + '–' + dateFormatter.format(new Date(end));
+      if (start != null) return 'events on or after ' + dateFormatter.format(new Date(start));
+      return 'events on or before ' + dateFormatter.format(new Date(end));
     }
 
     function applicantCount(event) {
@@ -177,7 +193,7 @@
       ui.setText('total-inquiries', totals.inquiries.toLocaleString());
       ui.setText('total-applicants', formatCount(totals.applicants));
       document.getElementById('blended-cost').textContent = blendedCost ? currency.format(blendedCost) : '—';
-      document.getElementById('registrant-summary').textContent = 'blended cost per ' + (useAdjustedApplicants ? 'adjusted ' : '') + 'applicant across ' + (selectedYear === 'all' ? 'all events' : selectedYear + ' events') + ' (' + totals.registrants.toLocaleString() + ' total registrants)';
+      document.getElementById('registrant-summary').textContent = 'blended cost per ' + (useAdjustedApplicants ? 'adjusted ' : '') + 'applicant across ' + dateRangeSummary() + ' (' + totals.registrants.toLocaleString() + ' total registrants)';
       document.getElementById('applicant-stat-label').textContent = useAdjustedApplicants ? 'Adjusted Applicants*' : 'Applicants Generated';
       document.getElementById('applicants-column-label').textContent = useAdjustedApplicants ? 'Adjusted Applicants*' : 'Applicants';
       document.getElementById('cost-column-label').textContent = useAdjustedApplicants ? 'Cost / Adjusted Applicant*' : 'Cost / Applicant';
@@ -297,15 +313,26 @@
         renderDrilldown(filteredEvents());
       });
     });
-    document.getElementById('event-year').addEventListener('change', function (event) {
-      selectedYear = event.target.value;
+    function updateDateRange(changedInput) {
+      selectedStartDate = document.getElementById('event-date-start').value;
+      selectedEndDate = document.getElementById('event-date-end').value;
+      if (selectedStartDate && selectedEndDate && selectedStartDate > selectedEndDate) {
+        if (changedInput.id === 'event-date-start') {
+          selectedEndDate = selectedStartDate;
+          document.getElementById('event-date-end').value = selectedEndDate;
+        } else {
+          selectedStartDate = selectedEndDate;
+          document.getElementById('event-date-start').value = selectedStartDate;
+        }
+      }
       currentPage = 1;
       renderView();
-    });
+    }
+    document.getElementById('event-date-start').addEventListener('change', function (event) { updateDateRange(event.target); });
+    document.getElementById('event-date-end').addEventListener('change', function (event) { updateDateRange(event.target); });
     document.getElementById('use-adjusted-applicants').addEventListener('change', function (event) {
       useAdjustedApplicants = event.target.checked;
-      document.getElementById('adjustment-percentage-group').hidden = !useAdjustedApplicants;
-      document.getElementById('adjustment-note').hidden = !useAdjustedApplicants;
+      document.getElementById('event-advanced-controls').hidden = !useAdjustedApplicants;
       currentPage = 1;
       renderView();
     });
