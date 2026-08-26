@@ -24,6 +24,10 @@
     </div>
 
     <div class="controls-row event-filter-controls">
+      <div class="control-group event-search-group">
+        <label class="ctrl-label" for="event-search">Event name</label>
+        <input id="event-search" class="event-search-input" type="search" autocomplete="off" placeholder="Search events">
+      </div>
       <label class="adjustment-toggle" for="use-adjusted-applicants"><input id="use-adjusted-applicants" type="checkbox"> Advanced</label>
       <div id="event-advanced-controls" class="event-advanced-controls" hidden>
         <div class="control-group">
@@ -88,6 +92,7 @@
     let blendedCost = 0;
     let selectedStartDate = '';
     let selectedEndDate = '';
+    let eventSearch = '';
     let useAdjustedApplicants = false;
     let adjustmentPercentage = 0;
     window.DashboardBridge.create('event-tracker', render);
@@ -148,11 +153,19 @@
     }
 
     function filteredEvents() {
-      if (!useAdjustedApplicants) return eventRecords.slice();
+      let events = eventRecords.slice();
+      const searchTerms = eventSearch.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+      if (searchTerms.length) {
+        events = events.filter(function (event) {
+          const title = event.title.toLocaleLowerCase();
+          return searchTerms.every(function (term) { return title.includes(term); });
+        });
+      }
+      if (!useAdjustedApplicants) return events;
       const start = dateBoundary(selectedStartDate, false);
       const end = dateBoundary(selectedEndDate, true);
-      if (start == null && end == null) return eventRecords.slice();
-      return eventRecords.filter(function (event) {
+      if (start == null && end == null) return events;
+      return events.filter(function (event) {
         const eventStart = event.startdateValue == null ? event.enddateValue : event.startdateValue;
         const eventEnd = event.enddateValue == null ? event.startdateValue : event.enddateValue;
         if (eventStart == null || eventEnd == null) return false;
@@ -249,7 +262,7 @@
     function renderTable(events, blended) {
       const body = document.getElementById('event-table'); body.replaceChildren();
       if (!events.length) {
-        const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 7; cell.appendChild(ui.emptyState('No event data available.')); return;
+        const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 7; cell.appendChild(ui.emptyState(eventSearch || selectedStartDate || selectedEndDate ? 'No events match the current filters.' : 'No event data available.')); return;
       }
       events.forEach(function (event) {
         const applicants = applicantCount(event);
@@ -331,6 +344,11 @@
     }
     document.getElementById('event-date-start').addEventListener('change', function (event) { updateDateRange(event.target); });
     document.getElementById('event-date-end').addEventListener('change', function (event) { updateDateRange(event.target); });
+    document.getElementById('event-search').addEventListener('input', function (event) {
+      eventSearch = event.target.value.trim();
+      currentPage = 1;
+      renderView();
+    });
     document.getElementById('use-adjusted-applicants').addEventListener('change', function (event) {
       useAdjustedApplicants = event.target.checked;
       document.getElementById('event-advanced-controls').hidden = !useAdjustedApplicants;
