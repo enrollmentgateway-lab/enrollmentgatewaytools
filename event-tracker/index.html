@@ -20,7 +20,7 @@
   <main id="app" class="container" hidden>
     <div class="page-intro">
       <h1 class="intro-heading">Event Tracker</h1>
-      <p class="intro-subtitle">See what each recruiting event cost and what it returned—registrants, inquiries, and applicants generated per dollar spent.</p>
+      <p class="intro-subtitle">See what each recruiting event cost and what it returned—registrants, inquiries, applicants, and students generated per dollar spent.</p>
     </div>
 
     <div class="controls-row event-filter-controls">
@@ -64,6 +64,7 @@
             <th id="event-sort-expenses-header" class="align-right" data-sort-column="expenses" aria-sort="none"><button id="event-sort-expenses" class="event-sort-button event-sort-button-right" type="button">Spend <span class="sort-indicator">↕</span></button></th>
             <th id="event-sort-inquiries-header" class="align-right" data-sort-column="inquiries" aria-sort="none"><button id="event-sort-inquiries" class="event-sort-button event-sort-button-right" type="button">Inquiries <span class="sort-indicator">↕</span></button></th>
             <th id="event-sort-applicants-header" class="align-right" data-sort-column="applicants" aria-sort="descending"><button id="event-sort-applicants" class="event-sort-button event-sort-button-right" type="button"><span id="applicants-column-label">Applicants</span> <span class="sort-indicator">↓</span></button></th>
+            <th id="event-sort-students-header" class="align-right" data-sort-column="students" aria-sort="none"><button id="event-sort-students" class="event-sort-button event-sort-button-right" type="button">Students <span class="sort-indicator">↕</span></button></th>
             <th id="event-sort-cost-header" class="align-right" data-sort-column="cost" aria-sort="none"><button id="event-sort-cost" class="event-sort-button event-sort-button-right" type="button"><span id="cost-column-label">Cost / Applicant</span> <span class="sort-indicator">↕</span></button></th>
           </tr>
         </thead>
@@ -84,7 +85,7 @@
     const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
     const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
     const pageSize = 10;
-    const sortColumns = ['title', 'dates', 'registrants', 'expenses', 'inquiries', 'applicants', 'cost'];
+    const sortColumns = ['title', 'dates', 'registrants', 'expenses', 'inquiries', 'applicants', 'students', 'cost'];
     let currentPage = 1;
     let sortColumn = 'applicants';
     let sortDirection = 'desc';
@@ -128,13 +129,14 @@
         const enddate = eventDate(event.enddate);
         const inquiries = matches.filter(function (person) { return /^inquir(?:y|ies)\b/i.test(ui.text(person.status, '')); }).length;
         const applicants = matches.filter(function (person) { return /^applicants?\b/i.test(ui.text(person.status, '')); }).length;
+        const students = matches.filter(function (person) { return /^students?\b/i.test(ui.text(person.status, '')); }).length;
         const expenses = numeric(event.expenses);
         return {
           title: eventTitle, startdate: startdate.label, enddate: enddate.label,
           startdateValue: startdate.value, enddateValue: enddate.value,
           year: startdate.year || enddate.year,
           registrants: numeric(event.registrants), expenses: expenses,
-          inquiries: inquiries, applicants: applicants
+          inquiries: inquiries, applicants: applicants, students: students
         };
       });
     }
@@ -236,7 +238,7 @@
     }
 
     function updateSortHeaders() {
-      const labels = { title:'event', dates:'dates', registrants:'registrants', expenses:'spend', inquiries:'inquiries', applicants:useAdjustedApplicants ? 'adjusted applicants' : 'applicants', cost:useAdjustedApplicants ? 'cost per adjusted applicant' : 'cost per applicant' };
+      const labels = { title:'event', dates:'dates', registrants:'registrants', expenses:'spend', inquiries:'inquiries', applicants:useAdjustedApplicants ? 'adjusted applicants' : 'applicants', students:'students', cost:useAdjustedApplicants ? 'cost per adjusted applicant' : 'cost per applicant' };
       sortColumns.forEach(function (column) {
         const active = column === sortColumn;
         const header = document.getElementById('event-sort-' + column + '-header');
@@ -262,7 +264,7 @@
     function renderTable(events, blended) {
       const body = document.getElementById('event-table'); body.replaceChildren();
       if (!events.length) {
-        const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 7; cell.appendChild(ui.emptyState(eventSearch || selectedStartDate || selectedEndDate ? 'No events match the current filters.' : 'No event data available.')); return;
+        const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 8; cell.appendChild(ui.emptyState(eventSearch || selectedStartDate || selectedEndDate ? 'No events match the current filters.' : 'No event data available.')); return;
       }
       events.forEach(function (event) {
         const applicants = applicantCount(event);
@@ -270,7 +272,7 @@
         const row = body.insertRow();
         const title = row.insertCell(); title.className = 'event-title'; title.textContent = event.title;
         const dates = row.insertCell(); dates.className = 'event-dates'; dates.textContent = event.startdate === event.enddate ? event.startdate : [event.startdate, event.enddate].filter(Boolean).join(' – ');
-        [event.registrants.toLocaleString(), currency.format(event.expenses), event.inquiries.toLocaleString(), formatCount(applicants)].forEach(function (value) {
+        [event.registrants.toLocaleString(), currency.format(event.expenses), event.inquiries.toLocaleString(), formatCount(applicants), event.students.toLocaleString()].forEach(function (value) {
           const cell = row.insertCell(); cell.className = 'align-right number'; cell.textContent = value;
         });
         const costCell = row.insertCell(); costCell.className = 'align-right';

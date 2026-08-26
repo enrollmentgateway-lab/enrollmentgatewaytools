@@ -280,7 +280,7 @@ button, select { font: inherit; }
 .event-dashboard .event-stat-bar .stat-sub-val { font-family: 'Playfair Display', Georgia, serif; }
 .event-dashboard .section-divider { margin: 40px 0 20px; }
 .event-dashboard .panel { overflow-x: auto; }
-.event-dashboard .data-table { min-width: 1060px; }
+.event-dashboard .data-table { min-width: 1160px; }
 .event-dashboard .data-table th:first-child, .event-dashboard .event-title { min-width: 230px; }
 .event-dashboard .data-table th:nth-child(2), .event-dashboard .event-dates { min-width: 210px; }
 .event-dashboard .event-sort-button { width: calc(100% + 30px); min-height: 38px; display: inline-flex; align-items: center; gap: 5px; margin: -12px -15px; padding: 12px 15px; border: 0; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; text-transform: inherit; background: transparent; cursor: pointer; }
