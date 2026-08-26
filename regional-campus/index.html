@@ -25,10 +25,9 @@
     .regional-stage { position: relative; min-height: 76px; display: grid; place-items: center; padding: 12px 20px; border: 0; border-radius: 3px; color: #fff; text-align: center; background: var(--stage-color); box-shadow: 0 3px 10px rgba(26,43,74,.16); cursor: pointer; transition: filter .18s, transform .18s; }
     .regional-stage::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.13), rgba(0,0,0,.08)); pointer-events: none; }
     .regional-stage:hover { filter: brightness(1.07); transform: scale(1.01); }
-    .regional-stage-label, .regional-stage-count, .regional-stage-rate { position: relative; z-index: 1; display: block; }
+    .regional-stage-label, .regional-stage-count { position: relative; z-index: 1; display: block; }
     .regional-stage-label { font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
     .regional-stage-count { margin-top: 2px; font: 700 1.85rem/1 'Playfair Display', Georgia, serif; }
-    .regional-stage-rate { margin-top: 5px; font-size: .68rem; font-weight: 600; opacity: .88; }
 
     .view-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
     .back-button { padding: 6px 0; border: 0; color: #0f766e; font-size: .82rem; font-weight: 750; background: transparent; cursor: pointer; }
@@ -49,6 +48,9 @@
     .record-name { color: var(--navy); font-weight: 750; }
     .record-contact { display: block; margin-top: 3px; color: var(--muted); font-size: .76rem; }
     .record-row:focus-visible { outline: 3px solid rgba(15,118,110,.25); outline-offset: -3px; }
+    .record-sort-button { width: calc(100% + 30px); min-height: 38px; display: inline-flex; align-items: center; gap: 5px; margin: -12px -15px; padding: 12px 15px; border: 0; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; text-transform: inherit; background: transparent; cursor: pointer; }
+    .record-sort-button:hover, .record-sort-button:focus-visible { color: var(--gold-light); }
+    .record-sort-indicator { width: 11px; display: inline-block; color: var(--gold-light); text-align: center; }
 
     .profile-card { overflow: hidden; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); }
     .profile-hero { padding: 28px 30px; color: #fff; background: linear-gradient(125deg, var(--navy), var(--navy-mid)); border-bottom: 4px solid var(--gold); }
@@ -133,7 +135,15 @@
         <div id="record-count" class="record-count"></div>
         <div class="panel">
           <table class="data-table">
-            <thead><tr><th>Name</th><th>Program</th><th>Status</th><th>Application Status</th><th>Campus</th></tr></thead>
+            <thead>
+              <tr>
+                <th id="record-sort-name-header" aria-sort="ascending"><button id="record-sort-name" class="record-sort-button" type="button">Name <span class="record-sort-indicator">↑</span></button></th>
+                <th id="record-sort-program-header" aria-sort="none"><button id="record-sort-program" class="record-sort-button" type="button">Program <span class="record-sort-indicator">↕</span></button></th>
+                <th id="record-sort-status-header" aria-sort="none"><button id="record-sort-status" class="record-sort-button" type="button">Status <span class="record-sort-indicator">↕</span></button></th>
+                <th id="record-sort-app_status-header" aria-sort="none"><button id="record-sort-app_status" class="record-sort-button" type="button">Application Status <span class="record-sort-indicator">↕</span></button></th>
+                <th id="record-sort-campus-header" aria-sort="none"><button id="record-sort-campus" class="record-sort-button" type="button">Campus <span class="record-sort-indicator">↕</span></button></th>
+              </tr>
+            </thead>
             <tbody id="record-table"></tbody>
           </table>
         </div>
@@ -154,9 +164,13 @@
     const bridge = window.DashboardBridge.create('regional-campus', render);
     const colors = ['#0f766e', '#2563eb', '#7c3aed', '#c8952a', '#d95d39', '#2a6b3c', '#1a2b4a'];
     const statusOrder = ['inquiry', 'prospect', 'applicant', 'application', 'awaiting approval', 'admitted', 'student', 'enrolled'];
+    const recordSortColumns = ['name', 'program', 'status', 'app_status', 'campus'];
     const minimumCampusRecords = 20;
     let data = { filters:{}, campuses:[], records:[] };
     let lastView = 'portal';
+    let recordSortColumn = 'name';
+    let recordSortDirection = 'asc';
+    let recordTableRecords = [];
 
     function clean(value) { return ui.text(value, '').trim(); }
     function unique(values) { return Array.from(new Set(values.filter(Boolean))).sort(function (a, b) { return a.localeCompare(b); }); }
@@ -250,7 +264,6 @@
       const campus = clean(data.filters.campus);
       document.getElementById('funnel-heading').textContent = campus ? campus + ' Records by Status' : 'All Campus Records by Status';
       if (!stages.length) { root.appendChild(ui.emptyState('No funnel records are available for this selection.')); return; }
-      const firstCount = stages[0].count || 1;
       stages.forEach(function (stage, index) {
         const width = Math.max(58, 100 - (index * (42 / Math.max(stages.length - 1, 1))));
         const button = document.createElement('button'); button.className = 'regional-stage'; button.type = 'button'; button.style.width = width + '%'; button.style.setProperty('--stage-color', colors[index % colors.length]);
@@ -258,7 +271,6 @@
         const label = document.createElement('span'); label.className = 'regional-stage-label'; label.textContent = stage.label;
         const count = document.createElement('span'); count.className = 'regional-stage-count'; count.textContent = stage.count.toLocaleString();
         button.append(label, count);
-        if (index) { const rate = document.createElement('span'); rate.className = 'regional-stage-rate'; rate.textContent = Math.round(stage.count * 1000 / firstCount) / 10 + '% of first stage'; button.appendChild(rate); }
         button.addEventListener('click', function () { bridge.navigate({ status:stage.label }, []); }); root.appendChild(button);
       });
     }
@@ -290,11 +302,36 @@
       renderRecordTable(data.records);
     }
 
+    function sortedRecordTable(records) {
+      return records.slice().sort(function (a, b) {
+        const aValue = clean(a[recordSortColumn]);
+        const bValue = clean(b[recordSortColumn]);
+        if (!aValue && bValue) return 1;
+        if (!bValue && aValue) return -1;
+        const comparison = aValue.localeCompare(bValue, undefined, { numeric:true, sensitivity:'base' });
+        if (comparison) return recordSortDirection === 'asc' ? comparison : -comparison;
+        return clean(a.name).localeCompare(clean(b.name), undefined, { numeric:true, sensitivity:'base' });
+      });
+    }
+
+    function updateRecordSortHeaders() {
+      recordSortColumns.forEach(function (column) {
+        const active = column === recordSortColumn;
+        const header = document.getElementById('record-sort-' + column + '-header');
+        const button = document.getElementById('record-sort-' + column);
+        header.setAttribute('aria-sort', active ? (recordSortDirection === 'asc' ? 'ascending' : 'descending') : 'none');
+        button.querySelector('.record-sort-indicator').textContent = active ? (recordSortDirection === 'asc' ? '↑' : '↓') : '↕';
+      });
+    }
+
     function renderRecordTable(records) {
+      recordTableRecords = records.slice();
+      const sortedRecords = sortedRecordTable(recordTableRecords);
       const body = document.getElementById('record-table'); body.replaceChildren();
-      document.getElementById('record-count').textContent = records.length.toLocaleString() + ' record' + (records.length === 1 ? '' : 's');
-      if (!records.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No records are available for this filter.')); return; }
-      records.forEach(function (record) {
+      document.getElementById('record-count').textContent = sortedRecords.length.toLocaleString() + ' record' + (sortedRecords.length === 1 ? '' : 's');
+      updateRecordSortHeaders();
+      if (!sortedRecords.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No records are available for this filter.')); return; }
+      sortedRecords.forEach(function (record) {
         const row = body.insertRow(); row.className = 'record-row'; row.tabIndex = 0;
         const name = row.insertCell(); const nameText = document.createElement('span'); nameText.className = 'record-name'; nameText.textContent = clean(record.name) || 'Unnamed record'; name.appendChild(nameText);
         const contact = [clean(record.email), clean(record.phone)].filter(Boolean).join(' · '); if (contact) { const meta = document.createElement('span'); meta.className = 'record-contact'; meta.textContent = contact; name.appendChild(meta); }
@@ -357,6 +394,13 @@
     document.getElementById('period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('lookup').addEventListener('input', function (event) { renderLookupResults(searchRecords(event.target.value, data.records)); });
     document.getElementById('record-search').addEventListener('input', function (event) { const value = event.target.value; renderRecordTable(value.trim() ? searchRecords(value, data.records) : data.records); });
+    recordSortColumns.forEach(function (column) {
+      document.getElementById('record-sort-' + column).addEventListener('click', function () {
+        if (recordSortColumn === column) recordSortDirection = recordSortDirection === 'asc' ? 'desc' : 'asc';
+        else { recordSortColumn = column; recordSortDirection = 'asc'; }
+        renderRecordTable(recordTableRecords);
+      });
+    });
     document.getElementById('portal-home').addEventListener('click', function () { bridge.navigate({}, ['campus', 'term', 'year', 'status']); });
     document.getElementById('records-back').addEventListener('click', clearStatus);
     document.getElementById('active-filter').querySelector('button').addEventListener('click', clearStatus);
