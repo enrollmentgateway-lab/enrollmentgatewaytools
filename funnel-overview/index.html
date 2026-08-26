@@ -39,9 +39,20 @@
       <div class="control-group"><label class="ctrl-label" for="period">Period</label><select id="period" class="control-select"></select></div>
       <div class="control-group">
         <span class="ctrl-label">Conversion</span>
-        <div class="toggle-group" role="group" aria-label="Conversion mode">
-          <button id="cumulative" class="toggle-btn" type="button">From Stage 1</button>
-          <button id="sequential" class="toggle-btn" type="button">Step-to-Step</button>
+        <div class="conversion-mode-control">
+          <div class="toggle-group" role="group" aria-label="Conversion mode">
+            <button id="cumulative" class="toggle-btn" type="button">From Stage 1</button>
+            <button id="sequential" class="toggle-btn" type="button">Step-to-Step</button>
+          </div>
+          <div id="choke-info-wrap" class="choke-info-wrap">
+            <button id="choke-info-toggle" class="choke-info-button" type="button" aria-label="Explain the largest funnel choke point" aria-expanded="false" aria-controls="choke-info-popover">i</button>
+            <div id="choke-info-popover" class="choke-info-popover" role="dialog" aria-labelledby="choke-info-title" hidden>
+              <button id="choke-info-close" class="choke-info-close" type="button" aria-label="Close choke-point explanation">×</button>
+              <div class="choke-info-eyebrow">Biggest Choke Point</div>
+              <div id="choke-info-title" class="choke-info-title">Waiting for funnel data</div>
+              <p id="choke-info-explanation"></p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -129,6 +140,39 @@
       return { value:value, base:base };
     }
 
+    function largestChokePoint(stages) {
+      const reached = reachedCounts(stages);
+      return stages.slice(1).map(function (stage, offset) {
+        const index = offset + 1;
+        const base = reached[index - 1];
+        const stalled = Math.max(0, stages[index - 1].count);
+        return {
+          from:stages[index - 1].label,
+          to:stage.label,
+          base:base,
+          stalled:stalled,
+          advanced:reached[index],
+          stalledRate:percent(stalled, base),
+          conversionRate:percent(reached[index], base)
+        };
+      }).filter(function (point) { return point.base > 0; }).sort(function (a, b) {
+        return b.stalledRate - a.stalledRate || b.stalled - a.stalled;
+      })[0] || null;
+    }
+
+    function renderChokePoint(stages) {
+      const point = largestChokePoint(stages);
+      const title = document.getElementById('choke-info-title');
+      const explanation = document.getElementById('choke-info-explanation');
+      if (!point) {
+        title.textContent = 'No choke point available';
+        explanation.textContent = 'There is not enough funnel data to identify where inquiries are currently waiting.';
+        return;
+      }
+      title.textContent = point.from + ' → ' + point.to;
+      explanation.textContent = point.stalled.toLocaleString() + ' of ' + point.base.toLocaleString() + ' people who reached ' + point.from + ' (' + point.stalledRate + '%) currently remain in that stage. ' + point.advanced.toLocaleString() + ' (' + point.conversionRate + '%) have advanced to ' + point.to + ' or beyond.';
+    }
+
     function renderFunnel() {
       const stages = [
         { label:'Inquiries', count:ui.number(data.counts.inquiries), color:'#1a2b4a' },
@@ -136,6 +180,7 @@
         { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#c8952a' },
         { label:'Admitted', count:ui.number(data.counts.admitted), color:'#2a6b3c' }
       ];
+      renderChokePoint(stages);
       const root = document.getElementById('funnel'); root.replaceChildren();
       const maxWidth = 680;
       const minWidth = 220;
@@ -244,6 +289,12 @@
     function updateModeButtons() {
       document.getElementById('cumulative').classList.toggle('active', conversionMode === 'cumulative');
       document.getElementById('sequential').classList.toggle('active', conversionMode === 'sequential');
+      document.getElementById('choke-info-wrap').hidden = conversionMode !== 'cumulative';
+      if (conversionMode !== 'cumulative') setChokeInfo(false);
+    }
+    function setChokeInfo(open) {
+      document.getElementById('choke-info-popover').hidden = !open;
+      document.getElementById('choke-info-toggle').setAttribute('aria-expanded', String(open));
     }
     function setMode(mode) { conversionMode = mode; sessionStorage.setItem('funnel-conversion-mode', mode); updateModeButtons(); renderFunnel(); }
     function setDrawer(open) { document.getElementById('action-drawer').hidden = !open; document.getElementById('drawer-overlay').hidden = !open; bridge.resize(); }
@@ -261,10 +312,12 @@
     });
     document.getElementById('sort-status').addEventListener('click', function () { statusDirection = statusDirection === 1 ? -1 : 1; currentPage = 1; renderAwaiting(); });
     document.getElementById('per-page').addEventListener('change', function (event) { perPage = Number(event.target.value) || 25; currentPage = 1; renderAwaiting(); });
+    document.getElementById('choke-info-toggle').addEventListener('click', function () { setChokeInfo(document.getElementById('choke-info-popover').hidden); });
+    document.getElementById('choke-info-close').addEventListener('click', function () { setChokeInfo(false); });
     document.getElementById('action-toggle').addEventListener('click', function () { setDrawer(true); });
     document.getElementById('drawer-close').addEventListener('click', function () { setDrawer(false); });
     document.getElementById('drawer-overlay').addEventListener('click', function () { setDrawer(false); });
-    window.addEventListener('keydown', function (event) { if (event.key === 'Escape') setDrawer(false); });
+    window.addEventListener('keydown', function (event) { if (event.key === 'Escape') { setDrawer(false); setChokeInfo(false); } });
   }());
   </script>
 </body>

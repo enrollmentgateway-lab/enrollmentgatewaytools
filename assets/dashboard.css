@@ -229,8 +229,16 @@ button, select { font: inherit; }
 .funnel-dashboard .stat-cell { padding: 14px 18px; color: var(--navy); background: var(--white); }
 .funnel-dashboard .stat-val { color: var(--navy); font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; }
 .funnel-dashboard .stat-lbl { color: var(--muted); font-size: .67rem; }
+.funnel-dashboard .conversion-mode-control { position: relative; display: flex; align-items: center; gap: 8px; }
 .funnel-dashboard .toggle-group { padding: 0; overflow: hidden; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); }
 .funnel-dashboard .toggle-btn { border-radius: 0; }
+.funnel-dashboard .choke-info-button { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 1px solid #c8cdd5; border-radius: 50%; color: #687181; font: 700 italic .86rem Georgia, serif; background: #eceff3; cursor: pointer; }
+.funnel-dashboard .choke-info-button:hover { color: var(--navy); border-color: #aeb5c0; background: #e1e5ea; }
+.funnel-dashboard .choke-info-popover { position: absolute; z-index: 20; top: calc(100% + 10px); right: 0; width: min(380px, calc(100vw - 32px)); padding: 20px 38px 18px 20px; border: 1px solid var(--border); border-radius: 8px; color: var(--ink); text-align: left; background: var(--white); box-shadow: 0 12px 32px rgba(26,43,74,.2); }
+.funnel-dashboard .choke-info-close { position: absolute; top: 8px; right: 10px; padding: 3px 6px; border: 0; color: var(--muted); font-size: 1.15rem; background: transparent; cursor: pointer; }
+.funnel-dashboard .choke-info-eyebrow { margin-bottom: 5px; color: #7a8290; font-size: .64rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.funnel-dashboard .choke-info-title { color: var(--navy); font: 700 1.05rem Georgia, serif; }
+.funnel-dashboard .choke-info-popover p { margin: 9px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.55; }
 .funnel-dashboard .icon-button svg { width: 18px; height: 18px; }
 .funnel-dashboard .funnel { gap: 6px; padding: 0; margin-bottom: 36px; }
 .funnel-dashboard .funnel-stage { position: relative; min-height: 80px; display: flex; align-items: center; justify-content: center; border-radius: 0; box-shadow: none; transition: filter .2s; }
@@ -300,6 +308,7 @@ button, select { font: inherit; }
   .classic-dashboard .gs-header { padding: 14px 16px; }
   .classic-dashboard .container { width: 100%; padding: 25px 12px 45px; }
   .pipeline-dashboard .stat-bar, .funnel-dashboard .stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .funnel-dashboard .conversion-mode-control { width: 100%; }
   .teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pipeline-dashboard .stat-cell { padding: 24px 14px; }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }
