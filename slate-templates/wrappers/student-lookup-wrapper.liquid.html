@@ -1,27 +1,116 @@
-<!-- Configure `student_lookup` to filter from the first, last, and sisid URL parameters. -->
+<!--
+  Student Lookup Slate wrapper.
 
-<div id="studentLookupData" style="display:none">
-  <div class="query"><span class="first">{{first | escape}}</span><span class="last">{{last | escape}}</span><span class="sisid">{{sisid | escape}}</span></div>
-  <span class="result-count">{{student_lookup.size}}</span>
-  {% if student_lookup.size > 100 %}{% else %}{% for person in student_lookup %}<div class="candidate"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="status">{{person.status | escape}}</span><span class="record_created_date">{{person.record_created_date | escape}}</span><span class="term">{{person.term | escape}}</span><span class="year">{{person.year | escape}}</span><span class="church">{{person.church | escape}}</span><span class="app_degree">{{person.app_degree | escape}}</span><span class="app_round">{{person.app_round | escape}}</span><span class="app_status">{{person.app_status | escape}}</span><span class="app_term">{{person.app_term | escape}}</span><span class="app_year">{{person.app_year | escape}}</span><span class="app_f1">{{person.app_f1 | escape}}</span><span class="app_url">{{person.app_url | escape}}</span></div>{% endfor %}{% endif %}
-</div>
+  This wrapper does not require a portal query. It calls the configured Slate
+  JSON service after the user searches by first name, last name, or SIS ID,
+  then sends the returned rows to the GitHub-hosted interface.
 
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v9" title="Student Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+  JSON fields: status, name, email, phone, pipeline, teachingsite, birthdate,
+  app_created_date, decision_code, vear, term, program, url, app_degree,
+  app_round, app_status, app_term, app_year, app_f1, app_url
+-->
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v10" title="Student Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
+  'use strict';
+  const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
   const frame = document.getElementById('studentLookupFrame');
-  const read = (node, key) => { const el = node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
-  const queryNode = document.querySelector('#studentLookupData .query');
-  const query = queryNode ? { first:read(queryNode,'first'), last:read(queryNode,'last'), sisid:read(queryNode,'sisid') } : {};
-  const resultCount = Number(document.querySelector('#studentLookupData .result-count').textContent) || 0;
-  const candidates = Array.from(document.querySelectorAll('#studentLookupData .candidate')).map(node => ({ SIS_ID:read(node,'SIS_ID'), first:read(node,'first'), last:read(node,'last'), email:read(node,'email'), phone:read(node,'phone'), program:read(node,'program'), status:read(node,'status'), record_created_date:read(node,'record_created_date'), term:read(node,'term'), year:read(node,'year'), church:read(node,'church'), app_degree:read(node,'app_degree'), app_round:read(node,'app_round'), app_status:read(node,'app_status'), app_term:read(node,'app_term'), app_year:read(node,'app_year'), app_f1:read(node,'app_f1'), app_url:read(node,'app_url') }));
-  const profile = null;
+  const pageUrl = new URL(window.location.href);
+  const query = {
+    first: pageUrl.searchParams.get('first') || '',
+    last: pageUrl.searchParams.get('last') || '',
+    sisid: pageUrl.searchParams.get('sisid') || ''
+  };
+  const searched = Boolean(query.first || query.last || query.sisid);
+  let frameReady = false;
+  let sendStarted = false;
+
+  function text(value) {
+    return value == null ? '' : String(value).trim();
+  }
+
+  function rowsFrom(response) {
+    if (Array.isArray(response)) return response;
+    if (response && Array.isArray(response.row)) return response.row;
+    return response && response.row ? [response.row] : [];
+  }
+
+  function normalize(row) {
+    return {
+      status: text(row && row.status),
+      name: text(row && row.name),
+      email: text(row && row.email),
+      phone: text(row && row.phone),
+      pipeline: text(row && row.pipeline),
+      teachingsite: text(row && row.teachingsite),
+      birthdate: text(row && row.birthdate),
+      app_created_date: text(row && row.app_created_date),
+      decision_code: text(row && row.decision_code),
+      vear: text(row && (row.vear || row.year)),
+      term: text(row && row.term),
+      program: text(row && row.program),
+      url: text(row && row.url),
+      app_degree: text(row && row.app_degree),
+      app_round: text(row && row.app_round),
+      app_status: text(row && row.app_status),
+      app_term: text(row && row.app_term),
+      app_year: text(row && row.app_year),
+      app_f1: text(row && row.app_f1),
+      app_url: text(row && row.app_url)
+    };
+  }
+
+  async function loadData() {
+    const payload = { searched:searched, resultCount:0, query:query, candidates:[], profile:null };
+    if (!searched) return payload;
+    const url = new URL(recordsService);
+    url.searchParams.set('first', query.first);
+    url.searchParams.set('last', query.last);
+    url.searchParams.set('sisid', query.sisid);
+    try {
+      const response = await fetch(url.toString().replace(/\+/g, '%20'), {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept:'application/json' }
+      });
+      if (!response.ok) throw new Error('Student Lookup query returned ' + response.status);
+      payload.candidates = rowsFrom(await response.json()).map(normalize);
+      payload.resultCount = payload.candidates.length;
+    } catch (error) {
+      console.error('Unable to load Student Lookup records.', error);
+      payload.loadError = 'Unable to load student records from Slate. Please try again.';
+    }
+    return payload;
+  }
+
+  const dataPromise = loadData();
+
+  async function sendData() {
+    if (!frameReady || sendStarted) return;
+    sendStarted = true;
+    const payload = await dataPromise;
+    if (frame.contentWindow) frame.contentWindow.postMessage({ type:'student-lookup-data', payload:payload }, frameOrigin);
+  }
+
+  function updateSearch(values) {
+    const url = new URL(window.location.href);
+    ['first','last','sisid'].forEach(function (key) {
+      const value = text(values && values[key]).slice(0, 100);
+      if (value) url.searchParams.set(key, value);
+      else url.searchParams.delete(key);
+    });
+    window.location.assign(url.toString().replace(/\+/g, '%20'));
+  }
+
   window.addEventListener('message', function (event) {
-    if (event.origin !== 'https://enrollmentgateway-lab.github.io' || !event.data) return;
-    if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height), 5000)) + 'px';
-    if (event.data.type === 'student-lookup-select' && event.data.studentId) { const url = new URL(window.location.href); url.searchParams.set('sisid', event.data.studentId); url.searchParams.delete('first'); url.searchParams.delete('last'); window.location.assign(url); }
-    if (event.data.type === 'student-lookup-search' && event.data.values) { const url = new URL(window.location.href); ['first','last','sisid'].forEach(key => { const value = String(event.data.values[key] || '').trim(); if (value) url.searchParams.set(key, value); else url.searchParams.delete(key); }); window.location.assign(url); }
+    if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data) return;
+    if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+    if (event.data.type === 'student-lookup-search') updateSearch(event.data.values);
   });
-  frame.addEventListener('load', function () { frame.contentWindow.postMessage({ type:'student-lookup-data', payload:{ searched: {{first | default: '' | size}} > 0 || {{last | default: '' | size}} > 0 || {{sisid | default: '' | size}} > 0, resultCount:resultCount, query:query, candidates:candidates, profile:profile } }, 'https://enrollmentgateway-lab.github.io'); });
+  frame.addEventListener('load', function () {
+    frameReady = true;
+    sendData();
+  });
 }());
 </script>
