@@ -3,10 +3,10 @@
 <div id="studentLookupData" style="display:none">
   <div class="query"><span class="first">{{first | escape}}</span><span class="last">{{last | escape}}</span><span class="sisid">{{sisid | escape}}</span></div>
   <span class="result-count">{{student_lookup.size}}</span>
-  {% if student_lookup.size > 100 %}{% else %}{% for person in student_lookup %}<div class="candidate"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="status">{{person.status | escape}}</span><span class="record_created_date">{{person.record_created_date | escape}}</span><span class="term">{{person.term | escape}}</span><span class="year">{{person.year | escape}}</span><span class="church">{{person.church | escape}}</span></div>{% endfor %}{% endif %}
+  {% if student_lookup.size > 100 %}{% else %}{% for person in student_lookup %}<div class="candidate"><span class="SIS_ID">{{person.SIS_ID | escape}}</span><span class="first">{{person.first | escape}}</span><span class="last">{{person.last | escape}}</span><span class="email">{{person.email | escape}}</span><span class="phone">{{person.phone | escape}}</span><span class="program">{{person.program | escape}}</span><span class="status">{{person.status | escape}}</span><span class="record_created_date">{{person.record_created_date | escape}}</span><span class="term">{{person.term | escape}}</span><span class="year">{{person.year | escape}}</span><span class="church">{{person.church | escape}}</span><span class="app_degree">{{person.app_degree | escape}}</span><span class="app_round">{{person.app_round | escape}}</span><span class="app_status">{{person.app_status | escape}}</span><span class="app_term">{{person.app_term | escape}}</span><span class="app_year">{{person.app_year | escape}}</span><span class="app_f1">{{person.app_f1 | escape}}</span><span class="app_url">{{person.app_url | escape}}</span></div>{% endfor %}{% endif %}
 </div>
 
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v8" title="Student Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v9" title="Student Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   const frame = document.getElementById('studentLookupFrame');
@@ -14,7 +14,7 @@
   const queryNode = document.querySelector('#studentLookupData .query');
   const query = queryNode ? { first:read(queryNode,'first'), last:read(queryNode,'last'), sisid:read(queryNode,'sisid') } : {};
   const resultCount = Number(document.querySelector('#studentLookupData .result-count').textContent) || 0;
-  const candidates = Array.from(document.querySelectorAll('#studentLookupData .candidate')).map(node => ({ SIS_ID:read(node,'SIS_ID'), first:read(node,'first'), last:read(node,'last'), email:read(node,'email'), phone:read(node,'phone'), program:read(node,'program'), status:read(node,'status'), record_created_date:read(node,'record_created_date'), term:read(node,'term'), year:read(node,'year'), church:read(node,'church') }));
+  const candidates = Array.from(document.querySelectorAll('#studentLookupData .candidate')).map(node => ({ SIS_ID:read(node,'SIS_ID'), first:read(node,'first'), last:read(node,'last'), email:read(node,'email'), phone:read(node,'phone'), program:read(node,'program'), status:read(node,'status'), record_created_date:read(node,'record_created_date'), term:read(node,'term'), year:read(node,'year'), church:read(node,'church'), app_degree:read(node,'app_degree'), app_round:read(node,'app_round'), app_status:read(node,'app_status'), app_term:read(node,'app_term'), app_year:read(node,'app_year'), app_f1:read(node,'app_f1'), app_url:read(node,'app_url') }));
   const profile = null;
   window.addEventListener('message', function (event) {
     if (event.origin !== 'https://enrollmentgateway-lab.github.io' || !event.data) return;
