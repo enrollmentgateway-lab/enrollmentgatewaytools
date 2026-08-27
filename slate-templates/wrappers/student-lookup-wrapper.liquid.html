@@ -30,6 +30,51 @@
     return value == null ? '' : String(value).trim();
   }
 
+  function scalar(value, preferredKeys) {
+    if (!value || typeof value !== 'object') return value;
+    const keys = preferredKeys || ['display','label','name','value','text','url','href'];
+    for (let index = 0; index < keys.length; index += 1) {
+      if (value[keys[index]] != null) return value[keys[index]];
+    }
+    return '';
+  }
+
+  function decodeEntities(value) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text(value);
+    return textarea.value;
+  }
+
+  function plain(value) {
+    return decodeEntities(scalar(value)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function link(value) {
+    const raw = decodeEntities(scalar(value, ['url','href','value','text']));
+    const href = raw.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    return text(href ? (href[1] || href[2] || href[3]) : raw);
+  }
+
+  function linkLabel(value) {
+    const raw = decodeEntities(scalar(value));
+    return /<a\b/i.test(raw) ? plain(raw) : '';
+  }
+
+  function field(row, names) {
+    if (!row || typeof row !== 'object') return '';
+    const requested = Array.isArray(names) ? names : [names];
+    for (let index = 0; index < requested.length; index += 1) {
+      if (row[requested[index]] != null && text(scalar(row[requested[index]]))) return row[requested[index]];
+    }
+    const keys = Object.keys(row);
+    for (let index = 0; index < requested.length; index += 1) {
+      const normalized = requested[index].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const match = keys.find(function (key) { return key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized && text(scalar(row[key])); });
+      if (match) return row[match];
+    }
+    return '';
+  }
+
   function rowsFrom(response) {
     if (Array.isArray(response)) return response;
     if (response && Array.isArray(response.row)) return response.row;
@@ -37,27 +82,31 @@
   }
 
   function normalize(row) {
+    const rawName = field(row, ['name','full_name','fullname','person_name']);
+    const rawPersonUrl = field(row, ['url','record_url','person_url']);
+    const first = plain(field(row, ['first','first_name','firstname']));
+    const last = plain(field(row, ['last','last_name','lastname']));
     return {
-      status: text(row && row.status),
-      name: text(row && row.name),
-      email: text(row && row.email),
-      phone: text(row && row.phone),
-      pipeline: text(row && row.pipeline),
-      teachingsite: text(row && row.teachingsite),
-      birthdate: text(row && row.birthdate),
-      app_created_date: text(row && row.app_created_date),
-      decision_code: text(row && row.decision_code),
-      vear: text(row && (row.vear || row.year)),
-      term: text(row && row.term),
-      program: text(row && row.program),
-      url: text(row && row.url),
-      app_degree: text(row && row.app_degree),
-      app_round: text(row && row.app_round),
-      app_status: text(row && row.app_status),
-      app_term: text(row && row.app_term),
-      app_year: text(row && row.app_year),
-      app_f1: text(row && row.app_f1),
-      app_url: text(row && row.app_url)
+      status: plain(field(row, 'status')),
+      name: plain(rawName) || linkLabel(rawPersonUrl) || [first, last].filter(Boolean).join(' '),
+      email: plain(field(row, 'email')),
+      phone: plain(field(row, 'phone')),
+      pipeline: plain(field(row, 'pipeline')),
+      teachingsite: plain(field(row, ['teachingsite','teaching_site'])),
+      birthdate: plain(field(row, ['birthdate','birth_date'])),
+      app_created_date: plain(field(row, ['app_created_date','application_created_date'])),
+      decision_code: plain(field(row, ['decision_code','app_code'])),
+      vear: plain(field(row, ['vear','year'])),
+      term: plain(field(row, 'term')),
+      program: plain(field(row, 'program')),
+      url: link(rawPersonUrl) || link(rawName),
+      app_degree: plain(field(row, 'app_degree')),
+      app_round: plain(field(row, 'app_round')),
+      app_status: plain(field(row, 'app_status')),
+      app_term: plain(field(row, 'app_term')),
+      app_year: plain(field(row, 'app_year')),
+      app_f1: plain(field(row, 'app_f1')),
+      app_url: link(field(row, ['app_url','application_url']))
     };
   }
 

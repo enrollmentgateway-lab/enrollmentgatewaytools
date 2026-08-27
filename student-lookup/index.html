@@ -101,13 +101,16 @@
       }
       return decoded;
     }
-    function text(value) { const decoded = decodeEntities(value); return decoded === '' ? '—' : decoded; }
-    function value(value) { return decodeEntities(value).trim(); }
+    function value(rawValue) { return decodeEntities(rawValue).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
+    function text(rawValue) { const normalized = value(rawValue); return normalized === '' ? '—' : normalized; }
     function slateUrl(rawUrl) {
-      const decoded = value(rawUrl);
-      if (!decoded) return '';
+      const decoded = decodeEntities(rawUrl).trim();
+      const href = decoded.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const embeddedSlatePath = decoded.match(/(?:https?:\/\/enroll\.gs\.edu)?\/manage\/[^\s'"<>)]+/i);
+      const candidate = (href ? (href[1] || href[2] || href[3]) : embeddedSlatePath ? embeddedSlatePath[0] : decoded).replace(/^['"]|['"]$/g, '').trim();
+      if (!candidate) return '';
       try {
-        const url = new URL(decoded, allowedOrigin);
+        const url = new URL(candidate, allowedOrigin);
         return url.origin === allowedOrigin && /^https?:$/.test(url.protocol) ? url.href : '';
       } catch (error) { return ''; }
     }
