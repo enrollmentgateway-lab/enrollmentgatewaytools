@@ -65,7 +65,7 @@
       <dl id="application-fields" class="application-fields"></dl>
       <div class="application-document-footer">
         <span>Gateway Seminary Admissions</span>
-        <a id="application-link" class="application-link" href="#" target="_blank" rel="noopener noreferrer">View application in Slate <span aria-hidden="true">↗</span></a>
+        <a id="application-link" class="application-link" href="#" target="_blank" rel="noopener noreferrer">Open applicant application <span aria-hidden="true">↗</span></a>
       </div>
     </section>
     <div id="empty" class="empty">Enter a first name, last name, or student ID to begin.</div>
@@ -114,6 +114,14 @@
         return url.origin === allowedOrigin && /^https?:$/.test(url.protocol) ? url.href : '';
       } catch (error) { return ''; }
     }
+    function applicantApplicationUrl(rawUrl) {
+      const resolved = slateUrl(rawUrl);
+      if (!resolved) return '';
+      const url = new URL(resolved);
+      const applicationId = url.searchParams.get('id');
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationId || '')) return '';
+      return allowedOrigin + '/apply/?id=' + encodeURIComponent(applicationId);
+    }
     function showResultsLayout() { document.body.classList.remove('search-start'); }
     function renderApplication(record) {
       const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Entry Term','app_term'],['Entry Year','app_year'],['F-1','app_f1']];
@@ -124,7 +132,7 @@
       applicationStatus.textContent = value(record.app_status) || 'Status not provided';
       applicationFields.replaceChildren();
       fields.forEach(([label,key]) => { const field=document.createElement('div'); field.className='application-field'; const term=document.createElement('dt'); const description=document.createElement('dd'); term.textContent=label; description.textContent=text(record[key]); field.append(term,description); applicationFields.appendChild(field); });
-      const applicationUrl = slateUrl(record.app_url);
+      const applicationUrl = applicantApplicationUrl(record.app_url);
       applicationLink.hidden = !applicationUrl;
       if (applicationUrl) applicationLink.href = applicationUrl;
       else applicationLink.removeAttribute('href');

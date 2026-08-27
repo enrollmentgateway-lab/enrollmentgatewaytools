@@ -60,6 +60,17 @@
     return /<a\b/i.test(raw) ? plain(raw) : '';
   }
 
+  function applicantApplicationUrl(value) {
+    const candidate = link(value);
+    if (!candidate) return '';
+    try {
+      const url = new URL(candidate, window.location.origin);
+      const applicationId = url.searchParams.get('id');
+      if (url.origin !== window.location.origin || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationId || '')) return '';
+      return window.location.origin + '/apply/?id=' + encodeURIComponent(applicationId);
+    } catch (_) { return ''; }
+  }
+
   function field(row, names) {
     if (!row || typeof row !== 'object') return '';
     const requested = Array.isArray(names) ? names : [names];
@@ -119,7 +130,7 @@
       app_term: plain(field(row, 'app_term')),
       app_year: plain(field(row, 'app_year')),
       app_f1: plain(field(row, 'app_f1')),
-      app_url: link(field(row, ['app_url','application_url']))
+      app_url: applicantApplicationUrl(field(row, ['app_url','application_url']))
     };
   }
 
