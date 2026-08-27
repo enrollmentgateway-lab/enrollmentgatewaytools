@@ -81,24 +81,37 @@
     return response && response.row ? [response.row] : [];
   }
 
-  function normalize(row) {
+  function normalize(row, index) {
     const rawName = field(row, ['name','full_name','fullname','person_name']);
     const rawPersonUrl = field(row, ['url','record_url','person_url']);
     const first = plain(field(row, ['first','first_name','firstname']));
     const last = plain(field(row, ['last','last_name','lastname']));
+    const name = plain(rawName) || linkLabel(rawPersonUrl) || [first, last].filter(Boolean).join(' ');
+    const nameParts = name.split(/\s+/).filter(Boolean);
+    const resolvedFirst = first || (nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : name);
+    const resolvedLast = last || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
+    const sisid = plain(field(row, ['sisid','SIS_ID','student_id'])) || 'result-' + (index + 1);
+    const createdDate = plain(field(row, ['app_created_date','application_created_date']));
+    const year = plain(field(row, ['vear','year']));
     return {
+      SIS_ID: sisid,
+      first: resolvedFirst,
+      last: resolvedLast,
       status: plain(field(row, 'status')),
-      name: plain(rawName) || linkLabel(rawPersonUrl) || [first, last].filter(Boolean).join(' '),
+      name: name,
       email: plain(field(row, 'email')),
       phone: plain(field(row, 'phone')),
       pipeline: plain(field(row, 'pipeline')),
       teachingsite: plain(field(row, ['teachingsite','teaching_site'])),
       birthdate: plain(field(row, ['birthdate','birth_date'])),
-      app_created_date: plain(field(row, ['app_created_date','application_created_date'])),
+      app_created_date: createdDate,
+      record_created_date: createdDate,
       decision_code: plain(field(row, ['decision_code','app_code'])),
-      vear: plain(field(row, ['vear','year'])),
+      vear: year,
+      year: year,
       term: plain(field(row, 'term')),
       program: plain(field(row, 'program')),
+      church: '',
       url: link(rawPersonUrl) || link(rawName),
       app_degree: plain(field(row, 'app_degree')),
       app_round: plain(field(row, 'app_round')),
@@ -142,6 +155,16 @@
     if (frame.contentWindow) frame.contentWindow.postMessage({ type:'student-lookup-data', payload:payload }, frameOrigin);
   }
 
+  async function sendSelectedCandidate(studentId) {
+    const payload = await dataPromise;
+    const selected = payload.candidates.find(function (candidate) { return candidate.SIS_ID === text(studentId); });
+    if (!selected || !frame.contentWindow) return;
+    frame.contentWindow.postMessage({
+      type:'student-lookup-data',
+      payload:{ searched:true, resultCount:1, query:query, candidates:[selected], profile:selected }
+    }, frameOrigin);
+  }
+
   function updateSearch(values) {
     const url = new URL(window.location.href);
     ['first','last','sisid'].forEach(function (key) {
@@ -155,6 +178,7 @@
   window.addEventListener('message', function (event) {
     if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data) return;
     if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+    if (event.data.type === 'student-lookup-select' && event.data.studentId) sendSelectedCandidate(event.data.studentId);
     if (event.data.type === 'student-lookup-search') updateSearch(event.data.values);
   });
   frame.addEventListener('load', function () {
