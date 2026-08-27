@@ -69,6 +69,25 @@
 
       <div id="site-funnel" class="funnel" aria-label="Teaching site enrollment funnel"></div>
       <div id="site-funnel-empty" class="empty-state" hidden>No funnel records are available for this teaching site and period.</div>
+
+      <section id="site-stage-drilldown" class="stage-drilldown" aria-labelledby="site-stage-title" hidden>
+        <div class="stage-drilldown-head">
+          <div>
+            <div class="section-eyebrow">Stage Drilldown</div>
+            <h2 id="site-stage-title" class="stage-drilldown-title">Records</h2>
+            <p id="site-stage-summary" class="stage-drilldown-summary"></p>
+          </div>
+          <button id="site-stage-close" class="stage-drilldown-close" type="button" aria-label="Close stage drilldown">&times;</button>
+        </div>
+        <label class="stage-search-label" for="site-stage-search">Search these records</label>
+        <input id="site-stage-search" class="stage-search" type="search" autocomplete="off" placeholder="Name, email, student ID, or program">
+        <div class="panel stage-record-panel">
+          <table class="data-table stage-record-table">
+            <thead><tr><th>Name</th><th>Contact</th><th>Student ID</th><th>Program</th></tr></thead>
+            <tbody id="site-stage-records"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -113,6 +132,7 @@
       data.filters = data.filters || {};
       data.filters.site = ui.text(data.filters.site, '').trim();
       data.funnel = data.funnel || {};
+      data.funnelRecords = data.funnelRecords || {};
       const detailActive = Boolean(data.filters.site);
 
       document.getElementById('overview-view').hidden = detailActive;
@@ -146,6 +166,7 @@
       ui.setText('site-applications', ui.number(data.funnel.applications).toLocaleString());
       ui.setText('site-students', ui.number(data.funnel.students).toLocaleString());
       renderSiteFunnel();
+      closeSiteStage();
     }
 
     function renderInactive(inactive) {
@@ -174,9 +195,9 @@
 
     function renderSiteFunnel() {
       const stages = [
-        { label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#0f766e' },
-        { label:'Applicants', count:ui.number(data.funnel.applications), color:'#2563eb' },
-        { label:'Students', count:ui.number(data.funnel.students), color:'#d95d39' }
+        { key:'inquiries', label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#0f766e' },
+        { key:'applications', label:'Applicants', count:ui.number(data.funnel.applications), color:'#2563eb' },
+        { key:'students', label:'Students', count:ui.number(data.funnel.students), color:'#d95d39' }
       ];
       const root = document.getElementById('site-funnel'); root.replaceChildren();
       const empty = document.getElementById('site-funnel-empty');
@@ -201,10 +222,13 @@
         const topWidth = maxWidth - index * step;
         const bottomWidth = index === stages.length - 1 ? minWidth : Math.max(minWidth, topWidth - step);
         const inset = (topWidth - bottomWidth) / 2;
-        const element = document.createElement('div');
-        element.className = 'funnel-stage';
+        const element = document.createElement('button');
+        element.className = 'funnel-stage stage-trigger';
+        element.type = 'button';
         element.style.width = topWidth + 'px';
-        element.setAttribute('aria-label', stage.label + ': ' + stage.count.toLocaleString());
+        element.setAttribute('aria-label', 'View ' + stage.count.toLocaleString() + ' ' + stage.label + ' records');
+        element.setAttribute('aria-controls', 'site-stage-drilldown');
+        element.setAttribute('aria-expanded', 'false');
 
         const svg = document.createElementNS(svgNamespace, 'svg');
         svg.setAttribute('viewBox', '0 0 ' + topWidth + ' ' + height);
@@ -225,8 +249,72 @@
         const name = document.createElement('div'); name.className = 'stage-name'; name.textContent = stage.label;
         const count = document.createElement('div'); count.className = 'stage-count'; count.textContent = stage.count.toLocaleString();
         label.append(name, count);
-        element.append(svg, label); root.appendChild(element);
+        element.append(svg, label);
+        element.addEventListener('click', function () { openSiteStage(stage, element); });
+        root.appendChild(element);
       });
+    }
+
+    function clean(value) { return ui.text(value, '').trim(); }
+
+    function siteStageRecords(stage) {
+      const records = Array.isArray(data.funnelRecords[stage.key]) ? data.funnelRecords[stage.key] : [];
+      const terms = document.getElementById('site-stage-search').value.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!terms.length) return records;
+      return records.filter(function (record) {
+        const haystack = [record.name, record.email, record.phone, record.sisid, record.program, record.status].map(clean).join(' ').toLowerCase();
+        return terms.every(function (term) { return haystack.includes(term); });
+      });
+    }
+
+    function renderSiteStageRecords(stage) {
+      const body = document.getElementById('site-stage-records');
+      const records = siteStageRecords(stage);
+      const total = Array.isArray(data.funnelRecords[stage.key]) ? data.funnelRecords[stage.key].length : 0;
+      body.replaceChildren();
+      document.getElementById('site-stage-summary').textContent = records.length.toLocaleString() + ' of ' + total.toLocaleString() + ' record' + (total === 1 ? '' : 's') + ' shown for ' + data.filters.site + '.';
+      if (!records.length) {
+        const row = body.insertRow();
+        const cell = row.insertCell();
+        cell.colSpan = 4;
+        cell.appendChild(ui.emptyState(total ? 'No records match this search.' : 'Record details are not available for this stage.'));
+        return;
+      }
+      records.slice().sort(function (a, b) { return clean(a.name).localeCompare(clean(b.name), undefined, { sensitivity:'base' }); }).forEach(function (record, index) {
+        const row = body.insertRow();
+        const recordUrl = clean(record.record_url);
+        if (recordUrl) {
+          row.className = 'clickable stage-record-row';
+          row.tabIndex = 0;
+          row.setAttribute('role', 'link');
+          row.setAttribute('aria-label', 'Open ' + (clean(record.name) || 'record ' + (index + 1)) + ' in Slate');
+          row.addEventListener('click', function () { bridge.openRecord(recordUrl); });
+          row.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); bridge.openRecord(recordUrl); } });
+        }
+        const name = row.insertCell(); name.className = 'stage-record-name'; name.textContent = clean(record.name) || 'Unnamed record';
+        const contact = row.insertCell(); contact.textContent = [clean(record.email), clean(record.phone)].filter(Boolean).join(' · ') || '—';
+        const sisid = row.insertCell(); sisid.textContent = clean(record.sisid) || '—';
+        const program = row.insertCell(); program.textContent = clean(record.program) || '—';
+      });
+    }
+
+    let activeSiteStage = null;
+    function openSiteStage(stage, trigger) {
+      activeSiteStage = stage;
+      document.querySelectorAll('#site-funnel .stage-trigger').forEach(function (element) { element.setAttribute('aria-expanded', String(element === trigger)); });
+      document.getElementById('site-stage-title').textContent = stage.label + ' Records';
+      document.getElementById('site-stage-search').value = '';
+      document.getElementById('site-stage-drilldown').hidden = false;
+      renderSiteStageRecords(stage);
+      bridge.resize();
+      document.getElementById('site-stage-drilldown').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    function closeSiteStage() {
+      activeSiteStage = null;
+      document.getElementById('site-stage-drilldown').hidden = true;
+      document.querySelectorAll('#site-funnel .stage-trigger').forEach(function (element) { element.setAttribute('aria-expanded', 'false'); });
+      bridge.resize();
     }
 
     function changePeriod(value) {
@@ -237,6 +325,8 @@
     document.getElementById('overview-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('detail-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('site-back').addEventListener('click', function () { bridge.navigate({}, ['site']); });
+    document.getElementById('site-stage-close').addEventListener('click', closeSiteStage);
+    document.getElementById('site-stage-search').addEventListener('input', function () { if (activeSiteStage) renderSiteStageRecords(activeSiteStage); });
     document.getElementById('portal-home').addEventListener('click', function () {
       bridge.navigate({}, ['status', 'term', 'year', 'site']);
     });

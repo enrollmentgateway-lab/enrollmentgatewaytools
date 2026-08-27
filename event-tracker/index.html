@@ -18,6 +18,7 @@
 
   <div id="loading" class="loading">Waiting for Event data from Slate…</div>
   <main id="app" class="container" hidden>
+    <section id="event-overview-view">
     <div class="page-intro">
       <h1 class="intro-heading">Event Tracker</h1>
       <p class="intro-subtitle">See what each recruiting event cost and what it returned—registrants, inquiries, applicants, and students generated per dollar spent.</p>
@@ -83,6 +84,45 @@
         <div id="event-page-buttons" class="pagination-buttons"></div>
       </div>
     </div>
+    </section>
+
+    <section id="event-detail-view" class="event-detail" hidden>
+      <button id="event-back" class="back-button" type="button"><span aria-hidden="true">←</span> Back to Event Tracker</button>
+
+      <div class="page-intro event-detail-intro">
+        <div class="section-eyebrow">Event Funnel</div>
+        <h1 id="event-detail-title" class="intro-heading">Event</h1>
+        <p id="event-detail-subtitle" class="intro-subtitle">Current enrollment progress for people associated with this event.</p>
+      </div>
+
+      <div class="stat-bar event-funnel-stat-bar">
+        <div class="stat-cell"><div id="event-funnel-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries</div></div>
+        <div class="stat-cell"><div id="event-funnel-applicants" class="stat-val">0</div><div class="stat-lbl">Applicants</div></div>
+        <div class="stat-cell"><div id="event-funnel-students" class="stat-val">0</div><div class="stat-lbl">Students</div></div>
+      </div>
+
+      <div id="event-funnel" class="funnel" aria-label="Event enrollment funnel"></div>
+      <div id="event-funnel-empty" class="empty-state" hidden>No funnel records are available for this event.</div>
+
+      <section id="event-stage-drilldown" class="stage-drilldown" aria-labelledby="event-stage-title" hidden>
+        <div class="stage-drilldown-head">
+          <div>
+            <div class="section-eyebrow">Stage Drilldown</div>
+            <h2 id="event-stage-title" class="stage-drilldown-title">Records</h2>
+            <p id="event-stage-summary" class="stage-drilldown-summary"></p>
+          </div>
+          <button id="event-stage-close" class="stage-drilldown-close" type="button" aria-label="Close stage drilldown">&times;</button>
+        </div>
+        <label class="stage-search-label" for="event-stage-search">Search these records</label>
+        <input id="event-stage-search" class="stage-search" type="search" autocomplete="off" placeholder="Name, email, student ID, status, or program">
+        <div class="panel stage-record-panel">
+          <table class="data-table stage-record-table">
+            <thead><tr><th>Name</th><th>Contact</th><th>Student ID</th><th>Status</th><th>Program</th></tr></thead>
+            <tbody id="event-stage-records"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
   </main>
 
   <script src="../assets/dashboard-common.js"></script>
@@ -104,7 +144,7 @@
     let eventSearch = '';
     let useAdjustedApplicants = false;
     let adjustmentPercentage = 0;
-    window.DashboardBridge.create('event-tracker', render);
+    const eventBridge = window.DashboardBridge.create('event-tracker', render);
 
     function numeric(value) {
       const cleaned = String(value == null ? '' : value).trim().replace(/[$,]/g, '');
@@ -144,7 +184,8 @@
           startdateValue: startdate.value, enddateValue: enddate.value,
           year: startdate.year || enddate.year,
           registrants: numeric(event.registrants), expenses: expenses,
-          inquiries: inquiries, applicants: applicants, students: students
+          inquiries: inquiries, applicants: applicants, students: students,
+          people: matches
         };
       });
     }
@@ -210,6 +251,10 @@
     }
 
     function renderView() {
+      document.title = 'Event Tracker';
+      document.getElementById('event-overview-view').hidden = false;
+      document.getElementById('event-detail-view').hidden = true;
+      document.body.classList.remove('event-detail-active');
       const events = filteredEvents();
       const totals = events.reduce(function (sum, event) {
         sum.spend += event.expenses; sum.registrants += event.registrants; sum.inquiries += inquiryCount(event); sum.applicants += applicantCount(event); sum.students += event.students; return sum;
@@ -227,6 +272,166 @@
       document.getElementById('applicants-column-label').textContent = useAdjustedApplicants ? 'Adjusted Applicants*' : 'Applicants';
       document.getElementById('cost-column-label').textContent = useAdjustedApplicants ? 'Cost / Adjusted Applicant*' : 'Cost / Applicant';
       renderDrilldown(events);
+    }
+
+    function eventDateLabel(event) {
+      return event.startdate === event.enddate ? event.startdate : [event.startdate, event.enddate].filter(Boolean).join(' – ');
+    }
+
+    function openEvent(event) {
+      document.title = event.title + ' — Event Funnel';
+      document.getElementById('event-overview-view').hidden = true;
+      document.getElementById('event-detail-view').hidden = false;
+      document.body.classList.add('event-detail-active');
+      document.getElementById('event-detail-title').textContent = event.title;
+      const dateLabel = eventDateLabel(event);
+      document.getElementById('event-detail-subtitle').textContent = 'Current enrollment progress for people associated with this event' + (dateLabel ? ' — ' + dateLabel : '') + '.';
+      ui.setText('event-funnel-inquiries', inquiryCount(event).toLocaleString());
+      ui.setText('event-funnel-applicants', (event.applicants + event.students).toLocaleString());
+      ui.setText('event-funnel-students', event.students.toLocaleString());
+      renderEventFunnel(event);
+      closeEventStage();
+    }
+
+    function clean(value) { return ui.text(value, '').trim(); }
+
+    function eventPersonStage(person) {
+      const status = clean(person.status);
+      if (/^inquir(?:y|ies)\b/i.test(status)) return 'inquiries';
+      if (/^applicants?\b/i.test(status)) return 'applicants';
+      if (/^students?\b/i.test(status)) return 'students';
+      return '';
+    }
+
+    function peopleForEventStage(event, key) {
+      return (Array.isArray(event.people) ? event.people : []).filter(function (person) {
+        const stage = eventPersonStage(person);
+        if (key === 'inquiries') return Boolean(stage);
+        if (key === 'applicants') return stage === 'applicants' || stage === 'students';
+        return stage === 'students';
+      });
+    }
+
+    function renderEventFunnel(event) {
+      const stages = [
+        { key:'inquiries', label:'Inquiries', count:inquiryCount(event), color:'#0f766e' },
+        { key:'applicants', label:'Applicants', count:event.applicants + event.students, color:'#2563eb' },
+        { key:'students', label:'Students', count:event.students, color:'#d95d39' }
+      ];
+      const root = document.getElementById('event-funnel'); root.replaceChildren();
+      const empty = document.getElementById('event-funnel-empty');
+      const hasRecords = stages.some(function (stage) { return stage.count > 0; });
+      root.hidden = !hasRecords;
+      empty.hidden = hasRecords;
+      if (!hasRecords) return;
+
+      const maxWidth = 680;
+      const minWidth = 220;
+      const height = 80;
+      const step = (maxWidth - minWidth) / (stages.length - 1);
+      const svgNamespace = 'http://www.w3.org/2000/svg';
+
+      stages.forEach(function (stage, index) {
+        const topWidth = maxWidth - index * step;
+        const bottomWidth = index === stages.length - 1 ? minWidth : Math.max(minWidth, topWidth - step);
+        const inset = (topWidth - bottomWidth) / 2;
+        const element = document.createElement('button');
+        element.className = 'funnel-stage stage-trigger';
+        element.type = 'button';
+        element.style.width = topWidth + 'px';
+        element.setAttribute('aria-label', 'View ' + stage.count.toLocaleString() + ' ' + stage.label + ' records');
+        element.setAttribute('aria-controls', 'event-stage-drilldown');
+        element.setAttribute('aria-expanded', 'false');
+
+        const svg = document.createElementNS(svgNamespace, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + topWidth + ' ' + height);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        const definitions = document.createElementNS(svgNamespace, 'defs');
+        const gradient = document.createElementNS(svgNamespace, 'linearGradient');
+        gradient.id = 'event-funnel-gradient-' + index;
+        gradient.setAttribute('x1', '0'); gradient.setAttribute('y1', '0'); gradient.setAttribute('x2', '0'); gradient.setAttribute('y2', '1');
+        const topStop = document.createElementNS(svgNamespace, 'stop'); topStop.setAttribute('offset', '0%'); topStop.setAttribute('stop-color', stage.color);
+        const bottomStop = document.createElementNS(svgNamespace, 'stop'); bottomStop.setAttribute('offset', '100%'); bottomStop.setAttribute('stop-color', stage.color); bottomStop.setAttribute('stop-opacity', '.82');
+        gradient.append(topStop, bottomStop); definitions.appendChild(gradient); svg.appendChild(definitions);
+        const polygon = document.createElementNS(svgNamespace, 'polygon');
+        polygon.setAttribute('points', '0,0 ' + topWidth + ',0 ' + (topWidth - inset) + ',' + height + ' ' + inset + ',' + height);
+        polygon.setAttribute('fill', 'url(#' + gradient.id + ')'); svg.appendChild(polygon);
+
+        const label = document.createElement('div'); label.className = 'funnel-label';
+        const name = document.createElement('div'); name.className = 'stage-name'; name.textContent = stage.label;
+        const count = document.createElement('div'); count.className = 'stage-count'; count.textContent = stage.count.toLocaleString();
+        label.append(name, count);
+        element.append(svg, label);
+        element.addEventListener('click', function () { openEventStage(event, stage, element); });
+        root.appendChild(element);
+      });
+    }
+
+    function filteredEventStageRecords(event, stage) {
+      const records = peopleForEventStage(event, stage.key);
+      const terms = document.getElementById('event-stage-search').value.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!terms.length) return records;
+      return records.filter(function (record) {
+        const haystack = [record.name, record.email, record.phone, record.sisid, record.status, record.program].map(clean).join(' ').toLowerCase();
+        return terms.every(function (term) { return haystack.includes(term); });
+      });
+    }
+
+    function renderEventStageRecords(event, stage) {
+      const body = document.getElementById('event-stage-records');
+      const records = filteredEventStageRecords(event, stage);
+      const total = peopleForEventStage(event, stage.key).length;
+      body.replaceChildren();
+      let summary = records.length.toLocaleString() + ' of ' + total.toLocaleString() + ' record' + (total === 1 ? '' : 's') + ' shown for ' + event.title + '.';
+      if (stage.key !== 'students') summary += ' This stage is cumulative and includes records that reached later stages.';
+      document.getElementById('event-stage-summary').textContent = summary;
+      if (!records.length) {
+        const row = body.insertRow();
+        const cell = row.insertCell();
+        cell.colSpan = 5;
+        cell.appendChild(ui.emptyState(total ? 'No records match this search.' : 'Record details are not available for this stage.'));
+        return;
+      }
+      records.slice().sort(function (a, b) { return clean(a.name).localeCompare(clean(b.name), undefined, { sensitivity:'base' }); }).forEach(function (record, index) {
+        const row = body.insertRow();
+        const recordUrl = clean(record.record_url);
+        if (recordUrl) {
+          row.className = 'clickable stage-record-row';
+          row.tabIndex = 0;
+          row.setAttribute('role', 'link');
+          row.setAttribute('aria-label', 'Open ' + (clean(record.name) || 'record ' + (index + 1)) + ' in Slate');
+          row.addEventListener('click', function () { eventBridge.openRecord(recordUrl); });
+          row.addEventListener('keydown', function (keyEvent) { if (keyEvent.key === 'Enter' || keyEvent.key === ' ') { keyEvent.preventDefault(); eventBridge.openRecord(recordUrl); } });
+        }
+        const name = row.insertCell(); name.className = 'stage-record-name'; name.textContent = clean(record.name) || 'Unnamed record';
+        const contact = row.insertCell(); contact.textContent = [clean(record.email), clean(record.phone)].filter(Boolean).join(' · ') || '—';
+        const sisid = row.insertCell(); sisid.textContent = clean(record.sisid) || '—';
+        const status = row.insertCell(); status.textContent = clean(record.status) || '—';
+        const program = row.insertCell(); program.textContent = clean(record.program) || '—';
+      });
+    }
+
+    let activeEvent = null;
+    let activeEventStage = null;
+    function openEventStage(event, stage, trigger) {
+      activeEvent = event;
+      activeEventStage = stage;
+      document.querySelectorAll('#event-funnel .stage-trigger').forEach(function (element) { element.setAttribute('aria-expanded', String(element === trigger)); });
+      document.getElementById('event-stage-title').textContent = stage.label + ' Records';
+      document.getElementById('event-stage-search').value = '';
+      document.getElementById('event-stage-drilldown').hidden = false;
+      renderEventStageRecords(event, stage);
+      eventBridge.resize();
+      document.getElementById('event-stage-drilldown').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    function closeEventStage() {
+      activeEvent = null;
+      activeEventStage = null;
+      document.getElementById('event-stage-drilldown').hidden = true;
+      document.querySelectorAll('#event-funnel .stage-trigger').forEach(function (element) { element.setAttribute('aria-expanded', 'false'); });
+      eventBridge.resize();
     }
 
     function sortValue(event, column) {
@@ -284,8 +489,11 @@
         const applicants = applicantCount(event);
         const cost = applicantCost(event);
         const row = body.insertRow();
-        const title = row.insertCell(); title.className = 'event-title'; title.textContent = event.title;
-        const dates = row.insertCell(); dates.className = 'event-dates'; dates.textContent = event.startdate === event.enddate ? event.startdate : [event.startdate, event.enddate].filter(Boolean).join(' – ');
+        row.className = 'clickable-event';
+        row.addEventListener('click', function () { openEvent(event); });
+        const title = row.insertCell(); title.className = 'event-title';
+        const titleButton = document.createElement('button'); titleButton.className = 'event-title-button'; titleButton.type = 'button'; titleButton.textContent = event.title; titleButton.setAttribute('aria-label', 'Open funnel for ' + event.title); title.appendChild(titleButton);
+        const dates = row.insertCell(); dates.className = 'event-dates'; dates.textContent = eventDateLabel(event);
         [event.registrants.toLocaleString(), currency.format(event.expenses), inquiryCount(event).toLocaleString(), formatCount(applicants), event.students.toLocaleString()].forEach(function (value) {
           const cell = row.insertCell(); cell.className = 'align-right number'; cell.textContent = value;
         });
@@ -380,6 +588,12 @@
     document.getElementById('adjustment-percentage').addEventListener('change', function (event) {
       event.target.value = String(adjustmentPercentage);
     });
+    document.getElementById('event-back').addEventListener('click', function () {
+      closeEventStage();
+      renderView();
+    });
+    document.getElementById('event-stage-close').addEventListener('click', closeEventStage);
+    document.getElementById('event-stage-search').addEventListener('input', function () { if (activeEvent && activeEventStage) renderEventStageRecords(activeEvent, activeEventStage); });
     const stageInfoButton = document.getElementById('event-stage-info-button');
     const stageInfoPopover = document.getElementById('event-stage-info-popover');
     function setStageInfoOpen(open) {

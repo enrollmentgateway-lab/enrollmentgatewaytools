@@ -3,8 +3,9 @@
   Configure teaching_sites_persons to return all teaching-site records and use
   only the term and year URL parameters.
   The site funnel calls one JSON service query three times with the status values
-  inquiry, applicant, and student. Configure that query's status,
-  site, term, and year filters accordingly.
+  inquiry, applicant, and student. Configure that query's status, site, term,
+  and year filters accordingly. For record drilldowns, return name (or first and
+  last), email, phone, sisid, program, status, and optionally url/record_url.
 -->
 <div id="teachingSiteOverviewData" style="display:none">
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
@@ -29,6 +30,7 @@
   const payload = {
     filters: { term: pageUrl.searchParams.get('term') || '', year: pageUrl.searchParams.get('year') || '', site: pageUrl.searchParams.get('site') || '' },
     funnel: { inquiries:0, applications:0, students:0 },
+    funnelRecords: { inquiries:[], applications:[], students:[] },
     records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') }))
   };
   const allowedParams = new Set(['term', 'year', 'site']);
@@ -38,11 +40,57 @@
     if (response && Array.isArray(response.row)) return response.row;
     return response && response.row ? [response.row] : [];
   }
+  function decodeEntities(value) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = value == null ? '' : String(value);
+    return textarea.value;
+  }
+  function plain(value) {
+    return decodeEntities(value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function recordLink(value) {
+    const raw = decodeEntities(value);
+    const href = raw.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    if (href) return String(href[1] || href[2] || href[3]).trim();
+    const candidate = String(raw).trim();
+    if (/^manage\//i.test(candidate)) return '/' + candidate;
+    return /^(?:https?:\/\/|\/)/i.test(candidate) ? candidate : '';
+  }
+  function field(row, keys) {
+    const names = Array.isArray(keys) ? keys : [keys];
+    for (let index = 0; index < names.length; index += 1) {
+      const value = row && row[names[index]];
+      if (value != null && String(value).trim()) return String(value).trim();
+    }
+    const available = row && typeof row === 'object' ? Object.keys(row) : [];
+    for (let index = 0; index < names.length; index += 1) {
+      const normalized = names[index].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const match = available.find(key => key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized && row[key] != null && String(row[key]).trim());
+      if (match) return String(row[match]).trim();
+    }
+    return '';
+  }
+  function normalizeRecord(row, stage) {
+    const rawName = field(row, ['name','display_name']);
+    const rawUrl = field(row, ['record_url','person_url','url']);
+    const first = plain(field(row, ['first','first_name','firstname']));
+    const last = plain(field(row, ['last','last_name','lastname']));
+    const sisid = plain(field(row, ['sisid','SIS_ID','SISID','student_id']));
+    return {
+      name: plain(rawName) || [first, last].filter(Boolean).join(' '),
+      email: plain(field(row, 'email')),
+      phone: plain(field(row, ['phone','mobile'])),
+      sisid: sisid,
+      program: plain(field(row, ['program','program_name'])),
+      status: plain(field(row, 'status')) || funnelStatuses[stage],
+      record_url: recordLink(rawUrl || rawName) || (sisid ? window.location.origin + '/manage/database/record?lookup=' + encodeURIComponent(sisid) : '')
+    };
+  }
   async function loadFunnel() {
     if (!payload.filters.site) return payload;
     try {
       const stages = Object.keys(funnelStatuses);
-      const counts = await Promise.all(stages.map(async stage => {
+      const records = await Promise.all(stages.map(async stage => {
         const url = new URL(funnelService);
         url.searchParams.set('status', funnelStatuses[stage]);
         url.searchParams.set('year', payload.filters.year);
@@ -50,9 +98,12 @@
         url.searchParams.set('site', payload.filters.site);
         const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
         if (!response.ok) throw new Error('Teaching site query returned ' + response.status);
-        return rowsFrom(await response.json()).length;
+        return rowsFrom(await response.json()).map(row => normalizeRecord(row, stage));
       }));
-      stages.forEach((stage, index) => { payload.funnel[stage] = counts[index]; });
+      stages.forEach((stage, index) => {
+        payload.funnelRecords[stage] = records[index];
+        payload.funnel[stage] = records[index].length;
+      });
     } catch (error) {
       payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
       console.error('Teaching site funnel query failed.', error);
@@ -70,11 +121,18 @@
     (message.remove || []).forEach(key => { if (removableParams.has(key)) url.searchParams.delete(key); });
     window.location.assign(url.toString().replace(/\+/g, '%20'));
   }
+  function openRecord(value) {
+    try {
+      const url = new URL(String(value || ''), window.location.origin);
+      if (url.origin === window.location.origin) window.open(url.href, '_blank', 'noopener');
+    } catch (_) {}
+  }
   window.addEventListener('message', function (event) {
     if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data || event.data.dashboard !== dashboard) return;
     if (event.data.type === 'enrollment-dashboard-ready') sendData();
     if (event.data.type === 'enrollment-dashboard-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
     if (event.data.type === 'enrollment-dashboard-navigate') navigate(event.data);
+    if (event.data.type === 'enrollment-dashboard-open-record') openRecord(event.data.url);
   });
   frame.addEventListener('load', sendData);
 }());

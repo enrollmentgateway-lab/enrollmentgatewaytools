@@ -1,7 +1,12 @@
-<!-- Event Tracker Slate wrapper. Query/export names must remain events_general and event_people. -->
+<!--
+  Event Tracker Slate wrapper. Query/export names must remain events_general
+  and event_people. For stage drilldowns, event_people should return name (or
+  first and last), email, phone, sisid, program, status, and optionally
+  url/record_url in addition to the event title.
+-->
 <div id="eventTrackerData" style="display:none">
   <div class="events">{% for event in events_general %}<div class="event"><span class="title">{{ event.title | escape }}</span><span class="startdate">{{ event.startdate | escape }}</span><span class="enddate">{{ event.enddate | escape }}</span><span class="registrants">{{ event.registrants | escape }}</span><span class="expenses">{{ event.expenses | escape }}</span></div>{% endfor %}</div>
-  <div class="people">{% for person in event_people %}<div class="person"><span class="title">{{ person.title | escape }}</span><span class="status">{{ person.status | escape }}</span></div>{% endfor %}</div>
+  <div class="people">{% for person in event_people %}<div class="person"><span class="title">{{ person.title | escape }}</span><span class="status">{{ person.status | escape }}</span><span class="name">{{ person.name | escape }}</span><span class="first">{{ person.first | escape }}</span><span class="last">{{ person.last | escape }}</span><span class="email">{{ person.email | escape }}</span><span class="phone">{{ person.phone | escape }}</span><span class="sisid">{{ person.sisid | escape }}</span><span class="program">{{ person.program | escape }}</span><span class="record_url">{{ person.record_url | escape }}</span><span class="url">{{ person.url | escape }}</span></div>{% endfor %}</div>
 </div>
 <iframe id="eventTrackerFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/event-tracker/" title="Event Tracker" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
@@ -12,15 +17,55 @@
   const frame = document.getElementById('eventTrackerFrame');
   const root = document.getElementById('eventTrackerData');
   const read = (node, key) => { const el = node && node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
+  function decodeEntities(value) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = value == null ? '' : String(value);
+    return textarea.value;
+  }
+  function plain(value) {
+    return decodeEntities(value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function recordLink(value) {
+    const raw = decodeEntities(value);
+    const href = raw.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    if (href) return String(href[1] || href[2] || href[3]).trim();
+    const candidate = String(raw).trim();
+    if (/^manage\//i.test(candidate)) return '/' + candidate;
+    return /^(?:https?:\/\/|\/)/i.test(candidate) ? candidate : '';
+  }
+  function personRecord(node) {
+    const rawName = read(node, 'name');
+    const rawUrl = read(node, 'record_url') || read(node, 'url');
+    const first = plain(read(node, 'first'));
+    const last = plain(read(node, 'last'));
+    const sisid = plain(read(node, 'sisid'));
+    return {
+      title: plain(read(node, 'title')),
+      status: plain(read(node, 'status')),
+      name: plain(rawName) || [first, last].filter(Boolean).join(' '),
+      email: plain(read(node, 'email')),
+      phone: plain(read(node, 'phone')),
+      sisid: sisid,
+      program: plain(read(node, 'program')),
+      record_url: recordLink(rawUrl || rawName) || (sisid ? window.location.origin + '/manage/database/record?lookup=' + encodeURIComponent(sisid) : '')
+    };
+  }
   const payload = {
     events: Array.from(root.querySelectorAll('.event')).map(node => ({ title:read(node,'title'), startdate:read(node,'startdate'), enddate:read(node,'enddate'), registrants:read(node,'registrants'), expenses:read(node,'expenses') })),
-    people: Array.from(root.querySelectorAll('.person')).map(node => ({ title:read(node,'title'), status:read(node,'status') }))
+    people: Array.from(root.querySelectorAll('.person')).map(personRecord)
   };
   function sendData() { if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload }, frameOrigin); }
+  function openRecord(value) {
+    try {
+      const url = new URL(String(value || ''), window.location.origin);
+      if (url.origin === window.location.origin) window.open(url.href, '_blank', 'noopener');
+    } catch (_) {}
+  }
   window.addEventListener('message', function (event) {
     if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data || event.data.dashboard !== dashboard) return;
     if (event.data.type === 'enrollment-dashboard-ready') sendData();
     if (event.data.type === 'enrollment-dashboard-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+    if (event.data.type === 'enrollment-dashboard-open-record') openRecord(event.data.url);
   });
   frame.addEventListener('load', sendData);
 }());
