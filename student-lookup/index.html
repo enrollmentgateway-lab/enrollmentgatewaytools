@@ -19,7 +19,7 @@
     .empty { padding:28px; text-align:center; color:var(--ink-soft); border:1px dashed var(--line); border-radius:10px; }
     .results { display:grid; gap:10px; margin-top:18px; } .result { width:100%; height:auto; padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); text-align:left; box-shadow:none; } .result:hover { border-color:var(--accent-dark); background:#fffaf0; } .result-name { display:block; font-size:1rem; } .result-meta { display:block; margin-top:5px; color:var(--ink-soft); font-size:.85rem; font-weight:400; }
     .profile-head { display:flex; align-items:start; justify-content:space-between; gap:16px; } .profile-head h1 { margin:0; } .profile-actions { display:flex; align-items:center; gap:16px; } .profile-action-link { color:var(--ink-soft); font-size:.85rem; text-decoration:none; white-space:nowrap; } .profile-action-link:hover { color:var(--ink); text-decoration:underline; }
-    body.profile-mode main { max-width:1280px; } body.profile-mode .card { min-height:calc(100vh - 48px); padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; } body.profile-mode .profile { grid-template-columns:repeat(3,minmax(0,1fr)); } form[hidden] { display:none !important; }
+    body.profile-mode main { max-width:1280px; } body.profile-mode .card { min-height:calc(100vh - 48px); padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; } body.profile-mode .profile { grid-template-columns:repeat(3,minmax(0,1fr)); } [hidden] { display:none !important; }
     .application-document { position:relative; max-width:960px; margin:38px auto 10px; padding:38px 42px 32px; border:1px solid #d8d1c1; border-radius:3px; background:linear-gradient(90deg,transparent 0,transparent 29px,#eadfc8 30px,#eadfc8 31px,transparent 32px),#fffdf8; box-shadow:0 18px 45px #12172b1a,0 2px 5px #12172b14; }
     .application-document::before { content:""; position:absolute; inset:8px; pointer-events:none; border:1px solid #ebe5d8; }
     .application-document-header,.application-document-footer { position:relative; display:flex; align-items:center; justify-content:space-between; gap:22px; }
@@ -45,7 +45,7 @@
   <main class="card">
     <div class="profile-head">
       <h1 id="title">Student Lookup</h1>
-      <div class="profile-actions"><a id="recordLink" class="profile-action-link" href="#" target="_blank" rel="noopener noreferrer" hidden>View person in Slate ↗</a><a id="searchAgain" class="profile-action-link" href="#" hidden>Search again</a></div>
+      <div class="profile-actions"><a id="searchAgain" class="profile-action-link" href="#" hidden>Search again</a></div>
     </div>
     <p id="summary">Search by first name, last name, or student ID.</p>
     <form id="searchForm" class="search">
@@ -73,7 +73,6 @@
   <script>
     const results = document.getElementById('results');
     const title = document.getElementById('title');
-    const recordLink = document.getElementById('recordLink');
     const searchAgain = document.getElementById('searchAgain');
     const app = document.querySelector('main');
     const profile = document.getElementById('profile');
@@ -142,15 +141,11 @@
       if (!record) return;
       const fields = [['Program','program'],['Status','status'],['Pipeline','pipeline'],['Teaching Site','teachingsite'],['Email','email'],['Phone','phone'],['Birthdate','birthdate'],['Term','term'],['Year','vear']];
       fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','pipeline'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
-      const personUrl = slateUrl(record.url);
-      recordLink.hidden = !personUrl;
-      if (personUrl) recordLink.href = personUrl;
-      else recordLink.removeAttribute('href');
       renderApplication(record);
       showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=value(record.name) || 'Student Profile'; summary.textContent='Student profile';
     }
     function renderResults(candidates) {
-      showResultsLayout(); document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true; application.hidden=true; recordLink.hidden=true;
+      showResultsLayout(); document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true; application.hidden=true;
       candidates.forEach(person => { const button=document.createElement('button'); button.className='result'; button.type='button'; button.innerHTML='<span class="result-name"></span><span class="result-meta"></span>'; button.querySelector('.result-name').textContent=text(person.name); button.querySelector('.result-meta').textContent=[person.email, person.program, person.status, person.term, person.vear].filter(Boolean).map(decodeEntities).join(' · '); button.addEventListener('click', () => { renderProfile(person); requestAnimationFrame(resize); }); results.appendChild(button); });
       summary.textContent=`${candidates.length} matching students — select one to view the profile.`;
     }
@@ -160,12 +155,12 @@
       firstInput.value = data.query && data.query.first || '';
       lastInput.value = data.query && data.query.last || '';
       sisidInput.value = data.query && data.query.sisid || '';
-      if (data.loadError) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; recordLink.hidden=true; empty.hidden=false; empty.textContent=data.loadError; summary.textContent='Student Lookup unavailable'; requestAnimationFrame(resize); return; }
-      if (data.searched && Number(data.resultCount || candidates.length) > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; recordLink.hidden=true; empty.hidden=false; empty.textContent='More than 100 students matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
+      if (data.loadError) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent=data.loadError; summary.textContent='Student Lookup unavailable'; requestAnimationFrame(resize); return; }
+      if (data.searched && Number(data.resultCount || candidates.length) > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent='More than 100 students matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
       if (data.profile || candidates.length === 1) renderProfile(data.profile || candidates[0]);
       else if (candidates.length > 1) renderResults(candidates);
       else if (candidates.length) { empty.hidden=false; empty.textContent='Loading the student profile…'; summary.textContent='Student Lookup'; }
-      else if (data.searched) { showResultsLayout(); application.hidden=true; recordLink.hidden=true; empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
+      else if (data.searched) { showResultsLayout(); application.hidden=true; empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
       requestAnimationFrame(resize);
     });
     searchForm.addEventListener('submit', (event) => {
