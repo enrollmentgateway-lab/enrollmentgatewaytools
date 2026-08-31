@@ -2,10 +2,10 @@
   Teaching Sites Slate wrapper.
   Configure teaching_sites_persons to return all teaching-site records and use
   only the term and year URL parameters.
-  The site funnel calls one JSON service query three times with the status values
-  inquiry, applicant, and student. Configure that query's status, site, term,
-  and year filters accordingly. For record drilldowns, return name (or first and
-  last), email, phone, sisid, program, status, and optionally url/record_url.
+  The site funnel reuses the all_people JSON service from Record Lookup and calls
+  it with teachingsite, status, term, and year. Its current person fields are
+  per_name, per_email, per_phone, per_sisid, per_status, per_url, and app_degree.
+  Legacy field aliases remain as fallbacks during rollout.
 -->
 <div id="teachingSiteOverviewData" style="display:none">
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
@@ -16,7 +16,7 @@
   'use strict';
   const dashboard = 'teaching-site-overview';
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
-  const funnelService = 'https://enroll.gs.edu/manage/query/run?id=3095d9eb-e68c-4253-bd57-e57f310e0f14&cmd=service&output=json&h=65d38d9a-bfb3-4931-a95c-e74dc6cf9d5d';
+  const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
   const funnelStatuses = { inquiries:'inquiry', applications:'applicant', students:'student' };
   const frame = document.getElementById('teachingSiteOverviewFrame');
   const root = document.getElementById('teachingSiteOverviewData');
@@ -48,6 +48,11 @@
   function plain(value) {
     return decodeEntities(value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   }
+  function readableName(value) {
+    const normalized = plain(value);
+    const parts = normalized.split(',').map(part => part.trim()).filter(Boolean);
+    return parts.length > 1 ? parts.slice(1).concat(parts[0]).join(' ') : normalized;
+  }
   function recordLink(value) {
     const raw = decodeEntities(value);
     const href = raw.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
@@ -71,18 +76,18 @@
     return '';
   }
   function normalizeRecord(row, stage) {
-    const rawName = field(row, ['name','display_name']);
-    const rawUrl = field(row, ['record_url','person_url','url']);
+    const rawName = field(row, ['per_name','name','display_name','full_name','person_name']);
+    const rawUrl = field(row, ['per_url','record_url','person_url','url']);
     const first = plain(field(row, ['first','first_name','firstname']));
     const last = plain(field(row, ['last','last_name','lastname']));
-    const sisid = plain(field(row, ['sisid','SIS_ID','SISID','student_id']));
+    const sisid = plain(field(row, ['per_sisid','sisid','SIS_ID','SISID','student_id']));
     return {
-      name: plain(rawName) || [first, last].filter(Boolean).join(' '),
-      email: plain(field(row, 'email')),
-      phone: plain(field(row, ['phone','mobile'])),
+      name: readableName(rawName) || [first, last].filter(Boolean).join(' '),
+      email: plain(field(row, ['per_email','email'])),
+      phone: plain(field(row, ['per_phone','phone','mobile'])),
       sisid: sisid,
-      program: plain(field(row, ['program','program_name'])),
-      status: plain(field(row, 'status')) || funnelStatuses[stage],
+      program: plain(field(row, ['app_degree','program','program_name'])),
+      status: plain(field(row, ['per_status','status'])) || funnelStatuses[stage],
       record_url: recordLink(rawUrl || rawName) || (sisid ? window.location.origin + '/manage/database/record?lookup=' + encodeURIComponent(sisid) : '')
     };
   }
@@ -91,11 +96,11 @@
     try {
       const stages = Object.keys(funnelStatuses);
       const records = await Promise.all(stages.map(async stage => {
-        const url = new URL(funnelService);
+        const url = new URL(recordsService);
         url.searchParams.set('status', funnelStatuses[stage]);
         url.searchParams.set('year', payload.filters.year);
         url.searchParams.set('term', payload.filters.term);
-        url.searchParams.set('site', payload.filters.site);
+        url.searchParams.set('teachingsite', payload.filters.site);
         const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
         if (!response.ok) throw new Error('Teaching site query returned ' + response.status);
         return rowsFrom(await response.json()).map(row => normalizeRecord(row, stage));

@@ -36,13 +36,13 @@ Before publishing the Pipeline and Teaching Sites wrappers, configure their prim
 - `pipeline_persons` must apply `status`, `term`, and `year`.
 - `teaching_sites_persons` must return all teaching-site records and apply only `term` and `year`. Do not filter this export by `status`; the overview displays total records per site.
 
-The Teaching Sites wrapper also powers the site-specific funnel inside the same tool. It calls the configured JSON service query three times with these `status` values whenever a site detail page loads or its period dropdown changes:
+The Teaching Sites wrapper also powers the site-specific funnel inside the same tool. It reuses Record Lookup's `all_people` JSON service and calls it three times with these `status` values whenever a site detail page loads or its period dropdown changes:
 
 - `inquiry` → Inquiries
 - `applicant` → Applicants
 - `student` → Students
 
-Configure the service query to apply `status`, `site`, `term`, and `year` and return JSON in the form `{ "row": [...] }`. The `site` parameter must be an exact text match against the same teaching-site title returned as `teaching_sites_persons.title`. The wrapper writes spaces as `%20`; standard query parsing also decodes `+` as a space, so either encoding represents the same site name. No separate `teaching_site_*` Liquid exports are required.
+The service applies `status`, `teachingsite`, `term`, and `year` and returns JSON in the form `{ "row": [...] }`. Its person-detail exports are `per_name`, `per_email`, `per_phone`, `per_sisid`, `per_status`, `per_url`, and `app_degree`; the wrapper retains legacy aliases as fallbacks. The `teachingsite` parameter must be an exact text match against the same teaching-site title returned as `teaching_sites_persons.title`. The wrapper writes spaces as `%20`; standard query parsing also decodes `+` as a space, so either encoding represents the same site name. No separate `teaching_site_*` Liquid exports or count-only service are required.
 
 The Pipeline wrapper's `total_apps`, `total_inquiries`, `total_prospects`, and `total_students` exports are fixed comparison populations used as percentage denominators. Do not apply the `term` or `year` URL parameters to those total exports. The Teaching Sites wrapper no longer uses comparison-total exports.
 
