@@ -10,7 +10,7 @@
   app_round, app_status, app_term, app_year, app_f1, app_url,
   missing_mats_list, full_mats_list
 -->
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v14" title="Record Lookup" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v15" title="Record Lookup" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
@@ -23,6 +23,7 @@
   const searched = Boolean(query.search);
   let frameReady = false;
   let sendStarted = false;
+  let contentHeight = 600;
 
   function text(value) {
     return value == null ? '' : String(value).trim();
@@ -95,10 +96,10 @@
     if (!normalized) return [];
     const parts = normalized.split(' ');
     if (parts.length > 1) return [{ first:parts.slice(0, -1).join(' '), last:parts[parts.length - 1], sisid:'' }];
+    if (/\d/.test(normalized)) return [{ first:'', last:'', sisid:normalized }];
     return [
       { first:normalized, last:'', sisid:'' },
-      { first:'', last:normalized, sisid:'' },
-      { first:'', last:'', sisid:normalized }
+      { first:'', last:normalized, sisid:'' }
     ];
   }
 
@@ -147,7 +148,7 @@
   }
 
   async function findCandidates(search) {
-    const responses = await Promise.all(searchVariants(search).map(async function (values) {
+    const responses = await Promise.allSettled(searchVariants(search).map(async function (values) {
       const url = new URL(recordsService);
       url.searchParams.set('first', values.first);
       url.searchParams.set('last', values.last);
@@ -156,7 +157,9 @@
       if (!response.ok) throw new Error('Record Lookup query returned ' + response.status);
       return rowsFrom(await response.json());
     }));
-    const candidates = responses.flat().map(normalize);
+    const successful = responses.filter(function (response) { return response.status === 'fulfilled'; });
+    if (!successful.length && responses.length) throw responses[0].reason;
+    const candidates = successful.flatMap(function (response) { return response.value; }).map(normalize);
     const seen = new Set();
     return candidates.filter(function (candidate) {
       const key = candidate.SIS_ID || candidate.url || [candidate.name,candidate.email].join('|').toLowerCase();
@@ -217,9 +220,19 @@
     }
   }
 
+  function viewportHeight() {
+    const top = Math.max(0, frame.getBoundingClientRect().top);
+    return Math.max(600, Math.ceil(window.innerHeight - top));
+  }
+
+  function resizeFrame(height) {
+    if (height != null) contentHeight = Math.max(600, Math.min(Number(height) || 600, 10000));
+    frame.style.height = Math.max(contentHeight, viewportHeight()) + 'px';
+  }
+
   window.addEventListener('message', function (event) {
     if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data) return;
-    if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+    if (event.data.type === 'student-lookup-resize') resizeFrame(event.data.height);
     if (event.data.type === 'student-lookup-scroll-top') frame.scrollIntoView({ block:'start' });
     if (event.data.type === 'student-lookup-select' && event.data.studentId) sendSelectedCandidate(event.data.studentId);
     if (event.data.type === 'student-lookup-suggest' && text(event.data.search).length >= 2) sendSuggestions(event.data.search, event.data.requestId);
@@ -227,7 +240,10 @@
   });
   frame.addEventListener('load', function () {
     frameReady = true;
+    resizeFrame();
     sendData();
   });
+  window.addEventListener('resize', function () { resizeFrame(); });
+  resizeFrame();
 }());
 </script>
