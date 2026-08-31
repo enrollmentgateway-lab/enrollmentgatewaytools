@@ -28,6 +28,9 @@
     .application-document { position:relative; max-width:960px; margin:38px auto 10px; padding:38px 42px 32px; border:1px solid #d8d1c1; border-radius:3px; background:linear-gradient(90deg,transparent 0,transparent 29px,#eadfc8 30px,#eadfc8 31px,transparent 32px),#fffdf8; box-shadow:0 18px 45px #12172b1a,0 2px 5px #12172b14; }
     .application-document::before { content:""; position:absolute; inset:8px; pointer-events:none; border:1px solid #ebe5d8; }
     .application-document-header,.application-document-footer { position:relative; display:flex; align-items:center; justify-content:space-between; gap:22px; }
+    .application-document-meta { display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+    .international-badge { display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border:1px solid #2f6680; border-radius:999px; color:#234f65; background:#edf7fb; font-size:.66rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
+    .international-symbol { font-size:1rem; line-height:1; }
     .application-document-eyebrow { display:block; margin-bottom:8px; color:#8d7452; font-size:.66rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
     .application-document h2 { margin:0; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.5rem,3vw,2.1rem); font-weight:600; letter-spacing:-.015em; }
     .application-status { flex:0 0 auto; width:auto; height:auto; max-width:240px; padding:8px 13px; border:2px solid #a9762b; border-radius:0; color:#79501a; font-size:.7rem; font-weight:800; letter-spacing:.1em; text-align:center; text-transform:uppercase; transform:rotate(-1deg); background:transparent; box-shadow:none; cursor:default; }
@@ -56,7 +59,7 @@
     .application-field dd { margin:0; overflow-wrap:anywhere; font-family:Georgia,"Times New Roman",serif; font-size:1.05rem; line-height:1.35; }
     .application-document-footer { margin-top:28px; color:#8a806f; font-family:Georgia,"Times New Roman",serif; font-size:.82rem; }
     @media (max-width:800px) { body { min-height:572px; padding:14px; } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } .materials-toggle { width:auto; } body.profile-mode .profile { grid-template-columns:repeat(2,minmax(0,1fr)); } .application-document { padding:30px 28px 26px 38px; } }
-    @media (max-width:600px) { .profile-head { flex-direction:column; } .profile-actions { width:100%; justify-content:space-between; } .application-document-header,.application-document-footer { align-items:flex-start; flex-direction:column; } .application-fields { grid-template-columns:1fr; } .application-field,.application-field:nth-child(2n) { padding:17px 0; border-left:0; } }
+    @media (max-width:600px) { .profile-head { flex-direction:column; } .profile-actions { width:100%; justify-content:space-between; } .application-document-header,.application-document-footer { align-items:flex-start; flex-direction:column; } .application-document-meta { align-items:flex-start; } .application-fields { grid-template-columns:1fr; } .application-field,.application-field:nth-child(2n) { padding:17px 0; border-left:0; } }
     @media (max-width:520px) { body.profile-mode .profile { grid-template-columns:1fr; } }
     body.search-start { display:flex; min-height:100vh; align-items:center; } body.search-start main { width:100%; min-height:0; } body.search-start .card { min-height:0; padding:34px; }
   </style>
@@ -80,7 +83,10 @@
     <section id="application" class="application-document" aria-labelledby="application-title" hidden>
       <div class="application-document-header">
         <div><span class="application-document-eyebrow">Application Record</span><h2 id="application-title">Application</h2></div>
-        <button id="application-status" class="application-status" type="button" disabled>Status not provided</button>
+        <div class="application-document-meta">
+          <span id="international-badge" class="international-badge" hidden><span class="international-symbol" aria-hidden="true">&#127760;</span> International / F-1</span>
+          <button id="application-status" class="application-status" type="button" disabled>Status not provided</button>
+        </div>
       </div>
       <button id="materials-toggle" class="materials-toggle" type="button" aria-controls="materials-checklist" aria-expanded="false" hidden>View materials checklist</button>
       <section id="materials-checklist" class="materials-checklist" aria-labelledby="materials-checklist-title" hidden>
@@ -105,6 +111,7 @@
     const application = document.getElementById('application');
     const applicationTitle = document.getElementById('application-title');
     const applicationStatus = document.getElementById('application-status');
+    const internationalBadge = document.getElementById('international-badge');
     const materialsToggle = document.getElementById('materials-toggle');
     const materialsChecklist = document.getElementById('materials-checklist');
     const materialsList = document.getElementById('materials-list');
@@ -156,13 +163,14 @@
     }
     function renderApplication(record) {
       const isStudent = value(record.status).toLowerCase() === 'student';
-      const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Term',isStudent ? 'app_term' : 'term'],['Year',isStudent ? 'app_year' : 'vear'],['F-1','app_f1']];
+      const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Term',isStudent ? 'app_term' : 'term'],['Year',isStudent ? 'app_year' : 'vear']];
       const applicationKeys = ['app_degree','app_round','app_status','app_created_date','decision_code','app_term','app_year','app_f1','missing_mats_list','full_mats_list'];
       const hasApplication = applicationKeys.some(key => value(record[key])) || value(record.app_url);
       application.hidden = !hasApplication;
       if (!hasApplication) return;
       applicationTitle.textContent = value(record.app_degree) || 'Application';
       const applicationStatusValue = value(record.app_status);
+      internationalBadge.hidden = value(record.app_f1).toLowerCase() !== 'yes';
       applicationStatus.textContent = applicationStatusValue || 'Status not provided';
       materialsChecklist.hidden = true;
       const materialsCount = renderMaterialsChecklist(record);
