@@ -25,8 +25,24 @@
     .application-document-header,.application-document-footer { position:relative; display:flex; align-items:center; justify-content:space-between; gap:22px; }
     .application-document-eyebrow { display:block; margin-bottom:8px; color:#8d7452; font-size:.66rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
     .application-document h2 { margin:0; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.5rem,3vw,2.1rem); font-weight:600; letter-spacing:-.015em; }
-    .application-status { flex:0 0 auto; max-width:240px; padding:8px 13px; border:2px solid #a9762b; color:#79501a; font-size:.7rem; font-weight:800; letter-spacing:.1em; text-align:center; text-transform:uppercase; transform:rotate(-1deg); }
+    .application-status { flex:0 0 auto; width:auto; height:auto; max-width:240px; padding:8px 13px; border:2px solid #a9762b; border-radius:0; color:#79501a; font-size:.7rem; font-weight:800; letter-spacing:.1em; text-align:center; text-transform:uppercase; transform:rotate(-1deg); background:transparent; box-shadow:none; cursor:default; }
+    .application-status:disabled { opacity:1; color:#79501a; }
+    .application-status.is-interactive { cursor:pointer; }
+    .application-status.is-interactive::after { content:"View checklist"; display:block; margin-top:5px; font-size:.55rem; letter-spacing:.08em; }
+    .application-status.is-interactive:hover { background:#fff4d8; }
+    .application-status.is-interactive:focus-visible { outline:3px solid #e3b456; outline-offset:3px; }
+    .application-status:active { transform:rotate(-1deg); box-shadow:none; }
     .application-document-rule { position:relative; height:4px; margin:25px 0 9px; border-top:1px solid #b9ad98; border-bottom:1px solid #ded6c8; }
+    .materials-checklist { position:relative; margin:24px 0 4px; padding:20px 22px; border:1px solid #d8d1c1; background:#fffaf0; }
+    .materials-checklist h3 { margin:0 0 14px; font-family:Georgia,"Times New Roman",serif; font-size:1.15rem; font-weight:600; }
+    .materials-list { display:grid; gap:9px; margin:0; padding:0; list-style:none; }
+    .materials-item { display:flex; align-items:center; justify-content:space-between; gap:18px; padding-bottom:9px; border-bottom:1px solid #e5ddcf; }
+    .materials-item:last-child { padding-bottom:0; border-bottom:0; }
+    .materials-name { font-family:Georgia,"Times New Roman",serif; line-height:1.35; }
+    .materials-state { flex:0 0 auto; font-size:.65rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+    .materials-state.missing { color:#a24332; }
+    .materials-state.received { color:#2a6b3c; }
+    .materials-empty { margin:0; color:#877b68; font-family:Georgia,"Times New Roman",serif; }
     .application-fields { position:relative; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin:0; }
     .application-field { min-width:0; padding:19px 20px 18px 0; border-bottom:1px solid #ded8cc; }
     .application-field:nth-child(2n) { padding-right:0; padding-left:28px; border-left:1px solid #ded8cc; }
@@ -57,8 +73,13 @@
     <section id="application" class="application-document" aria-labelledby="application-title" hidden>
       <div class="application-document-header">
         <div><span class="application-document-eyebrow">Application Record</span><h2 id="application-title">Application</h2></div>
-        <div id="application-status" class="application-status">Status not provided</div>
+        <button id="application-status" class="application-status" type="button" aria-controls="materials-checklist" aria-expanded="false" disabled>Status not provided</button>
       </div>
+      <section id="materials-checklist" class="materials-checklist" aria-labelledby="materials-checklist-title" hidden>
+        <h3 id="materials-checklist-title">Materials Checklist</h3>
+        <ul id="materials-list" class="materials-list"></ul>
+        <p id="materials-empty" class="materials-empty" hidden>No checklist items were provided.</p>
+      </section>
       <div class="application-document-rule"></div>
       <dl id="application-fields" class="application-fields"></dl>
       <div class="application-document-footer">
@@ -76,6 +97,9 @@
     const application = document.getElementById('application');
     const applicationTitle = document.getElementById('application-title');
     const applicationStatus = document.getElementById('application-status');
+    const materialsChecklist = document.getElementById('materials-checklist');
+    const materialsList = document.getElementById('materials-list');
+    const materialsEmpty = document.getElementById('materials-empty');
     const applicationFields = document.getElementById('application-fields');
     const empty = document.getElementById('empty');
     const summary = document.getElementById('summary');
@@ -98,16 +122,37 @@
     }
     function value(rawValue) { return decodeEntities(rawValue).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
     function text(rawValue) { const normalized = value(rawValue); return normalized === '' ? '—' : normalized; }
+    function list(rawValue) {
+      const seen = new Set();
+      return decodeEntities(rawValue).replace(/<[^>]*>/g, ' ').split(',').map(item => item.replace(/\s+/g, ' ').trim()).filter(item => { const key=item.toLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; });
+    }
+    function renderMaterialsChecklist(record) {
+      const allItems = list(record.full_mats_list);
+      const missingItems = list(record.missing_mats_list);
+      const missingKeys = new Set(missingItems.map(item => item.toLowerCase()));
+      missingItems.forEach(item => { if (!allItems.some(existing => existing.toLowerCase() === item.toLowerCase())) allItems.push(item); });
+      materialsList.replaceChildren();
+      allItems.forEach(item => { const row=document.createElement('li'); row.className='materials-item'; const name=document.createElement('span'); name.className='materials-name'; name.textContent=item; const state=document.createElement('span'); const isMissing=missingKeys.has(item.toLowerCase()); state.className='materials-state ' + (isMissing ? 'missing' : 'received'); state.textContent=isMissing ? 'Missing' : 'Received'; row.append(name,state); materialsList.appendChild(row); });
+      materialsEmpty.hidden = allItems.length > 0;
+    }
     function showResultsLayout() { document.body.classList.remove('search-start'); }
     function renderApplication(record) {
       const isStudent = value(record.status).toLowerCase() === 'student';
       const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Term',isStudent ? 'app_term' : 'term'],['Year',isStudent ? 'app_year' : 'vear'],['F-1','app_f1']];
-      const applicationKeys = ['app_degree','app_round','app_status','app_created_date','decision_code','app_term','app_year','app_f1'];
+      const applicationKeys = ['app_degree','app_round','app_status','app_created_date','decision_code','app_term','app_year','app_f1','missing_mats_list','full_mats_list'];
       const hasApplication = applicationKeys.some(key => value(record[key])) || value(record.app_url);
       application.hidden = !hasApplication;
       if (!hasApplication) return;
       applicationTitle.textContent = value(record.app_degree) || 'Application';
-      applicationStatus.textContent = value(record.app_status) || 'Status not provided';
+      const applicationStatusValue = value(record.app_status);
+      const hasMaterialsChecklist = applicationStatusValue.toLowerCase() === 'awaiting materials';
+      applicationStatus.textContent = applicationStatusValue || 'Status not provided';
+      applicationStatus.disabled = !hasMaterialsChecklist;
+      applicationStatus.classList.toggle('is-interactive', hasMaterialsChecklist);
+      applicationStatus.setAttribute('aria-expanded', 'false');
+      applicationStatus.title = hasMaterialsChecklist ? 'View materials checklist' : '';
+      materialsChecklist.hidden = true;
+      renderMaterialsChecklist(record);
       applicationFields.replaceChildren();
       fields.forEach(([label,key]) => { const field=document.createElement('div'); field.className='application-field'; const term=document.createElement('dt'); const description=document.createElement('dd'); term.textContent=label; description.textContent=text(record[key]); field.append(term,description); applicationFields.appendChild(field); });
     }
@@ -146,6 +191,7 @@
       window.parent.postMessage({ type:'student-lookup-search', values }, '*');
     });
     searchAgain.addEventListener('click', (event) => { event.preventDefault(); window.parent.postMessage({ type:'student-lookup-search', values:{} }, '*'); });
+    applicationStatus.addEventListener('click', () => { if (applicationStatus.disabled) return; const expanded=applicationStatus.getAttribute('aria-expanded') === 'true'; applicationStatus.setAttribute('aria-expanded', String(!expanded)); materialsChecklist.hidden=expanded; requestAnimationFrame(resize); });
     window.addEventListener('load', () => { resize(); setTimeout(resize, 300); }); new ResizeObserver(resize).observe(document.documentElement);
   </script>
 </body>
