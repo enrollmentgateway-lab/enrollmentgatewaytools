@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Student Lookup</title>
+  <title>Record Lookup</title>
   <style>
     :root { --ink:#12172b; --ink-soft:#5b6072; --line:#e1e3ea; --panel:#fff; --bg:#f5f6f8; --accent:#f5a623; --accent-dark:#c9860f; font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); }
     * { box-sizing:border-box; } html, body { min-height:100%; } body { margin:0; min-height:100vh; background:var(--bg); padding:24px; } main { max-width:860px; min-height:calc(100vh - 48px); margin:auto; }
@@ -33,10 +33,8 @@
     .application-field dt { margin:0 0 7px; color:#877b68; font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
     .application-field dd { margin:0; overflow-wrap:anywhere; font-family:Georgia,"Times New Roman",serif; font-size:1.05rem; line-height:1.35; }
     .application-document-footer { margin-top:28px; color:#8a806f; font-family:Georgia,"Times New Roman",serif; font-size:.82rem; }
-    .application-link { position:relative; display:inline-flex; align-items:center; gap:8px; padding:10px 15px; border:1px solid var(--ink); border-radius:2px; color:#fff; font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:.78rem; font-weight:750; text-decoration:none; background:var(--ink); }
-    .application-link:hover { color:var(--ink); background:#fffdf8; }
     @media (max-width:800px) { body { padding:14px; } main { min-height:calc(100vh - 28px); } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } body.profile-mode .profile { grid-template-columns:repeat(2,minmax(0,1fr)); } .application-document { padding:30px 28px 26px 38px; } }
-    @media (max-width:600px) { .profile-head { flex-direction:column; } .profile-actions { width:100%; justify-content:space-between; } .application-document-header,.application-document-footer { align-items:flex-start; flex-direction:column; } .application-fields { grid-template-columns:1fr; } .application-field,.application-field:nth-child(2n) { padding:17px 0; border-left:0; } .application-link { width:100%; justify-content:center; } }
+    @media (max-width:600px) { .profile-head { flex-direction:column; } .profile-actions { width:100%; justify-content:space-between; } .application-document-header,.application-document-footer { align-items:flex-start; flex-direction:column; } .application-fields { grid-template-columns:1fr; } .application-field,.application-field:nth-child(2n) { padding:17px 0; border-left:0; } }
     @media (max-width:520px) { body.profile-mode .profile { grid-template-columns:1fr; } }
     body.search-start { display:flex; align-items:center; } body.search-start main { width:100%; min-height:0; } body.search-start .card { min-height:0; padding:34px; }
   </style>
@@ -44,7 +42,7 @@
 <body class="search-start">
   <main class="card">
     <div class="profile-head">
-      <h1 id="title">Student Lookup</h1>
+      <h1 id="title">Record Lookup</h1>
       <div class="profile-actions"><a id="searchAgain" class="profile-action-link" href="#" hidden>Search again</a></div>
     </div>
     <p id="summary">Search by first name, last name, or student ID.</p>
@@ -65,7 +63,6 @@
       <dl id="application-fields" class="application-fields"></dl>
       <div class="application-document-footer">
         <span>Gateway Seminary Admissions</span>
-        <a id="application-link" class="application-link" href="#" target="_blank" rel="noopener noreferrer">Open applicant application <span aria-hidden="true">↗</span></a>
       </div>
     </section>
     <div id="empty" class="empty">Enter a first name, last name, or student ID to begin.</div>
@@ -80,7 +77,6 @@
     const applicationTitle = document.getElementById('application-title');
     const applicationStatus = document.getElementById('application-status');
     const applicationFields = document.getElementById('application-fields');
-    const applicationLink = document.getElementById('application-link');
     const empty = document.getElementById('empty');
     const summary = document.getElementById('summary');
     const searchForm = document.getElementById('searchForm');
@@ -102,39 +98,18 @@
     }
     function value(rawValue) { return decodeEntities(rawValue).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
     function text(rawValue) { const normalized = value(rawValue); return normalized === '' ? '—' : normalized; }
-    function slateUrl(rawUrl) {
-      const decoded = decodeEntities(rawUrl).trim();
-      const href = decoded.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
-      const embeddedSlatePath = decoded.match(/(?:https?:\/\/enroll\.gs\.edu)?\/manage\/[^\s'"<>)]+/i);
-      const candidate = (href ? (href[1] || href[2] || href[3]) : embeddedSlatePath ? embeddedSlatePath[0] : decoded).replace(/^['"]|['"]$/g, '').trim();
-      if (!candidate) return '';
-      try {
-        const url = new URL(candidate, allowedOrigin);
-        return url.origin === allowedOrigin && /^https?:$/.test(url.protocol) ? url.href : '';
-      } catch (error) { return ''; }
-    }
-    function applicantApplicationUrl(rawUrl) {
-      const resolved = slateUrl(rawUrl);
-      if (!resolved) return '';
-      const url = new URL(resolved);
-      const applicationId = url.searchParams.get('id');
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationId || '')) return '';
-      return allowedOrigin + '/apply/?id=' + encodeURIComponent(applicationId);
-    }
     function showResultsLayout() { document.body.classList.remove('search-start'); }
     function renderApplication(record) {
-      const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Entry Term','app_term'],['Entry Year','app_year'],['F-1','app_f1']];
-      const hasApplication = fields.some(([,key]) => value(record[key])) || value(record.app_url);
+      const isStudent = value(record.status).toLowerCase() === 'student';
+      const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Term',isStudent ? 'app_term' : 'term'],['Year',isStudent ? 'app_year' : 'vear'],['F-1','app_f1']];
+      const applicationKeys = ['app_degree','app_round','app_status','app_created_date','decision_code','app_term','app_year','app_f1'];
+      const hasApplication = applicationKeys.some(key => value(record[key])) || value(record.app_url);
       application.hidden = !hasApplication;
       if (!hasApplication) return;
       applicationTitle.textContent = value(record.app_degree) || 'Application';
       applicationStatus.textContent = value(record.app_status) || 'Status not provided';
       applicationFields.replaceChildren();
       fields.forEach(([label,key]) => { const field=document.createElement('div'); field.className='application-field'; const term=document.createElement('dt'); const description=document.createElement('dd'); term.textContent=label; description.textContent=text(record[key]); field.append(term,description); applicationFields.appendChild(field); });
-      const applicationUrl = applicantApplicationUrl(record.app_url);
-      applicationLink.hidden = !applicationUrl;
-      if (applicationUrl) applicationLink.href = applicationUrl;
-      else applicationLink.removeAttribute('href');
     }
     function renderProfile(record) {
       profile.innerHTML = '';
@@ -142,12 +117,13 @@
       const fields = [['Program','program'],['Status','status'],['Pipeline','pipeline'],['Teaching Site','teachingsite'],['Email','email'],['Phone','phone'],['Birthdate','birthdate'],['Term','term'],['Year','vear']];
       fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','pipeline'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
       renderApplication(record);
-      showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=value(record.name) || 'Student Profile'; summary.textContent='Student profile';
+      const status = value(record.status);
+      showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=value(record.name) || 'Record Profile'; summary.textContent=(status || 'Record') + ' profile';
     }
     function renderResults(candidates) {
       showResultsLayout(); document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true; application.hidden=true;
       candidates.forEach(person => { const button=document.createElement('button'); button.className='result'; button.type='button'; button.innerHTML='<span class="result-name"></span><span class="result-meta"></span>'; button.querySelector('.result-name').textContent=text(person.name); button.querySelector('.result-meta').textContent=[person.email, person.program, person.status, person.term, person.vear].filter(Boolean).map(decodeEntities).join(' · '); button.addEventListener('click', () => { renderProfile(person); requestAnimationFrame(resize); }); results.appendChild(button); });
-      summary.textContent=`${candidates.length} matching students — select one to view the profile.`;
+      summary.textContent=`${candidates.length} matching records — select one to view the profile.`;
     }
     window.addEventListener('message', (event) => {
       if (event.origin !== allowedOrigin || !event.data || event.data.type !== 'student-lookup-data') return;
@@ -155,12 +131,12 @@
       firstInput.value = data.query && data.query.first || '';
       lastInput.value = data.query && data.query.last || '';
       sisidInput.value = data.query && data.query.sisid || '';
-      if (data.loadError) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent=data.loadError; summary.textContent='Student Lookup unavailable'; requestAnimationFrame(resize); return; }
-      if (data.searched && Number(data.resultCount || candidates.length) > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent='More than 100 students matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
+      if (data.loadError) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent=data.loadError; summary.textContent='Record Lookup unavailable'; requestAnimationFrame(resize); return; }
+      if (data.searched && Number(data.resultCount || candidates.length) > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent='More than 100 records matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
       if (data.profile || candidates.length === 1) renderProfile(data.profile || candidates[0]);
       else if (candidates.length > 1) renderResults(candidates);
-      else if (candidates.length) { empty.hidden=false; empty.textContent='Loading the student profile…'; summary.textContent='Student Lookup'; }
-      else if (data.searched) { showResultsLayout(); application.hidden=true; empty.hidden=false; empty.textContent='No students matched that search.'; summary.textContent='Student Lookup'; }
+      else if (candidates.length) { empty.hidden=false; empty.textContent='Loading the record profile…'; summary.textContent='Record Lookup'; }
+      else if (data.searched) { showResultsLayout(); application.hidden=true; empty.hidden=false; empty.textContent='No records matched that search.'; summary.textContent='Record Lookup'; }
       requestAnimationFrame(resize);
     });
     searchForm.addEventListener('submit', (event) => {

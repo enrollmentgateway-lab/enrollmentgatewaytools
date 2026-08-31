@@ -1,5 +1,5 @@
 <!--
-  Student Lookup Slate wrapper.
+  Record Lookup Slate wrapper.
 
   This wrapper does not require a portal query. It calls the configured Slate
   JSON service after the user searches by first name, last name, or SIS ID,
@@ -9,7 +9,7 @@
   app_created_date, decision_code, vear, term, program, url, app_degree,
   app_round, app_status, app_term, app_year, app_f1, app_url
 -->
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v10" title="Student Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v11" title="Record Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
@@ -58,17 +58,6 @@
   function linkLabel(value) {
     const raw = decodeEntities(scalar(value));
     return /<a\b/i.test(raw) ? plain(raw) : '';
-  }
-
-  function applicantApplicationUrl(value) {
-    const candidate = link(value);
-    if (!candidate) return '';
-    try {
-      const url = new URL(candidate, window.location.origin);
-      const applicationId = url.searchParams.get('id');
-      if (url.origin !== window.location.origin || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationId || '')) return '';
-      return window.location.origin + '/apply/?id=' + encodeURIComponent(applicationId);
-    } catch (_) { return ''; }
   }
 
   function field(row, names) {
@@ -130,7 +119,7 @@
       app_term: plain(field(row, 'app_term')),
       app_year: plain(field(row, 'app_year')),
       app_f1: plain(field(row, 'app_f1')),
-      app_url: applicantApplicationUrl(field(row, ['app_url','application_url']))
+      app_url: link(field(row, ['app_url','application_url']))
     };
   }
 
@@ -147,12 +136,12 @@
         cache: 'no-store',
         headers: { Accept:'application/json' }
       });
-      if (!response.ok) throw new Error('Student Lookup query returned ' + response.status);
+      if (!response.ok) throw new Error('Record Lookup query returned ' + response.status);
       payload.candidates = rowsFrom(await response.json()).map(normalize);
       payload.resultCount = payload.candidates.length;
     } catch (error) {
-      console.error('Unable to load Student Lookup records.', error);
-      payload.loadError = 'Unable to load student records from Slate. Please try again.';
+      console.error('Unable to load Record Lookup records.', error);
+      payload.loadError = 'Unable to load records from Slate. Please try again.';
     }
     return payload;
   }

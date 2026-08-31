@@ -9,8 +9,8 @@ This repository is the single source of truth for the Enrollment Intelligence Hu
 - `slate-templates/wrappers/` — the small wrapper files you paste into Slate.
 - `slate-templates/full-page-backups/` — the old self-contained Liquid dashboards, retained only for rollback/reference.
 - `iframe-bridge-test/` — working proof of concept for Slate query data sent to a GitHub-hosted iframe with automatic height resizing.
-- `student-lookup/` — GitHub-hosted student search/profile interface.
-- `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Student Lookup portal.
+- `student-lookup/` — GitHub-hosted record search/profile interface.
+- `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Record Lookup portal.
 - `regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
 - `slate-templates/wrappers/regional-campus-wrapper.liquid.html` — the Slate query wrapper for the Regional Campus portal.
 - `pipeline-overview/`, `teaching-site-overview/`, `event-tracker/`, and `funnel-overview/` — GitHub-hosted dashboard interfaces.
