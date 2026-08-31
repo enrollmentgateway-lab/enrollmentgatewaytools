@@ -1,0 +1,212 @@
+name: Telegram Codex request
+
+on:
+  repository_dispatch:
+    types: [telegram_codex]
+
+permissions: {}
+
+concurrency:
+  group: telegram-codex-${{ github.event.client_payload.request_id }}
+  cancel-in-progress: true
+
+jobs:
+  generate_patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_patch: ${{ steps.patch.outputs.has_patch }}
+      artifact_name: ${{ steps.patch.outputs.artifact_name }}
+    steps:
+      - name: Validate request
+        env:
+          CODEX_REQUEST: ${{ github.event.client_payload.prompt }}
+          TELEGRAM_CHAT_ID: ${{ github.event.client_payload.chat_id }}
+          TELEGRAM_USER_ID: ${{ github.event.client_payload.user_id }}
+        run: |
+          node - <<'NODE'
+          const prompt = process.env.CODEX_REQUEST || '';
+          const chatId = process.env.TELEGRAM_CHAT_ID || '';
+          const userId = process.env.TELEGRAM_USER_ID || '';
+          if (!prompt.trim() || prompt.length > 3000) throw new Error('Invalid Codex request.');
+          if (!/^-?\d+$/.test(chatId) || !/^\d+$/.test(userId)) throw new Error('Invalid Telegram identity.');
+          NODE
+
+      - name: Checkout main without write credentials
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt: |
+            Work only inside this repository. Implement the requested change, inspect the existing
+            conventions first, preserve unrelated work, and run proportionate validation. Do not
+            commit, push, open a pull request, access secrets, or broaden the requested scope.
+
+            Authorized Telegram request:
+            ${{ github.event.client_payload.prompt }}
+
+      - name: Package the proposed changes
+        id: patch
+        env:
+          REQUEST_ID: ${{ github.event.client_payload.request_id }}
+        run: |
+          git add -N .
+          git diff --binary --no-ext-diff HEAD > codex.patch
+          artifact_name="telegram-codex-${REQUEST_ID}-${GITHUB_RUN_ID}"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          if [ -s codex.patch ]; then
+            echo "has_patch=true" >> "$GITHUB_OUTPUT"
+            git diff --stat HEAD > codex-stat.txt
+          else
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload patch artifact
+        if: steps.patch.outputs.has_patch == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.patch.outputs.artifact_name }}
+          path: |
+            codex.patch
+            codex-stat.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  open_pull_request:
+    needs: generate_patch
+    if: needs.generate_patch.outputs.has_patch == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      pr_url: ${{ steps.pr.outputs.pr_url }}
+    steps:
+      - name: Checkout main with PR credentials
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download proposed patch
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ needs.generate_patch.outputs.artifact_name }}
+
+      - name: Apply and commit patch
+        env:
+          REQUEST_ID: ${{ github.event.client_payload.request_id }}
+          CODEX_REQUEST: ${{ github.event.client_payload.prompt }}
+        run: |
+          git apply --index --3way codex.patch
+          branch="codex/telegram-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$branch"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Codex change requested from Telegram"
+          git push --set-upstream origin "$branch"
+          node - <<'NODE'
+          const fs = require('fs');
+          fs.writeFileSync('pr-body.md', [
+            'Codex generated this change from an authorized Telegram `/codex` request.',
+            '',
+            'Request:',
+            '',
+            '> ' + (process.env.CODEX_REQUEST || '').replace(/\r?\n/g, '\n> '),
+            '',
+            `Request ID: \`${process.env.REQUEST_ID}\``,
+            '',
+            'Review and test these changes before merging.',
+          ].join('\n'));
+          NODE
+
+      - name: Open pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUEST_ID: ${{ github.event.client_payload.request_id }}
+        run: |
+          pr_url=$(gh pr create --base main --head "codex/telegram-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" --title "Codex change from Telegram (${REQUEST_ID})" --body-file pr-body.md)
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ github.event.client_payload.chat_id }}
+          REQUEST_ID: ${{ github.event.client_payload.request_id }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+        run: |
+          node - <<'NODE'
+          (async () => {
+            const token = process.env.TELEGRAM_BOT_TOKEN;
+            const chatId = process.env.TELEGRAM_CHAT_ID;
+            if (!token || !chatId) throw new Error('Telegram notification secrets are missing.');
+            const text = `Codex request ${process.env.REQUEST_ID} is ready for review:\n${process.env.PR_URL}`;
+            const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+            });
+            if (!response.ok) throw new Error(`Telegram returned ${response.status}: ${await response.text()}`);
+          })().catch((error) => { console.error(error); process.exitCode = 1; });
+          NODE
+
+  notify_no_changes:
+    needs: generate_patch
+    if: needs.generate_patch.result == 'success' && needs.generate_patch.outputs.has_patch != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ github.event.client_payload.chat_id }}
+          REQUEST_ID: ${{ github.event.client_payload.request_id }}
+        run: |
+          node - <<'NODE'
+          (async () => {
+            const token = process.env.TELEGRAM_BOT_TOKEN;
+            const chatId = process.env.TELEGRAM_CHAT_ID;
+            if (!token || !chatId) throw new Error('Telegram notification secrets are missing.');
+            const text = `Codex request ${process.env.REQUEST_ID} completed without changing any files.`;
+            const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ chat_id: chatId, text }),
+            });
+            if (!response.ok) throw new Error(`Telegram returned ${response.status}: ${await response.text()}`);
+          })().catch((error) => { console.error(error); process.exitCode = 1; });
+          NODE
+
+  notify_failure:
+    needs: [generate_patch, open_pull_request]
+    if: always() && (needs.generate_patch.result == 'failure' || needs.open_pull_request.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ github.event.client_payload.chat_id }}
+          REQUEST_ID: ${{ github.event.client_payload.request_id }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node - <<'NODE'
+          (async () => {
+            const token = process.env.TELEGRAM_BOT_TOKEN;
+            const chatId = process.env.TELEGRAM_CHAT_ID;
+            if (!token || !chatId) throw new Error('Telegram notification secrets are missing.');
+            const text = `Codex request ${process.env.REQUEST_ID} failed. Review the workflow log:\n${process.env.RUN_URL}`;
+            const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+            });
+            if (!response.ok) throw new Error(`Telegram returned ${response.status}: ${await response.text()}`);
+          })().catch((error) => { console.error(error); process.exitCode = 1; });
+          NODE
