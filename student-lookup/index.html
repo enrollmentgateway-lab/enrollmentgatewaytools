@@ -35,13 +35,13 @@
     .international-symbol { font-size:1rem; line-height:1; }
     .application-document-eyebrow { display:block; margin-bottom:8px; color:#8d7452; font-size:.66rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
     .application-document h2 { margin:0; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.5rem,3vw,2.1rem); font-weight:600; letter-spacing:-.015em; }
-    .application-status { flex:0 0 auto; width:auto; height:auto; max-width:240px; padding:8px 13px; border:2px solid #a9762b; border-radius:0; color:#79501a; font-size:.7rem; font-weight:800; letter-spacing:.1em; text-align:center; text-transform:uppercase; transform:rotate(-1deg); background:transparent; box-shadow:none; cursor:default; }
+    .application-status { flex:0 0 auto; width:auto; height:auto; max-width:250px; padding:10px 16px 9px; border:3px double currentColor; border-radius:3px; color:#8a5720; font-family:"Courier New",Courier,monospace; font-size:.72rem; font-weight:900; letter-spacing:.13em; line-height:1.15; text-align:center; text-transform:uppercase; transform:rotate(-2deg); background-color:transparent; background-image:radial-gradient(circle at 13% 24%,#fffdf8 0 1px,transparent 1.5px),radial-gradient(circle at 82% 68%,#fffdf8 0 1px,transparent 1.5px),radial-gradient(circle at 57% 14%,#fffdf8 0 .7px,transparent 1.2px); background-size:17px 13px,23px 19px,29px 17px; box-shadow:inset 0 0 0 2px #fffdf8,inset 0 0 0 3px currentColor,1px 1px 0 #8a572026; text-shadow:.4px 0 currentColor,-.3px .2px currentColor; cursor:default; }
     .application-status:disabled { opacity:1; color:#79501a; }
     .application-status.is-interactive { cursor:pointer; }
     .application-status.is-interactive::after { content:"View checklist"; display:block; margin-top:5px; font-size:.55rem; letter-spacing:.08em; }
-    .application-status.is-interactive:hover { background:#fff4d8; }
+    .application-status.is-interactive:hover { color:#744615; background-color:#fff4d8; }
     .application-status.is-interactive:focus-visible { outline:3px solid #e3b456; outline-offset:3px; }
-    .application-status:active { transform:rotate(-1deg); box-shadow:none; }
+    .application-status:active { transform:rotate(-2deg) translateY(1px); box-shadow:inset 0 0 0 2px #fffdf8,inset 0 0 0 3px currentColor; }
     .materials-toggle { position:relative; display:block; width:auto; height:auto; margin:22px 0 0; padding:9px 16px; border-radius:4px; background:#f5a623; }
     .application-document-rule { position:relative; height:4px; margin:25px 0 9px; border-top:1px solid #b9ad98; border-bottom:1px solid #ded6c8; }
     .materials-checklist { position:relative; margin:24px 0 4px; padding:20px 22px; border:1px solid #d8d1c1; background:#fffaf0; }
@@ -143,7 +143,19 @@
     function text(rawValue) { const normalized = value(rawValue); return normalized === '' ? '—' : normalized; }
     function list(rawValue) {
       const seen = new Set();
-      return decodeEntities(rawValue).replace(/<br\s*\/?\s*>/gi, '\n').replace(/<\/(?:li|p|div|tr)>/gi, '\n').replace(/<[^>]*>/g, ' ').split(/\r?\n|[,;|]+/).map(item => item.replace(/\s+/g, ' ').trim()).filter(item => { const key=item.toLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; });
+      const source = decodeEntities(rawValue).replace(/<br\s*\/?\s*>/gi, '\n').replace(/<\/(?:li|p|div|tr)>/gi, '\n').replace(/<[^>]*>/g, ' ');
+      const items = [];
+      let item = '';
+      let parenthesisDepth = 0;
+      function finishItem() { const normalized=item.replace(/\s+/g, ' ').trim(); if (normalized) items.push(normalized); item=''; }
+      for (const character of source) {
+        if (character === '(') parenthesisDepth += 1;
+        if (character === ')' && parenthesisDepth > 0) parenthesisDepth -= 1;
+        if ((character === '\n' || character === '\r' || character === ',' || character === ';' || character === '|') && parenthesisDepth === 0) finishItem();
+        else item += /\s/.test(character) ? ' ' : character;
+      }
+      finishItem();
+      return items.filter(item => { const key=item.toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; });
     }
     function renderMaterialsChecklist(record) {
       const allItems = list(record.full_mats_list);
