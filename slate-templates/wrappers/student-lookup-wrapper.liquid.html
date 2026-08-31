@@ -5,12 +5,12 @@
   JSON service as the user searches a combined name/SIS ID field, then sends
   matching rows to the GitHub-hosted interface.
 
-  JSON fields: status, name, email, phone, pipeline, teachingsite, birthdate,
+  JSON fields: status, name, email, phone, pipeline, teachingsite, location_code, birthdate,
   app_created_date, decision_code, vear, term, program, url, app_degree,
   app_round, app_status, app_term, app_year, app_f1, app_url,
   missing_mats_list, full_mats_list
 -->
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v16" title="Record Lookup" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v17" title="Record Lookup" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
@@ -125,6 +125,7 @@
       phone: plain(field(row, 'phone')),
       pipeline: plain(field(row, 'pipeline')),
       teachingsite: plain(field(row, ['teachingsite','teaching_site'])),
+      location_code: plain(field(row, ['location_code','locationcode'])),
       birthdate: plain(field(row, ['birthdate','birth_date'])),
       app_created_date: createdDate,
       record_created_date: createdDate,

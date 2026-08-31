@@ -184,8 +184,8 @@
     function renderProfile(record) {
       profile.innerHTML = '';
       if (!record) return;
-      const fields = [['Program','program'],['Status','status'],['Pipeline','pipeline'],['Teaching Site','teachingsite'],['Email','email'],['Phone','phone'],['Birthdate','birthdate'],['Term','term'],['Year','vear']];
-      fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','pipeline'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
+      const fields = [['Program','program'],['Status','status'],['Teaching Site','teachingsite'],['Pipeline','pipeline'],['Location Code','location_code'],['Email','email'],['Phone','phone'],['Birthdate','birthdate']];
+      fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','teachingsite'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
       renderApplication(record);
       const status = value(record.status);
       showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=value(record.name) || 'Record Profile'; summary.textContent=(status || 'Record') + ' profile';
