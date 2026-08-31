@@ -11,7 +11,7 @@
   app_f1, app_url, app_missing_mats_list, app_full_mats_list.
   Legacy field aliases remain as fallbacks during rollout.
 -->
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v18" title="Record Lookup" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v19" title="Record Lookup" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
@@ -47,6 +47,12 @@
 
   function plain(value) {
     return decodeEntities(scalar(value)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function readableName(value) {
+    const normalized = plain(value);
+    const parts = normalized.split(',').map(function (part) { return part.trim(); }).filter(Boolean);
+    return parts.length > 1 ? parts.slice(1).concat(parts[0]).join(' ') : normalized;
   }
 
   function materialList(value) {
@@ -109,7 +115,7 @@
     const rawPersonUrl = field(row, ['per_url','url','record_url','person_url']);
     const first = plain(field(row, ['first','first_name','firstname']));
     const last = plain(field(row, ['last','last_name','lastname']));
-    const name = plain(rawName) || linkLabel(rawPersonUrl) || [first, last].filter(Boolean).join(' ');
+    const name = readableName(rawName) || readableName(linkLabel(rawPersonUrl)) || [first, last].filter(Boolean).join(' ');
     const nameParts = name.split(/\s+/).filter(Boolean);
     const resolvedFirst = first || (nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : name);
     const resolvedLast = last || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');

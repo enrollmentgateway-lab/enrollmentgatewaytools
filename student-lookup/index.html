@@ -18,13 +18,15 @@
     .suggestion:last-child { border-bottom:0; } .suggestion:hover,.suggestion:focus-visible { background:#fffaf0; outline:none; } .suggestion:active { transform:none; }
     .suggestion-name { display:block; font-size:.95rem; } .suggestion-meta { display:block; margin-top:4px; color:var(--ink-soft); font-size:.78rem; font-weight:400; }
     .suggestions-message { padding:13px 14px; color:var(--ink-soft); font-size:.85rem; text-transform:none; letter-spacing:0; }
-    .profile { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:24px; }
-    .field { padding:12px; border:1px solid var(--line); border-radius:4px; background:#fff; } .field b { display:block; margin-top:4px; font-size:1rem; }
-    .field.feature { padding:18px; border-color:#f2d9a3; background:#fffaf0; box-shadow:0 1px 0 #f2d9a3; } .field.feature b { font-size:1.15rem; color:var(--ink); }
+    .profile { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:18px; padding:24px; border:1px solid #d9dee7; border-radius:12px; background:linear-gradient(145deg,#eef1f5 0%,#f8f9fb 100%); box-shadow:inset 0 1px 0 #fff,0 8px 24px #12172b0d; }
+    .profile-section-title { grid-column:1/-1; display:flex; align-items:center; gap:10px; margin-bottom:2px; color:#3f4658; font-size:.72rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    .profile-section-title::before { content:""; width:22px; height:2px; background:var(--accent); }
+    .field { min-width:0; padding:14px; border:1px solid #dfe3ea; border-radius:7px; background:#fff; box-shadow:0 2px 7px #12172b0a; } .field b { display:block; margin-top:5px; overflow-wrap:anywhere; font-size:1rem; }
+    .field.feature { padding:18px; border-color:#edce8a; background:linear-gradient(145deg,#fff8e8,#fffdf7); box-shadow:0 3px 10px #c9860f17; } .field.feature b { font-size:1.15rem; color:var(--ink); }
     .empty { padding:28px; text-align:center; color:var(--ink-soft); border:1px dashed var(--line); border-radius:10px; }
     .results { display:grid; gap:10px; margin-top:18px; } .result { width:100%; height:auto; padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); text-align:left; box-shadow:none; } .result:hover { border-color:var(--accent-dark); background:#fffaf0; } .result-name { display:block; font-size:1rem; } .result-meta { display:block; margin-top:5px; color:var(--ink-soft); font-size:.85rem; font-weight:400; }
     .profile-head { display:flex; align-items:start; justify-content:space-between; gap:16px; } .profile-head h1 { margin:0; } .profile-actions { display:flex; align-items:center; gap:16px; } .profile-action-link { color:var(--ink-soft); font-size:.85rem; text-decoration:none; white-space:nowrap; } .profile-action-link:hover { color:var(--ink); text-decoration:underline; }
-    body.profile-mode main { max-width:1280px; } body.profile-mode .card { padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; } body.profile-mode .profile { grid-template-columns:repeat(3,minmax(0,1fr)); } [hidden] { display:none !important; }
+    body.profile-mode main { max-width:1280px; } body.profile-mode .card { padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:18px; border-bottom:1px solid var(--line); } body.profile-mode #summary { display:inline-flex; align-items:center; gap:8px; margin:14px 0 0; padding:7px 11px; border:1px solid #d6dce5; border-radius:999px; color:#465064; background:#edf0f4; font-size:.7rem; font-weight:800; letter-spacing:.1em; line-height:1; text-transform:uppercase; } body.profile-mode #summary::before { content:""; width:8px; height:8px; border-radius:50%; background:#778196; box-shadow:0 0 0 3px #fff; } body.profile-mode .profile { grid-template-columns:repeat(3,minmax(0,1fr)); } [hidden] { display:none !important; }
     .application-document { position:relative; max-width:960px; margin:38px auto 10px; padding:38px 42px 32px; border:1px solid #d8d1c1; border-radius:3px; background:linear-gradient(90deg,transparent 0,transparent 29px,#eadfc8 30px,#eadfc8 31px,transparent 32px),#fffdf8; box-shadow:0 18px 45px #12172b1a,0 2px 5px #12172b14; }
     .application-document::before { content:""; position:absolute; inset:8px; pointer-events:none; border:1px solid #ebe5d8; }
     .application-document-header,.application-document-footer { position:relative; display:flex; align-items:center; justify-content:space-between; gap:22px; }
@@ -183,11 +185,12 @@
     function renderProfile(record) {
       profile.innerHTML = '';
       if (!record) return;
+      const profileHeading=document.createElement('div'); profileHeading.className='profile-section-title'; profileHeading.textContent='Person Profile'; profile.appendChild(profileHeading);
       const fields = [['Program','program'],['Status','status'],['Teaching Site','teachingsite'],['Pipeline','pipeline'],['Location Code','location_code'],['Email','email'],['Phone','phone'],['Birthdate','birthdate']];
       fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','teachingsite'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
       renderApplication(record);
       const status = value(record.status);
-      showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=value(record.name) || 'Record Profile'; summary.textContent=(status || 'Record') + ' profile';
+      showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=value(record.name) || 'Record Profile'; summary.textContent=status || 'Status not provided';
       window.scrollTo(0, 0);
       window.parent.postMessage({ type:'student-lookup-scroll-top' }, '*');
     }
