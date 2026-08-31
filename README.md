@@ -7,8 +7,6 @@ This repository is the single source of truth for the Enrollment Intelligence Hu
 - `index.html` — hub published at the GitHub Pages root.
 - `queryomatic/` — Queryomatic frontend, Worker configuration, options reference, and setup notes. Its GitHub Pages entry point is `/queryomatic/`.
 - `slate-templates/wrappers/` — the small wrapper files you paste into Slate.
-- `slate-templates/full-page-backups/` — the old self-contained Liquid dashboards, retained only for rollback/reference.
-- `iframe-bridge-test/` — working proof of concept for Slate query data sent to a GitHub-hosted iframe with automatic height resizing.
 - `student-lookup/` — GitHub-hosted record search/profile interface.
 - `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Record Lookup portal.
 - `regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
@@ -22,7 +20,7 @@ This repository is the single source of truth for the Enrollment Intelligence Hu
 
 GitHub Pages hosts the front-end pages. Slate retains the queries and renders their results into a small wrapper, which sends the data to the relevant page using `window.postMessage`. This keeps UI code deployable from this repository while each Slate portal controls its own query.
 
-The original full Liquid dashboards remain in `slate-templates/full-page-backups/` as rollback copies. Use the files in `slate-templates/wrappers/` for the iframe-based portals. Normal HTML, CSS, labels, charts, and client-side behavior can be changed in this repository without repasting a Slate template. Repaste a wrapper only when its query/export names, exported fields, URL parameters, iframe URL, or message contract changes.
+Use the files in `slate-templates/wrappers/` for the iframe-based portals. Normal HTML, CSS, labels, charts, and client-side behavior can be changed in this repository without repasting a Slate template. Repaste a wrapper only when its query/export names, exported fields, URL parameters, iframe URL, or message contract changes.
 
 ## Wrapper rollout
 
