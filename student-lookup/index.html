@@ -162,8 +162,7 @@
       suggestions.hidden=false; searchInput.setAttribute('aria-expanded','true'); requestAnimationFrame(resize);
     }
     function renderApplication(record) {
-      const isStudent = value(record.status).toLowerCase() === 'student';
-      const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Term',isStudent ? 'app_term' : 'term'],['Year',isStudent ? 'app_year' : 'vear']];
+      const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Term','app_term'],['Year','app_year']];
       const applicationKeys = ['app_degree','app_round','app_status','app_created_date','decision_code','app_term','app_year','app_f1','missing_mats_list','full_mats_list'];
       const hasApplication = applicationKeys.some(key => value(record[key])) || value(record.app_url);
       application.hidden = !hasApplication;
