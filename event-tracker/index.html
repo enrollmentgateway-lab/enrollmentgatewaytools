@@ -113,8 +113,13 @@
           </div>
           <button id="event-stage-close" class="stage-drilldown-close" type="button" aria-label="Close stage drilldown">&times;</button>
         </div>
-        <label class="stage-search-label" for="event-stage-search">Search these records</label>
-        <input id="event-stage-search" class="stage-search" type="search" autocomplete="off" placeholder="Name, email, student ID, status, or program">
+        <div class="drilldown-table-tools">
+          <div class="drilldown-search-group">
+            <label class="stage-search-label" for="event-stage-search">Search these records</label>
+            <input id="event-stage-search" class="stage-search" type="search" autocomplete="off" placeholder="Name, email, student ID, status, or program">
+          </div>
+          <button id="event-stage-export" class="csv-export-button" type="button">Export CSV</button>
+        </div>
         <div class="panel stage-record-panel">
           <table class="data-table stage-record-table">
             <thead><tr><th>Name</th><th>Contact</th><th>Student ID</th><th>Status</th><th>Program</th></tr></thead>
@@ -386,6 +391,7 @@
       let summary = records.length.toLocaleString() + ' of ' + total.toLocaleString() + ' record' + (total === 1 ? '' : 's') + ' shown for ' + event.title + '.';
       if (stage.key !== 'students') summary += ' This stage is cumulative and includes records that reached later stages.';
       document.getElementById('event-stage-summary').textContent = summary;
+      document.getElementById('event-stage-export').disabled = !records.length;
       if (!records.length) {
         const row = body.insertRow();
         const cell = row.insertCell();
@@ -594,6 +600,14 @@
     });
     document.getElementById('event-stage-close').addEventListener('click', closeEventStage);
     document.getElementById('event-stage-search').addEventListener('input', function () { if (activeEvent && activeEventStage) renderEventStageRecords(activeEvent, activeEventStage); });
+    document.getElementById('event-stage-export').addEventListener('click', function () {
+      if (!activeEvent || !activeEventStage) return;
+      const records = filteredEventStageRecords(activeEvent, activeEventStage).slice().sort(function (a, b) { return clean(a.name).localeCompare(clean(b.name), undefined, { sensitivity:'base' }); });
+      ui.downloadCsv(activeEvent.title + '-' + activeEventStage.label + '-records', [
+        { label:'Name', key:'name' }, { label:'Email', key:'email' }, { label:'Phone', key:'phone' },
+        { label:'Student ID', key:'sisid' }, { label:'Status', key:'status' }, { label:'Program', key:'program' }
+      ], records);
+    });
     const stageInfoButton = document.getElementById('event-stage-info-button');
     const stageInfoPopover = document.getElementById('event-stage-info-popover');
     function setStageInfoOpen(open) {

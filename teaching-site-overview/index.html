@@ -79,8 +79,13 @@
           </div>
           <button id="site-stage-close" class="stage-drilldown-close" type="button" aria-label="Close stage drilldown">&times;</button>
         </div>
-        <label class="stage-search-label" for="site-stage-search">Search these records</label>
-        <input id="site-stage-search" class="stage-search" type="search" autocomplete="off" placeholder="Name, email, student ID, or program">
+        <div class="drilldown-table-tools">
+          <div class="drilldown-search-group">
+            <label class="stage-search-label" for="site-stage-search">Search these records</label>
+            <input id="site-stage-search" class="stage-search" type="search" autocomplete="off" placeholder="Name, email, student ID, or program">
+          </div>
+          <button id="site-stage-export" class="csv-export-button" type="button">Export CSV</button>
+        </div>
         <div class="panel stage-record-panel">
           <table class="data-table stage-record-table">
             <thead><tr><th>Name</th><th>Contact</th><th>Student ID</th><th>Program</th></tr></thead>
@@ -273,6 +278,7 @@
       const total = Array.isArray(data.funnelRecords[stage.key]) ? data.funnelRecords[stage.key].length : 0;
       body.replaceChildren();
       document.getElementById('site-stage-summary').textContent = records.length.toLocaleString() + ' of ' + total.toLocaleString() + ' record' + (total === 1 ? '' : 's') + ' shown for ' + data.filters.site + '.';
+      document.getElementById('site-stage-export').disabled = !records.length;
       if (!records.length) {
         const row = body.insertRow();
         const cell = row.insertCell();
@@ -327,6 +333,14 @@
     document.getElementById('site-back').addEventListener('click', function () { bridge.navigate({}, ['site']); });
     document.getElementById('site-stage-close').addEventListener('click', closeSiteStage);
     document.getElementById('site-stage-search').addEventListener('input', function () { if (activeSiteStage) renderSiteStageRecords(activeSiteStage); });
+    document.getElementById('site-stage-export').addEventListener('click', function () {
+      if (!activeSiteStage) return;
+      const records = siteStageRecords(activeSiteStage).slice().sort(function (a, b) { return clean(a.name).localeCompare(clean(b.name), undefined, { sensitivity:'base' }); });
+      ui.downloadCsv(clean(data.filters.site) + '-' + activeSiteStage.label + '-records', [
+        { label:'Name', key:'name' }, { label:'Email', key:'email' }, { label:'Phone', key:'phone' },
+        { label:'Student ID', key:'sisid' }, { label:'Program', key:'program' }
+      ], records);
+    });
     document.getElementById('portal-home').addEventListener('click', function () {
       bridge.navigate({}, ['status', 'term', 'year', 'site']);
     });

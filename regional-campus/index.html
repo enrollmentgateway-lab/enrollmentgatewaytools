@@ -130,8 +130,13 @@
         <p id="records-subtitle" class="intro-subtitle"></p>
       </div>
       <div class="panel lookup-panel">
-        <label class="lookup-label" for="record-search">Search within these records</label>
-        <input id="record-search" class="lookup-input" type="search" autocomplete="off" placeholder="Name, student ID, email, phone, application status, or program">
+        <div class="drilldown-table-tools">
+          <div class="drilldown-search-group">
+            <label class="lookup-label" for="record-search">Search within these records</label>
+            <input id="record-search" class="lookup-input" type="search" autocomplete="off" placeholder="Name, student ID, email, phone, application status, or program">
+          </div>
+          <button id="record-export" class="csv-export-button" type="button">Export CSV</button>
+        </div>
         <div id="record-count" class="record-count"></div>
         <div class="panel">
           <table class="data-table">
@@ -329,6 +334,7 @@
       const sortedRecords = sortedRecordTable(recordTableRecords);
       const body = document.getElementById('record-table'); body.replaceChildren();
       document.getElementById('record-count').textContent = sortedRecords.length.toLocaleString() + ' record' + (sortedRecords.length === 1 ? '' : 's');
+      document.getElementById('record-export').disabled = !sortedRecords.length;
       updateRecordSortHeaders();
       if (!sortedRecords.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No records are available for this filter.')); return; }
       sortedRecords.forEach(function (record) {
@@ -394,6 +400,14 @@
     document.getElementById('period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('lookup').addEventListener('input', function (event) { renderLookupResults(searchRecords(event.target.value, data.records)); });
     document.getElementById('record-search').addEventListener('input', function (event) { const value = event.target.value; renderRecordTable(value.trim() ? searchRecords(value, data.records) : data.records); });
+    document.getElementById('record-export').addEventListener('click', function () {
+      const records = sortedRecordTable(recordTableRecords);
+      ui.downloadCsv([clean(data.filters.campus), clean(data.filters.status), 'records'].filter(Boolean).join('-'), [
+        { label:'Name', key:'name' }, { label:'Email', key:'email' }, { label:'Phone', key:'phone' },
+        { label:'Student ID', key:'sisid' }, { label:'Program', key:'program' }, { label:'Status', key:'status' },
+        { label:'Application Status', key:'app_status' }, { label:'Campus', key:'campus' }
+      ], records);
+    });
     recordSortColumns.forEach(function (column) {
       document.getElementById('record-sort-' + column).addEventListener('click', function () {
         if (recordSortColumn === column) recordSortDirection = recordSortDirection === 'asc' ? 'desc' : 'asc';

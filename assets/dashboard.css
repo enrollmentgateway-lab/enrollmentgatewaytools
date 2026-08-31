@@ -139,9 +139,15 @@ button, select { font: inherit; }
 .stage-drilldown-title { margin: 4px 0 5px; color: var(--navy); font: 700 1.45rem 'Playfair Display', Georgia, serif; }
 .stage-drilldown-summary { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
 .stage-drilldown-close { width: 36px; height: 36px; flex: 0 0 auto; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font-size: 1.3rem; background: var(--white); cursor: pointer; }
+.drilldown-table-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 14px; }
+.drilldown-search-group { flex: 1 1 320px; }
 .stage-search-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: .7rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
-.stage-search { width: min(460px, 100%); min-height: 40px; margin-bottom: 14px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--navy); font: 650 .86rem Inter, sans-serif; background: var(--white); box-shadow: var(--shadow); }
+.stage-search { width: min(460px, 100%); min-height: 40px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--navy); font: 650 .86rem Inter, sans-serif; background: var(--white); box-shadow: var(--shadow); }
 .stage-search:focus { outline: 3px solid rgba(200,149,42,.35); outline-offset: 2px; border-color: var(--gold); }
+.csv-export-button { min-height: 40px; padding: 8px 14px; border: 1px solid var(--navy); border-radius: var(--radius); color: var(--white); font: 750 .78rem Inter, sans-serif; background: var(--navy); cursor: pointer; }
+.csv-export-button:hover, .csv-export-button:focus-visible { color: var(--navy); background: var(--white); }
+.csv-export-button:focus-visible { outline: 3px solid rgba(200,149,42,.35); outline-offset: 2px; }
+.csv-export-button:disabled { opacity: .45; cursor: default; }
 .stage-record-panel { overflow-x: auto; }
 .stage-record-table { min-width: 720px; }
 .stage-record-name { color: var(--navy); font-weight: 750; }
