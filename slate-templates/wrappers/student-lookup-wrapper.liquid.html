@@ -2,15 +2,15 @@
   Record Lookup Slate wrapper.
 
   This wrapper does not require a portal query. It calls the configured Slate
-  JSON service after the user searches by first name, last name, or SIS ID,
-  then sends the returned rows to the GitHub-hosted interface.
+  JSON service as the user searches a combined name/SIS ID field, then sends
+  matching rows to the GitHub-hosted interface.
 
   JSON fields: status, name, email, phone, pipeline, teachingsite, birthdate,
   app_created_date, decision_code, vear, term, program, url, app_degree,
   app_round, app_status, app_term, app_year, app_f1, app_url,
   missing_mats_list, full_mats_list
 -->
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v12" title="Record Lookup" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v14" title="Record Lookup" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
@@ -18,12 +18,9 @@
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
   const frame = document.getElementById('studentLookupFrame');
   const pageUrl = new URL(window.location.href);
-  const query = {
-    first: pageUrl.searchParams.get('first') || '',
-    last: pageUrl.searchParams.get('last') || '',
-    sisid: pageUrl.searchParams.get('sisid') || ''
-  };
-  const searched = Boolean(query.first || query.last || query.sisid);
+  const legacySearch = [pageUrl.searchParams.get('first'), pageUrl.searchParams.get('last'), pageUrl.searchParams.get('sisid')].filter(Boolean).join(' ');
+  const query = { search:pageUrl.searchParams.get('search') || legacySearch };
+  const searched = Boolean(query.search);
   let frameReady = false;
   let sendStarted = false;
 
@@ -48,6 +45,17 @@
 
   function plain(value) {
     return decodeEntities(scalar(value)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function materialList(value) {
+    return decodeEntities(scalar(value))
+      .replace(/<br\s*\/?\s*>/gi, '\n')
+      .replace(/<\/(?:li|p|div|tr)>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .split(/\r?\n|[,;|]+/)
+      .map(function (item) { return item.replace(/\s+/g, ' ').trim(); })
+      .filter(Boolean)
+      .join('\n');
   }
 
   function link(value) {
@@ -80,6 +88,18 @@
     if (Array.isArray(response)) return response;
     if (response && Array.isArray(response.row)) return response.row;
     return response && response.row ? [response.row] : [];
+  }
+
+  function searchVariants(search) {
+    const normalized = text(search).replace(/\s+/g, ' ');
+    if (!normalized) return [];
+    const parts = normalized.split(' ');
+    if (parts.length > 1) return [{ first:parts.slice(0, -1).join(' '), last:parts[parts.length - 1], sisid:'' }];
+    return [
+      { first:normalized, last:'', sisid:'' },
+      { first:'', last:normalized, sisid:'' },
+      { first:'', last:'', sisid:normalized }
+    ];
   }
 
   function normalize(row, index) {
@@ -121,26 +141,36 @@
       app_year: plain(field(row, 'app_year')),
       app_f1: plain(field(row, 'app_f1')),
       app_url: link(field(row, ['app_url','application_url'])),
-      missing_mats_list: plain(field(row, 'missing_mats_list')),
-      full_mats_list: plain(field(row, 'full_mats_list'))
+      missing_mats_list: materialList(field(row, 'missing_mats_list')),
+      full_mats_list: materialList(field(row, 'full_mats_list'))
     };
+  }
+
+  async function findCandidates(search) {
+    const responses = await Promise.all(searchVariants(search).map(async function (values) {
+      const url = new URL(recordsService);
+      url.searchParams.set('first', values.first);
+      url.searchParams.set('last', values.last);
+      url.searchParams.set('sisid', values.sisid);
+      const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
+      if (!response.ok) throw new Error('Record Lookup query returned ' + response.status);
+      return rowsFrom(await response.json());
+    }));
+    const candidates = responses.flat().map(normalize);
+    const seen = new Set();
+    return candidates.filter(function (candidate) {
+      const key = candidate.SIS_ID || candidate.url || [candidate.name,candidate.email].join('|').toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   async function loadData() {
     const payload = { searched:searched, resultCount:0, query:query, candidates:[], profile:null };
     if (!searched) return payload;
-    const url = new URL(recordsService);
-    url.searchParams.set('first', query.first);
-    url.searchParams.set('last', query.last);
-    url.searchParams.set('sisid', query.sisid);
     try {
-      const response = await fetch(url.toString().replace(/\+/g, '%20'), {
-        credentials: 'same-origin',
-        cache: 'no-store',
-        headers: { Accept:'application/json' }
-      });
-      if (!response.ok) throw new Error('Record Lookup query returned ' + response.status);
-      payload.candidates = rowsFrom(await response.json()).map(normalize);
+      payload.candidates = await findCandidates(query.search);
       payload.resultCount = payload.candidates.length;
     } catch (error) {
       console.error('Unable to load Record Lookup records.', error);
@@ -170,18 +200,29 @@
 
   function updateSearch(values) {
     const url = new URL(window.location.href);
-    ['first','last','sisid'].forEach(function (key) {
-      const value = text(values && values[key]).slice(0, 100);
-      if (value) url.searchParams.set(key, value);
-      else url.searchParams.delete(key);
-    });
+    ['first','last','sisid'].forEach(function (key) { url.searchParams.delete(key); });
+    const value = text(values && values.search).slice(0, 100);
+    if (value) url.searchParams.set('search', value);
+    else url.searchParams.delete('search');
     window.location.assign(url.toString().replace(/\+/g, '%20'));
+  }
+
+  async function sendSuggestions(search, requestId) {
+    try {
+      const candidates = (await findCandidates(text(search).slice(0, 100))).slice(0, 8);
+      if (frame.contentWindow) frame.contentWindow.postMessage({ type:'student-lookup-suggestions', requestId:requestId, candidates:candidates }, frameOrigin);
+    } catch (error) {
+      console.error('Unable to load Record Lookup suggestions.', error);
+      if (frame.contentWindow) frame.contentWindow.postMessage({ type:'student-lookup-suggestions', requestId:requestId, candidates:[] }, frameOrigin);
+    }
   }
 
   window.addEventListener('message', function (event) {
     if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data) return;
     if (event.data.type === 'student-lookup-resize') frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+    if (event.data.type === 'student-lookup-scroll-top') frame.scrollIntoView({ block:'start' });
     if (event.data.type === 'student-lookup-select' && event.data.studentId) sendSelectedCandidate(event.data.studentId);
+    if (event.data.type === 'student-lookup-suggest' && text(event.data.search).length >= 2) sendSuggestions(event.data.search, event.data.requestId);
     if (event.data.type === 'student-lookup-search') updateSearch(event.data.values);
   });
   frame.addEventListener('load', function () {

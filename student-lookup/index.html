@@ -6,20 +6,25 @@
   <title>Record Lookup</title>
   <style>
     :root { --ink:#12172b; --ink-soft:#5b6072; --line:#e1e3ea; --panel:#fff; --bg:#f5f6f8; --accent:#f5a623; --accent-dark:#c9860f; font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); }
-    * { box-sizing:border-box; } html, body { min-height:100%; } body { margin:0; min-height:100vh; background:var(--bg); padding:24px; } main { max-width:860px; min-height:calc(100vh - 48px); margin:auto; }
+    * { box-sizing:border-box; } body { margin:0; min-height:552px; background:var(--bg); padding:24px; } main { max-width:860px; margin:auto; }
     .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:28px; box-shadow:0 2px 10px #12172b12; }
     h1 { margin:0 0 6px; font-size:2rem; letter-spacing:-.02em; } p { color:var(--ink-soft); margin:0 0 20px; line-height:1.5; }
     label { display:block; margin:0; font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
     select, input { width:100%; height:42px; margin-top:6px; padding:9px 11px; border:1.5px solid var(--line); border-radius:8px; color:var(--ink); font:inherit; background:#fff; }
     input:focus { outline:none; border-color:var(--ink); box-shadow:0 0 0 3px #12172b14; }
-    .search { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 112px; gap:12px; margin:20px 0; align-items:end; } button { height:42px; padding:0 18px; border:1px solid var(--accent-dark); border-radius:999px; background:var(--accent); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; box-shadow:0 2px 0 var(--accent-dark); } button:active { transform:translateY(2px); box-shadow:none; }
+    .search { display:grid; grid-template-columns:minmax(0,1fr) 112px; gap:12px; margin:20px 0; align-items:end; } .search-field { position:relative; } button { height:42px; padding:0 18px; border:1px solid var(--accent-dark); border-radius:999px; background:var(--accent); color:var(--ink); font:inherit; font-weight:700; cursor:pointer; box-shadow:0 2px 0 var(--accent-dark); } button:active { transform:translateY(2px); box-shadow:none; }
+    .suggestions { position:absolute; z-index:10; top:calc(100% + 5px); right:0; left:0; max-height:310px; overflow-y:auto; border:1px solid var(--line); border-radius:9px; background:#fff; box-shadow:0 12px 28px #12172b24; }
+    .suggestion { display:block; width:100%; height:auto; padding:12px 14px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:#fff; box-shadow:none; color:var(--ink); text-align:left; }
+    .suggestion:last-child { border-bottom:0; } .suggestion:hover,.suggestion:focus-visible { background:#fffaf0; outline:none; } .suggestion:active { transform:none; }
+    .suggestion-name { display:block; font-size:.95rem; } .suggestion-meta { display:block; margin-top:4px; color:var(--ink-soft); font-size:.78rem; font-weight:400; }
+    .suggestions-message { padding:13px 14px; color:var(--ink-soft); font-size:.85rem; text-transform:none; letter-spacing:0; }
     .profile { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:24px; }
     .field { padding:12px; border:1px solid var(--line); border-radius:4px; background:#fff; } .field b { display:block; margin-top:4px; font-size:1rem; }
     .field.feature { padding:18px; border-color:#f2d9a3; background:#fffaf0; box-shadow:0 1px 0 #f2d9a3; } .field.feature b { font-size:1.15rem; color:var(--ink); }
     .empty { padding:28px; text-align:center; color:var(--ink-soft); border:1px dashed var(--line); border-radius:10px; }
     .results { display:grid; gap:10px; margin-top:18px; } .result { width:100%; height:auto; padding:16px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); text-align:left; box-shadow:none; } .result:hover { border-color:var(--accent-dark); background:#fffaf0; } .result-name { display:block; font-size:1rem; } .result-meta { display:block; margin-top:5px; color:var(--ink-soft); font-size:.85rem; font-weight:400; }
     .profile-head { display:flex; align-items:start; justify-content:space-between; gap:16px; } .profile-head h1 { margin:0; } .profile-actions { display:flex; align-items:center; gap:16px; } .profile-action-link { color:var(--ink-soft); font-size:.85rem; text-decoration:none; white-space:nowrap; } .profile-action-link:hover { color:var(--ink); text-decoration:underline; }
-    body.profile-mode main { max-width:1280px; } body.profile-mode .card { min-height:calc(100vh - 48px); padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; } body.profile-mode .profile { grid-template-columns:repeat(3,minmax(0,1fr)); } [hidden] { display:none !important; }
+    body.profile-mode main { max-width:1280px; } body.profile-mode .card { padding:36px 40px; } body.profile-mode .profile-head { padding-bottom:22px; border-bottom:1px solid var(--line); } body.profile-mode #summary { margin-top:14px; } body.profile-mode .profile { grid-template-columns:repeat(3,minmax(0,1fr)); } [hidden] { display:none !important; }
     .application-document { position:relative; max-width:960px; margin:38px auto 10px; padding:38px 42px 32px; border:1px solid #d8d1c1; border-radius:3px; background:linear-gradient(90deg,transparent 0,transparent 29px,#eadfc8 30px,#eadfc8 31px,transparent 32px),#fffdf8; box-shadow:0 18px 45px #12172b1a,0 2px 5px #12172b14; }
     .application-document::before { content:""; position:absolute; inset:8px; pointer-events:none; border:1px solid #ebe5d8; }
     .application-document-header,.application-document-footer { position:relative; display:flex; align-items:center; justify-content:space-between; gap:22px; }
@@ -32,6 +37,7 @@
     .application-status.is-interactive:hover { background:#fff4d8; }
     .application-status.is-interactive:focus-visible { outline:3px solid #e3b456; outline-offset:3px; }
     .application-status:active { transform:rotate(-1deg); box-shadow:none; }
+    .materials-toggle { position:relative; display:block; width:auto; height:auto; margin:22px 0 0; padding:9px 16px; border-radius:4px; background:#f5a623; }
     .application-document-rule { position:relative; height:4px; margin:25px 0 9px; border-top:1px solid #b9ad98; border-bottom:1px solid #ded6c8; }
     .materials-checklist { position:relative; margin:24px 0 4px; padding:20px 22px; border:1px solid #d8d1c1; background:#fffaf0; }
     .materials-checklist h3 { margin:0 0 14px; font-family:Georgia,"Times New Roman",serif; font-size:1.15rem; font-weight:600; }
@@ -49,7 +55,7 @@
     .application-field dt { margin:0 0 7px; color:#877b68; font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
     .application-field dd { margin:0; overflow-wrap:anywhere; font-family:Georgia,"Times New Roman",serif; font-size:1.05rem; line-height:1.35; }
     .application-document-footer { margin-top:28px; color:#8a806f; font-family:Georgia,"Times New Roman",serif; font-size:.82rem; }
-    @media (max-width:800px) { body { padding:14px; } main { min-height:calc(100vh - 28px); } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } body.profile-mode .profile { grid-template-columns:repeat(2,minmax(0,1fr)); } .application-document { padding:30px 28px 26px 38px; } }
+    @media (max-width:800px) { body { min-height:572px; padding:14px; } .card { padding:20px; } .search { grid-template-columns:1fr; } button { width:100%; } .materials-toggle { width:auto; } body.profile-mode .profile { grid-template-columns:repeat(2,minmax(0,1fr)); } .application-document { padding:30px 28px 26px 38px; } }
     @media (max-width:600px) { .profile-head { flex-direction:column; } .profile-actions { width:100%; justify-content:space-between; } .application-document-header,.application-document-footer { align-items:flex-start; flex-direction:column; } .application-fields { grid-template-columns:1fr; } .application-field,.application-field:nth-child(2n) { padding:17px 0; border-left:0; } }
     @media (max-width:520px) { body.profile-mode .profile { grid-template-columns:1fr; } }
     body.search-start { display:flex; align-items:center; } body.search-start main { width:100%; min-height:0; } body.search-start .card { min-height:0; padding:34px; }
@@ -63,9 +69,10 @@
     </div>
     <p id="summary">Search by first name, last name, or student ID.</p>
     <form id="searchForm" class="search">
-      <label>First name<input id="first" name="first" type="text" autocomplete="given-name"></label>
-      <label>Last name<input id="last" name="last" type="text" autocomplete="family-name"></label>
-      <label>Student ID<input id="sisid" name="sisid" type="text"></label>
+      <label class="search-field">Name or student ID
+        <input id="search" name="search" type="search" autocomplete="off" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false" placeholder="First name, last name, or student ID">
+        <div id="suggestions" class="suggestions" role="listbox" hidden></div>
+      </label>
       <button type="submit">Search</button>
     </form>
     <section id="results" class="results" hidden></section>
@@ -73,8 +80,9 @@
     <section id="application" class="application-document" aria-labelledby="application-title" hidden>
       <div class="application-document-header">
         <div><span class="application-document-eyebrow">Application Record</span><h2 id="application-title">Application</h2></div>
-        <button id="application-status" class="application-status" type="button" aria-controls="materials-checklist" aria-expanded="false" disabled>Status not provided</button>
+        <button id="application-status" class="application-status" type="button" disabled>Status not provided</button>
       </div>
+      <button id="materials-toggle" class="materials-toggle" type="button" aria-controls="materials-checklist" aria-expanded="false" hidden>View materials checklist</button>
       <section id="materials-checklist" class="materials-checklist" aria-labelledby="materials-checklist-title" hidden>
         <h3 id="materials-checklist-title">Materials Checklist</h3>
         <ul id="materials-list" class="materials-list"></ul>
@@ -97,6 +105,7 @@
     const application = document.getElementById('application');
     const applicationTitle = document.getElementById('application-title');
     const applicationStatus = document.getElementById('application-status');
+    const materialsToggle = document.getElementById('materials-toggle');
     const materialsChecklist = document.getElementById('materials-checklist');
     const materialsList = document.getElementById('materials-list');
     const materialsEmpty = document.getElementById('materials-empty');
@@ -104,12 +113,13 @@
     const empty = document.getElementById('empty');
     const summary = document.getElementById('summary');
     const searchForm = document.getElementById('searchForm');
-    const firstInput = document.getElementById('first');
-    const lastInput = document.getElementById('last');
-    const sisidInput = document.getElementById('sisid');
+    const searchInput = document.getElementById('search');
+    const suggestions = document.getElementById('suggestions');
     const allowedOrigin = 'https://enroll.gs.edu';
+    let suggestionTimer = 0;
+    let suggestionRequest = 0;
 
-    function resize() { window.parent.postMessage({ type:'student-lookup-resize', height:Math.ceil(document.documentElement.scrollHeight) }, '*'); }
+    function resize() { window.parent.postMessage({ type:'student-lookup-resize', height:Math.ceil(document.body.getBoundingClientRect().height) }, '*'); }
     function decodeEntities(value) {
       const named = { amp:'&', apos:"'", quot:'"', lt:'<', gt:'>', nbsp:'\u00a0', rsquo:'’', lsquo:'‘', rdquo:'”', ldquo:'“', ndash:'–', mdash:'—' };
       let decoded = String(value == null ? '' : value);
@@ -124,7 +134,7 @@
     function text(rawValue) { const normalized = value(rawValue); return normalized === '' ? '—' : normalized; }
     function list(rawValue) {
       const seen = new Set();
-      return decodeEntities(rawValue).replace(/<[^>]*>/g, ' ').split(',').map(item => item.replace(/\s+/g, ' ').trim()).filter(item => { const key=item.toLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; });
+      return decodeEntities(rawValue).replace(/<br\s*\/?\s*>/gi, '\n').replace(/<\/(?:li|p|div|tr)>/gi, '\n').replace(/<[^>]*>/g, ' ').split(/\r?\n|[,;|]+/).map(item => item.replace(/\s+/g, ' ').trim()).filter(item => { const key=item.toLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; });
     }
     function renderMaterialsChecklist(record) {
       const allItems = list(record.full_mats_list);
@@ -134,8 +144,16 @@
       materialsList.replaceChildren();
       allItems.forEach(item => { const row=document.createElement('li'); row.className='materials-item'; const name=document.createElement('span'); name.className='materials-name'; name.textContent=item; const state=document.createElement('span'); const isMissing=missingKeys.has(item.toLowerCase()); state.className='materials-state ' + (isMissing ? 'missing' : 'received'); state.textContent=isMissing ? 'Missing' : 'Received'; row.append(name,state); materialsList.appendChild(row); });
       materialsEmpty.hidden = allItems.length > 0;
+      return allItems.length;
     }
     function showResultsLayout() { document.body.classList.remove('search-start'); }
+    function hideSuggestions() { suggestions.hidden=true; suggestions.replaceChildren(); searchInput.setAttribute('aria-expanded','false'); }
+    function renderSuggestions(candidates) {
+      suggestions.replaceChildren();
+      if (!candidates.length) { const message=document.createElement('div'); message.className='suggestions-message'; message.textContent='No suggested records found.'; suggestions.appendChild(message); }
+      candidates.forEach(person => { const button=document.createElement('button'); button.className='suggestion'; button.type='button'; button.setAttribute('role','option'); button.innerHTML='<span class="suggestion-name"></span><span class="suggestion-meta"></span>'; button.querySelector('.suggestion-name').textContent=text(person.name); button.querySelector('.suggestion-meta').textContent=[person.SIS_ID,person.email,person.program].filter(Boolean).map(decodeEntities).join(' · '); button.addEventListener('click', () => { searchInput.value=value(person.name) || value(person.SIS_ID); hideSuggestions(); renderProfile(person); requestAnimationFrame(resize); }); suggestions.appendChild(button); });
+      suggestions.hidden=false; searchInput.setAttribute('aria-expanded','true'); requestAnimationFrame(resize);
+    }
     function renderApplication(record) {
       const isStudent = value(record.status).toLowerCase() === 'student';
       const fields = [['Degree / Program','app_degree'],['Application Round','app_round'],['Application Status','app_status'],['Application Created','app_created_date'],['Decision Code','decision_code'],['Term',isStudent ? 'app_term' : 'term'],['Year',isStudent ? 'app_year' : 'vear'],['F-1','app_f1']];
@@ -145,14 +163,13 @@
       if (!hasApplication) return;
       applicationTitle.textContent = value(record.app_degree) || 'Application';
       const applicationStatusValue = value(record.app_status);
-      const hasMaterialsChecklist = applicationStatusValue.toLowerCase() === 'awaiting materials';
       applicationStatus.textContent = applicationStatusValue || 'Status not provided';
-      applicationStatus.disabled = !hasMaterialsChecklist;
-      applicationStatus.classList.toggle('is-interactive', hasMaterialsChecklist);
-      applicationStatus.setAttribute('aria-expanded', 'false');
-      applicationStatus.title = hasMaterialsChecklist ? 'View materials checklist' : '';
       materialsChecklist.hidden = true;
-      renderMaterialsChecklist(record);
+      const materialsCount = renderMaterialsChecklist(record);
+      const hasMaterialsChecklist = materialsCount > 0 || applicationStatusValue.toLowerCase().includes('awaiting material');
+      materialsToggle.hidden = !hasMaterialsChecklist;
+      materialsToggle.textContent = materialsCount > 0 ? `View materials checklist (${materialsCount})` : 'View materials checklist';
+      materialsToggle.setAttribute('aria-expanded', 'false');
       applicationFields.replaceChildren();
       fields.forEach(([label,key]) => { const field=document.createElement('div'); field.className='application-field'; const term=document.createElement('dt'); const description=document.createElement('dd'); term.textContent=label; description.textContent=text(record[key]); field.append(term,description); applicationFields.appendChild(field); });
     }
@@ -164,6 +181,8 @@
       renderApplication(record);
       const status = value(record.status);
       showResultsLayout(); document.body.classList.add('profile-mode'); app.classList.add('profile-mode'); profile.hidden=false; empty.hidden=true; results.hidden=true; searchForm.hidden=true; searchAgain.hidden=false; title.textContent=value(record.name) || 'Record Profile'; summary.textContent=(status || 'Record') + ' profile';
+      window.scrollTo(0, 0);
+      window.parent.postMessage({ type:'student-lookup-scroll-top' }, '*');
     }
     function renderResults(candidates) {
       showResultsLayout(); document.body.classList.remove('profile-mode'); app.classList.remove('profile-mode'); results.innerHTML=''; results.hidden=false; empty.hidden=true; profile.hidden=true; application.hidden=true;
@@ -171,11 +190,15 @@
       summary.textContent=`${candidates.length} matching records — select one to view the profile.`;
     }
     window.addEventListener('message', (event) => {
-      if (event.origin !== allowedOrigin || !event.data || event.data.type !== 'student-lookup-data') return;
+      if (event.origin !== allowedOrigin || !event.data) return;
+      if (event.data.type === 'student-lookup-suggestions') {
+        if (Number(event.data.requestId) !== suggestionRequest) return;
+        renderSuggestions(Array.isArray(event.data.candidates) ? event.data.candidates : []);
+        return;
+      }
+      if (event.data.type !== 'student-lookup-data') return;
       const data = event.data.payload || {}; const candidates = Array.isArray(data.candidates) ? data.candidates : [];
-      firstInput.value = data.query && data.query.first || '';
-      lastInput.value = data.query && data.query.last || '';
-      sisidInput.value = data.query && data.query.sisid || '';
+      searchInput.value = data.query && data.query.search || '';
       if (data.loadError) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent=data.loadError; summary.textContent='Record Lookup unavailable'; requestAnimationFrame(resize); return; }
       if (data.searched && Number(data.resultCount || candidates.length) > 100) { showResultsLayout(); results.hidden=true; profile.hidden=true; application.hidden=true; empty.hidden=false; empty.textContent='More than 100 records matched. Add another search value to narrow the results.'; summary.textContent='Refine your search'; requestAnimationFrame(resize); return; }
       if (data.profile || candidates.length === 1) renderProfile(data.profile || candidates[0]);
@@ -186,12 +209,24 @@
     });
     searchForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const values = Object.fromEntries(new FormData(searchForm).entries());
-      if (!values.first && !values.last && !values.sisid) return;
-      window.parent.postMessage({ type:'student-lookup-search', values }, '*');
+      const search = searchInput.value.trim();
+      if (!search) return;
+      hideSuggestions();
+      window.parent.postMessage({ type:'student-lookup-search', values:{ search } }, '*');
     });
+    searchInput.addEventListener('input', () => {
+      clearTimeout(suggestionTimer);
+      const search=searchInput.value.trim();
+      suggestionRequest += 1;
+      if (search.length < 2) { hideSuggestions(); return; }
+      const requestId=suggestionRequest;
+      suggestions.innerHTML='<div class="suggestions-message">Finding records…</div>'; suggestions.hidden=false; searchInput.setAttribute('aria-expanded','true');
+      suggestionTimer=setTimeout(() => { window.parent.postMessage({ type:'student-lookup-suggest', search, requestId }, '*'); }, 250);
+    });
+    searchInput.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideSuggestions(); });
+    document.addEventListener('click', (event) => { if (!searchForm.contains(event.target)) hideSuggestions(); });
     searchAgain.addEventListener('click', (event) => { event.preventDefault(); window.parent.postMessage({ type:'student-lookup-search', values:{} }, '*'); });
-    applicationStatus.addEventListener('click', () => { if (applicationStatus.disabled) return; const expanded=applicationStatus.getAttribute('aria-expanded') === 'true'; applicationStatus.setAttribute('aria-expanded', String(!expanded)); materialsChecklist.hidden=expanded; requestAnimationFrame(resize); });
+    materialsToggle.addEventListener('click', () => { const expanded=materialsToggle.getAttribute('aria-expanded') === 'true'; materialsToggle.setAttribute('aria-expanded', String(!expanded)); materialsToggle.textContent=expanded ? `View materials checklist${materialsList.children.length ? ` (${materialsList.children.length})` : ''}` : 'Hide materials checklist'; materialsChecklist.hidden=expanded; requestAnimationFrame(resize); });
     window.addEventListener('load', () => { resize(); setTimeout(resize, 300); }); new ResizeObserver(resize).observe(document.documentElement);
   </script>
 </body>
