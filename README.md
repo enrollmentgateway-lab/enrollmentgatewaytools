@@ -66,6 +66,8 @@ The Event Tracker, Teaching Sites, and Regional Campus funnel drilldowns can exp
 
 The Pipeline status dropdown supports `applicant`, `inquiry`, `prospect`, and `student`. Configure its Slate status filter so `?status=student` returns the intended student population.
 
+Record Lookup makes a second, SIS-ID-specific service request only after a profile whose person status is `Student` is opened. That service may return prior applications for other degree programs. The hosted interface removes the degree already displayed by the primary lookup, deduplicates exact application rows, and presents the remaining records as an interactive stack of application sheets. Changes to this request contract or its service URL require repasting `slate-templates/wrappers/student-lookup-wrapper.liquid.html` in Slate.
+
 The Pipeline dropdowns send combinations such as `?status=applicant&term=Fall&year=2026-2027`. The Teaching Sites period dropdown sends `term` and `year` without a status. Choosing **Total (All Time)** removes `term` and `year`.
 
 Do not rename the query exports or their fields without making the matching change in the relevant wrapper. The iframe pages intentionally accept data only from `https://enroll.gs.edu`, and the wrappers intentionally accept messages only from the configured GitHub Pages origin.

@@ -9,14 +9,18 @@
   per_pipeline, per_teachingsite, per_birthdate, per_url, per_location_code,
   app_created_date, app_degree, app_round, app_status, app_term, app_year,
   app_f1, app_url, app_missing_mats_list, app_full_mats_list.
+  The additional-applications JSON service accepts sisid and returns per_sisid,
+  app_degree, app_round, app_status, app_term, app_year, app_f1, and
+  app_created_date. It is called only when an opened record has Student status.
   Legacy field aliases remain as fallbacks during rollout.
 -->
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v21" title="Record Lookup" referrerpolicy="origin" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/student-lookup/?v=student-lookup-v22" title="Record Lookup" referrerpolicy="origin" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
+  const additionalApplicationsService = 'https://enroll.gs.edu/manage/query/run?id=ae358124-96d9-4c40-a6a9-da66b82b8f19&cmd=service&output=json&h=ff8fb6fa-de49-4f83-9a64-fc916a0dc6e8&sisid=';
   const frame = document.getElementById('studentLookupFrame');
   const pageUrl = new URL(window.location.href);
   const legacySearch = [pageUrl.searchParams.get('first'), pageUrl.searchParams.get('last'), pageUrl.searchParams.get('sisid')].filter(Boolean).join(' ');
@@ -177,6 +181,23 @@
     };
   }
 
+  function normalizeApplication(row) {
+    return {
+      SIS_ID: plain(field(row, ['per_sisid','sisid','SIS_ID','SISID','student_id'])),
+      app_degree: plain(field(row, ['app_degree','degree','program'])),
+      app_round: plain(field(row, ['app_round','application_round'])),
+      app_status: plain(field(row, ['app_status','application_status'])),
+      app_term: plain(field(row, ['app_term','term'])),
+      app_year: plain(field(row, ['app_year','year'])),
+      app_f1: plain(field(row, ['app_f1','f1'])),
+      app_created_date: plain(field(row, ['app_created_date','application_created_date'])),
+      decision_code: plain(field(row, ['decision_code','app_code'])),
+      app_url: link(field(row, ['app_url','application_url'])),
+      missing_mats_list: materialList(field(row, ['app_missing_mats_list','missing_mats_list'])),
+      full_mats_list: materialList(field(row, ['app_full_mats_list','full_mats_list']))
+    };
+  }
+
   async function findCandidates(search) {
     const responses = await Promise.allSettled(searchVariants(search).map(async function (values) {
       const url = new URL(recordsService);
@@ -252,6 +273,24 @@
     }
   }
 
+  async function sendAdditionalApplications(studentId, requestId) {
+    const normalizedStudentId = text(studentId).slice(0, 50);
+    if (!normalizedStudentId || !frame.contentWindow) return;
+    try {
+      const url = new URL(additionalApplicationsService);
+      url.searchParams.set('sisid', normalizedStudentId);
+      const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
+      if (!response.ok) throw new Error('Additional applications query returned ' + response.status);
+      const applications = rowsFrom(await response.json()).map(normalizeApplication).filter(function (application) {
+        return application.SIS_ID === normalizedStudentId;
+      });
+      if (frame.contentWindow) frame.contentWindow.postMessage({ type:'student-lookup-applications', requestId:requestId, studentId:normalizedStudentId, applications:applications }, frameOrigin);
+    } catch (error) {
+      console.error('Unable to load additional Record Lookup applications.', error);
+      if (frame.contentWindow) frame.contentWindow.postMessage({ type:'student-lookup-applications', requestId:requestId, studentId:normalizedStudentId, applications:[], error:true }, frameOrigin);
+    }
+  }
+
   function viewportHeight() {
     const top = Math.max(0, frame.getBoundingClientRect().top);
     return Math.max(600, Math.ceil(window.innerHeight - top));
@@ -268,6 +307,7 @@
     if (event.data.type === 'student-lookup-scroll-top') frame.scrollIntoView({ block:'start' });
     if (event.data.type === 'student-lookup-select' && event.data.studentId) sendSelectedCandidate(event.data.studentId);
     if (event.data.type === 'student-lookup-suggest' && text(event.data.search).length >= 2) sendSuggestions(event.data.search, event.data.requestId);
+    if (event.data.type === 'student-lookup-applications-request' && event.data.studentId && text(event.data.recordStatus).toLowerCase() === 'student') sendAdditionalApplications(event.data.studentId, event.data.requestId);
     if (event.data.type === 'student-lookup-search') updateSearch(event.data.values);
   });
   frame.addEventListener('load', function () {
