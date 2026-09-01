@@ -56,12 +56,29 @@
 // ============================================================
 
 const GITHUB_OWNER = "enrollmentgateway-lab";
-const GITHUB_REPO = "queryomatic";
+const GITHUB_REPO = "enrollmentgatewaytools";
 const GITHUB_BRANCH = "main";
-const GITHUB_OPTIONS_PATH = "options.md";
+const GITHUB_OPTIONS_PATH = "queryomatic/options.md";
 
 const GITHUB_API_URL =
   `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_OPTIONS_PATH}`;
+
+const QUERY_PARAMETER_KEYS = Object.freeze([
+  "first",
+  "last",
+  "sisid",
+  "term",
+  "year",
+  "status",
+  "pipeline",
+  "teachingsite",
+  "program",
+  "app_code",
+  "app_createddate_start",
+  "app_createddate_end",
+  "campus_assigned",
+  "alt_form_type",
+]);
 
 
 
@@ -115,6 +132,25 @@ function secretStatus(value) {
   }
 
   return `SET (${value.length} characters)`;
+}
+
+
+function normalizeQueryParams(params) {
+  const source =
+    params &&
+    typeof params === "object" &&
+    !Array.isArray(params)
+      ? params
+      : {};
+
+  return Object.fromEntries(
+    QUERY_PARAMETER_KEYS.map(key => [
+      key,
+      source[key] == null
+        ? ""
+        : String(source[key]).trim(),
+    ])
+  );
 }
 
 
@@ -1143,6 +1179,19 @@ async function generateQueryParams(
   }
 
 
+  const currentDate =
+    new Date()
+      .toISOString()
+      .slice(0, 10);
+
+  const emptyParameters =
+    JSON.stringify(
+      normalizeQueryParams({}),
+      null,
+      2
+    );
+
+
   const systemPrompt =
 `You translate a staff member's plain-English request into query parameters for a Slate admissions export.
 
@@ -1172,6 +1221,30 @@ If the user does not specify a parameter, leave that parameter as an empty strin
 
 If the user's language corresponds to an alias or instruction in a Context section, translate it to the appropriate exact value from Valid Values.
 
+The output keys are Slate query parameter names. Map them to these options.md sections when a fixed list of values applies:
+
+- term: academic_term
+- year: academic_year
+- status: person_status
+- pipeline: pipelines
+- teachingsite: teachingsites
+- program: program
+- app_code: Decision Code
+- campus_assigned: campus
+- alt_form_type: alt_form_type
+
+The first, last, and sisid parameters are free text and do not require a Valid Values lookup. Use first and last only when the user identifies a person by name. For a clearly stated full name, put all given-name words in first and the family name in last. Use sisid for an explicitly provided student/SIS ID.
+
+Use the exact Valid Values from the mapped section. For a shorthand location such as "Burbank", select the one teaching-site or campus value that contains that location name.
+
+Today is ${currentDate}. Resolve relative academic-term language when possible. For example, "this fall" means term "Fall" and the academic-year value whose first year is this calendar year. Thus, during 2026, "this fall" maps to year "2026-2027".
+
+When the user asks for people associated with events or event registrations, set alt_form_type to the exact value "Event". Otherwise leave alt_form_type empty.
+
+When the user asks for "students", use the exact person_status value "Student" in the status output key. When they ask for admitted students or admitted applications, use status "Student" and decision code "AT". For provisionally admitted students, use decision code "ATP" instead.
+
+Application Created Date is a date range. Use app_createddate_start for the inclusive beginning of the requested range and app_createddate_end for the inclusive end. Return dates in YYYY-MM-DD format. If the user provides only one boundary, leave the other boundary empty. If they name a full month, use its first and last calendar dates. Never return app_createddate.
+
 OPTIONS.MD
 ============================================================
 
@@ -1182,16 +1255,7 @@ END OPTIONS.MD
 
 Respond with ONLY a JSON object using exactly these keys:
 
-{
-  "term": "",
-  "year": "",
-  "status": "",
-  "pipeline": "",
-  "teachingsite": "",
-  "program": "",
-  "app_code": "",
-  "app_createddate": ""
-}
+${emptyParameters}
 
 No prose.
 No explanation.
@@ -1314,8 +1378,10 @@ No markdown fences.`;
 
   try {
 
-    return JSON.parse(
-      cleaned
+    return normalizeQueryParams(
+      JSON.parse(
+        cleaned
+      )
     );
 
   } catch {
@@ -1338,6 +1404,9 @@ async function runSlateQuery(
   params
 ) {
 
+  const normalizedParams =
+    normalizeQueryParams(params);
+
   logInfo(
     id,
     "Starting main Slate query",
@@ -1352,7 +1421,8 @@ async function runSlateQuery(
           env.SLATE_TOKEN_MAINDB
         ),
 
-      params,
+      params:
+        normalizedParams,
     }
   );
 
@@ -1387,7 +1457,7 @@ async function runSlateQuery(
 
   for (
     const [key, value]
-    of Object.entries(params)
+    of Object.entries(normalizedParams)
   ) {
 
     url.searchParams.set(
@@ -1704,7 +1774,11 @@ export default {
           body?.params;
 
 
-        if (!params) {
+        if (
+          !params ||
+          typeof params !== "object" ||
+          Array.isArray(params)
+        ) {
 
           return json(
             {

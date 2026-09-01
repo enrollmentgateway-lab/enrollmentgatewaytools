@@ -293,18 +293,28 @@
   const WORKER_URL = "https://slate-query-tool.queryomatic.workers.dev";
 
   const PARAMS = [
+    ["first", "First Name"],
+    ["last", "Last Name"],
+    ["sisid", "Student ID"],
     ["term", "Term"],
     ["year", "Academic Year"],
     ["status", "Person Status"],
     ["pipeline", "Pipeline"],
     ["teachingsite", "Teaching Site"],
+    ["campus_assigned", "Assigned Campus"],
     ["program", "Program"],
     ["app_code", "Decision Code"],
     ["app_createddate_start", "Application Created Date (Start)"],
     ["app_createddate_end", "Application Created Date (End)"],
+    ["alt_form_type", "Alternate Form Type"],
   ];
   const PARAM_LABELS = Object.fromEntries(PARAMS);
   const PARAM_KEYS = PARAMS.map(([key]) => key);
+
+  function normalizeParams(params) {
+    const source = params && typeof params === "object" && !Array.isArray(params) ? params : {};
+    return Object.fromEntries(PARAM_KEYS.map((key) => [key, source[key] == null ? "" : String(source[key]).trim()]));
+  }
 
   const $ = (id) => document.getElementById(id);
 
@@ -454,14 +464,14 @@
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || "Failed to generate query");
-    return data.params;
+    return normalizeParams(data.params);
   }
 
   async function runParams(params) {
     const resp = await apiFetch("/api/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ params }),
+      body: JSON.stringify({ params: normalizeParams(params) }),
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || "Query failed");

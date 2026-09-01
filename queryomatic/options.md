@@ -80,6 +80,42 @@ These are valid academic year periods. The first year represents the year that t
 
 <!-- VALUES:academic_year END -->
 
+## alt_form_type
+
+### Context
+
+Use this parameter to select the alternate Slate form population. Requests for people associated with recruiting events or event registrations use `Event`. Leave it empty for ordinary person and application searches.
+
+### Valid Values
+
+<!-- VALUES:alt_form_type START -->
+
+- Event
+
+<!-- VALUES:alt_form_type END -->
+
+## campus
+
+### Context
+
+These are the campuses assigned to person records. Queryomatic sends the selected value through the `campus_assigned` Slate query parameter. A shortened location name should resolve to the one campus value containing that location.
+
+### Valid Values
+
+<!-- VALUES:campus START -->
+
+- Arizona Regional Campus
+- Bay Area Campus
+- Boston
+- Doctor of Ministry
+- Hawaii Campus
+- Online Campus
+- Ontario Campus
+- Pacific Northwest Campus
+- Rocky Mountain Campus
+
+<!-- VALUES:campus END -->
+
 ## degree
 
 ### Context
@@ -175,6 +211,24 @@ _Add context for this parameter here._
 - Widowed
 
 <!-- VALUES:marital_status END -->
+
+## person_status
+
+### Context
+
+These are the enrollment stages for person records. People with applications are applicants, people without applications are inquiries, prospects are people from specific recruiting sources or events, and students are admitted applications. Requests for admitted people or admitted applications therefore use `Student`, not `Applicant`.
+
+### Valid Values
+
+<!-- VALUES:person_status START -->
+
+- Applicant
+- Graduate
+- Inquiry
+- Prospect
+- Student
+
+<!-- VALUES:person_status END -->
 
 ## pipelines
 
@@ -354,3 +408,31 @@ _Add context for this parameter here._
 - Youth Ministry Certificate
 
 <!-- VALUES:standard_degree END -->
+
+## Decision Code
+
+### Context
+
+These values represent application decision stages:
+
+- `AT` - Admit
+- `ATP` - Admitted Provisional
+- `DF` - Defer
+- `DN` - Deny
+
+### Valid Values
+
+<!-- VALUES:app_code START -->
+
+- AT
+- ATP
+- DF
+- DN
+
+<!-- VALUES:app_code END -->
+
+## Application Created Date (Start/End)
+
+### Context
+
+Use this to filter on when an application was created. A date range is sent as `app_createddate_start` for the inclusive beginning and `app_createddate_end` for the inclusive end. Dates must use `YYYY-MM-DD`. Leave either parameter empty when the request provides only one boundary.
