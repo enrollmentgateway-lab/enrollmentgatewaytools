@@ -114,12 +114,21 @@
     const normalized = text(search).replace(/\s+/g, ' ');
     if (!normalized) return [];
     const parts = normalized.split(' ');
-    if (parts.length > 1) return [{ first:parts.slice(0, -1).join(' '), last:parts[parts.length - 1], sisid:'' }];
-    if (/\d/.test(normalized)) return [{ first:'', last:'', sisid:normalized }];
+    if (parts.length === 1 && /\d/.test(normalized)) return [{ first:'', last:'', sisid:normalized }];
+    const anchor = parts.reduce(function (longest, part) { return part.length > longest.length ? part : longest; }, '');
     return [
-      { first:normalized, last:'', sisid:'' },
-      { first:'', last:normalized, sisid:'' }
+      { first:anchor, last:'', sisid:'' },
+      { first:'', last:anchor, sisid:'' }
     ];
+  }
+
+  function matchesSearch(candidate, search) {
+    const normalized = text(search).toLocaleLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+    const terms = normalized.split(' ').filter(Boolean);
+    if (!terms.length) return true;
+    if (terms.length === 1 && /\d/.test(terms[0])) return text(candidate.SIS_ID).toLocaleLowerCase().includes(terms[0]);
+    const candidateName = [candidate.first, candidate.last, candidate.name].filter(Boolean).join(' ').toLocaleLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    return terms.every(function (term) { return candidateName.includes(term); });
   }
 
   function normalize(row, index) {
@@ -179,7 +188,9 @@
     }));
     const successful = responses.filter(function (response) { return response.status === 'fulfilled'; });
     if (!successful.length && responses.length) throw responses[0].reason;
-    const candidates = successful.flatMap(function (response) { return response.value; }).map(normalize);
+    const candidates = successful.flatMap(function (response) { return response.value; }).map(normalize).filter(function (candidate) {
+      return matchesSearch(candidate, search);
+    });
     const seen = new Set();
     return candidates.filter(function (candidate) {
       const key = candidate.SIS_ID || candidate.url || [candidate.name,candidate.email].join('|').toLowerCase();
