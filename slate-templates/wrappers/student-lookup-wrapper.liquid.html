@@ -5,7 +5,7 @@
   JSON service as the user searches a combined name/SIS ID field, then sends
   matching rows to the GitHub-hosted interface.
 
-  all_people JSON fields: per_status, per_name, per_email, per_phone,
+  all_people JSON fields: per_status, per_name, per_email, per_phone, per_sisid,
   per_pipeline, per_teachingsite, per_birthdate, per_url, per_location_code,
   app_created_date, app_degree, app_round, app_status, app_term, app_year,
   app_f1, app_url, app_missing_mats_list, app_full_mats_list.
@@ -113,13 +113,14 @@
   function searchVariants(search) {
     const normalized = text(search).replace(/\s+/g, ' ');
     if (!normalized) return [];
-    const parts = normalized.split(' ');
-    if (parts.length === 1 && /\d/.test(normalized)) return [{ first:'', last:'', sisid:normalized }];
-    const anchor = parts.reduce(function (longest, part) { return part.length > longest.length ? part : longest; }, '');
-    return [
-      { first:anchor, last:'', sisid:'' },
-      { first:'', last:anchor, sisid:'' }
-    ];
+    const parts = Array.from(new Set(normalized.split(' '))).sort(function (left, right) { return right.length - left.length; });
+    const variants = [];
+    parts.forEach(function (part) {
+      variants.push({ first:part, last:'', sisid:'' });
+      variants.push({ first:'', last:part, sisid:'' });
+      if (/\d/.test(part)) variants.push({ first:'', last:'', sisid:part });
+    });
+    return variants;
   }
 
   function matchesSearch(candidate, search) {
@@ -140,7 +141,7 @@
     const nameParts = name.split(/\s+/).filter(Boolean);
     const resolvedFirst = first || (nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : name);
     const resolvedLast = last || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
-    const sisid = plain(field(row, ['sisid','SIS_ID','student_id']));
+    const sisid = plain(field(row, ['per_sisid','sisid','SIS_ID','SISID','student_id']));
     const createdDate = plain(field(row, ['app_created_date','application_created_date']));
     const appDegree = plain(field(row, 'app_degree'));
     return {
