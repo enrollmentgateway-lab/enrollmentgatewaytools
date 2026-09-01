@@ -22,6 +22,18 @@ GitHub Pages hosts the front-end pages. Slate retains the queries and renders th
 
 Use the files in `slate-templates/wrappers/` for the iframe-based portals. Normal HTML, CSS, labels, charts, and client-side behavior can be changed in this repository without repasting a Slate template. Repaste a wrapper only when its query/export names, exported fields, URL parameters, iframe URL, or message contract changes.
 
+## Usage analytics
+
+The GitHub-hosted hub and portal interfaces support Cloudflare Web Analytics for aggregate page views and visits. The integration does not send custom events, search text, student IDs, names, record URLs, or query results.
+
+To enable collection:
+
+1. In the existing Cloudflare account, open **Web Analytics**, add `enrollmentgateway-lab.github.io` as a site, and copy its beacon token.
+2. Paste the public token into `SITE_TOKEN` in `assets/portal-analytics.js`.
+3. Push the change to `main`, repaste the six iframe wrappers in Slate to activate their explicit referrer safeguards, and verify a visit in the Cloudflare Web Analytics dashboard.
+
+An empty `SITE_TOKEN` disables collection, and the loader also refuses to run outside the production GitHub Pages hostname so local development does not affect the reports. The dashboard paths distinguish the hub, Funnel Overview, Pipeline Overview, Teaching Sites, Event Tracker, Regional Campus, Record Lookup, BetterQuery, and `/queryomatic/admin/`. The Slate wrapper iframes use an origin-only referrer policy so parent portal paths and query values are not disclosed to the hosted interfaces or analytics beacon.
+
 ## Wrapper rollout
 
 Publish and verify one wrapper at a time in this order:
