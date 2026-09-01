@@ -1,12 +1,12 @@
 <!--
   Event Tracker Slate wrapper. Query/export names must remain events_general
-  and event_people. For stage drilldowns, event_people should return name (or
-  first and last), email, phone, sisid, program, status, and optionally
-  url/record_url in addition to the event title.
+  and event_people. event_people only supplies each person's event title and
+  identity (sisid and/or email); current person details come from the shared
+  all_people JSON service with alt_form_type=Event.
 -->
 <div id="eventTrackerData" style="display:none">
   <div class="events">{% for event in events_general %}<div class="event"><span class="title">{{ event.title | escape }}</span><span class="startdate">{{ event.startdate | escape }}</span><span class="enddate">{{ event.enddate | escape }}</span><span class="registrants">{{ event.registrants | escape }}</span><span class="expenses">{{ event.expenses | escape }}</span></div>{% endfor %}</div>
-  <div class="people">{% for person in event_people %}<div class="person"><span class="title">{{ person.title | escape }}</span><span class="status">{{ person.status | escape }}</span><span class="name">{{ person.name | escape }}</span><span class="first">{{ person.first | escape }}</span><span class="last">{{ person.last | escape }}</span><span class="email">{{ person.email | escape }}</span><span class="phone">{{ person.phone | escape }}</span><span class="sisid">{{ person.sisid | escape }}</span><span class="program">{{ person.program | escape }}</span><span class="record_url">{{ person.record_url | escape }}</span><span class="url">{{ person.url | escape }}</span></div>{% endfor %}</div>
+  <div class="people">{% for person in event_people %}<div class="person"><span class="title">{{ person.title | escape }}</span><span class="status">{{ person.status | escape }}</span><span class="per_status">{{ person.per_status | escape }}</span><span class="email">{{ person.email | escape }}</span><span class="per_email">{{ person.per_email | escape }}</span><span class="sisid">{{ person.sisid | escape }}</span><span class="per_sisid">{{ person.per_sisid | escape }}</span></div>{% endfor %}</div>
 </div>
 <iframe id="eventTrackerFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/event-tracker/" title="Event Tracker" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
@@ -14,12 +14,26 @@
   'use strict';
   const dashboard = 'event-tracker';
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=&alt_form_type=Event';
   const frame = document.getElementById('eventTrackerFrame');
   const root = document.getElementById('eventTrackerData');
   const read = (node, key) => { const el = node && node.querySelector('.' + key); return el ? el.textContent.trim() : ''; };
+  function rowsFrom(response) {
+    if (Array.isArray(response)) return response;
+    if (response && Array.isArray(response.row)) return response.row;
+    return response && response.row ? [response.row] : [];
+  }
+  function scalar(value, preferredKeys) {
+    if (!value || typeof value !== 'object') return value;
+    const keys = preferredKeys || ['display','label','name','value','text','url','href'];
+    for (let index = 0; index < keys.length; index += 1) {
+      if (value[keys[index]] != null) return value[keys[index]];
+    }
+    return '';
+  }
   function decodeEntities(value) {
     const textarea = document.createElement('textarea');
-    textarea.innerHTML = value == null ? '' : String(value);
+    textarea.innerHTML = value == null ? '' : String(scalar(value));
     return textarea.value;
   }
   function plain(value) {
@@ -33,28 +47,85 @@
     if (/^manage\//i.test(candidate)) return '/' + candidate;
     return /^(?:https?:\/\/|\/)/i.test(candidate) ? candidate : '';
   }
-  function personRecord(node) {
-    const rawName = read(node, 'name');
-    const rawUrl = read(node, 'record_url') || read(node, 'url');
-    const first = plain(read(node, 'first'));
-    const last = plain(read(node, 'last'));
-    const sisid = plain(read(node, 'sisid'));
+  function field(row, keys) {
+    const names = Array.isArray(keys) ? keys : [keys];
+    for (let index = 0; index < names.length; index += 1) {
+      const value = scalar(row && row[names[index]]);
+      if (value != null && String(value).trim()) return value;
+    }
+    const available = row && typeof row === 'object' ? Object.keys(row) : [];
+    for (let index = 0; index < names.length; index += 1) {
+      const normalized = names[index].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const match = available.find(key => key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized && plain(row[key]));
+      if (match) return scalar(row[match]);
+    }
+    return '';
+  }
+  function readableName(value) {
+    const normalized = plain(value);
+    const parts = normalized.split(',').map(part => part.trim()).filter(Boolean);
+    return parts.length > 1 ? parts.slice(1).concat(parts[0]).join(' ') : normalized;
+  }
+  function normalizeRecord(row) {
+    const rawName = field(row, ['per_name','name','display_name','full_name','person_name']);
+    const rawUrl = field(row, ['per_url','record_url','person_url','url']);
+    const first = plain(field(row, ['first','first_name','firstname']));
+    const last = plain(field(row, ['last','last_name','lastname']));
+    const sisid = plain(field(row, ['per_sisid','sisid','SIS_ID','SISID','student_id']));
     return {
-      title: plain(read(node, 'title')),
-      status: plain(read(node, 'status')),
-      name: plain(rawName) || [first, last].filter(Boolean).join(' '),
-      email: plain(read(node, 'email')),
-      phone: plain(read(node, 'phone')),
+      title: plain(field(row, ['event_title','alt_form_title','form_title','title'])),
+      status: plain(field(row, ['per_status','status'])),
+      name: readableName(rawName) || [first, last].filter(Boolean).join(' '),
+      email: plain(field(row, ['per_email','email'])),
+      phone: plain(field(row, ['per_phone','phone','mobile'])),
       sisid: sisid,
-      program: plain(read(node, 'program')),
+      program: plain(field(row, ['app_degree','program','program_name'])),
       record_url: recordLink(rawUrl || rawName) || (sisid ? window.location.origin + '/manage/database/record?lookup=' + encodeURIComponent(sisid) : '')
     };
   }
+  function identityKeys(record) {
+    const keys = [];
+    const sisid = plain(record && record.sisid).toLowerCase();
+    const email = plain(record && record.email).toLowerCase();
+    if (sisid) keys.push('sisid:' + sisid);
+    if (email) keys.push('email:' + email);
+    return keys;
+  }
+  const associations = Array.from(root.querySelectorAll('.person')).map(node => ({
+    title: plain(read(node, 'title')),
+    status: plain(read(node, 'per_status') || read(node, 'status')),
+    email: plain(read(node, 'per_email') || read(node, 'email')),
+    sisid: plain(read(node, 'per_sisid') || read(node, 'sisid'))
+  }));
   const payload = {
     events: Array.from(root.querySelectorAll('.event')).map(node => ({ title:read(node,'title'), startdate:read(node,'startdate'), enddate:read(node,'enddate'), registrants:read(node,'registrants'), expenses:read(node,'expenses') })),
-    people: Array.from(root.querySelectorAll('.person')).map(personRecord)
+    people: associations
   };
-  function sendData() { if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload }, frameOrigin); }
+  async function loadPeople() {
+    try {
+      const url = new URL(recordsService);
+      url.searchParams.set('alt_form_type', 'Event');
+      const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
+      if (!response.ok) throw new Error('Event people query returned ' + response.status);
+      const records = rowsFrom(await response.json()).map(normalizeRecord);
+      const recordsByIdentity = new Map();
+      records.forEach(record => identityKeys(record).forEach(key => { if (!recordsByIdentity.has(key)) recordsByIdentity.set(key, record); }));
+      const eventRecords = records.filter(record => record.title);
+      payload.people = eventRecords.length ? eventRecords : associations.map(association => {
+        const match = identityKeys(association).map(key => recordsByIdentity.get(key)).find(Boolean);
+        return Object.assign({}, association, match || {}, { title:association.title, status:(match && match.status) || association.status });
+      });
+    } catch (error) {
+      payload.peopleError = 'Unable to load current Event records from Slate. Please try again.';
+      console.error('Event people query failed.', error);
+    }
+    return payload;
+  }
+  const payloadReady = loadPeople();
+  async function sendData() {
+    const resolvedPayload = await payloadReady;
+    if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload:resolvedPayload }, frameOrigin);
+  }
   function openRecord(value) {
     try {
       const url = new URL(String(value || ''), window.location.origin);
