@@ -2,7 +2,7 @@
   'use strict';
 
   const PRODUCTION_HOST = 'enrollmentgateway-lab.github.io';
-  const SITE_TOKEN = '';
+  const SITE_TOKEN = '41948a5bca5f4a97b32961ff03ce053f';
 
   if (window.location.hostname !== PRODUCTION_HOST || !SITE_TOKEN) return;
 
