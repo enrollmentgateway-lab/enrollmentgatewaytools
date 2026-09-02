@@ -11,10 +11,64 @@
       .homepage *::after {
         box-sizing: border-box;
       }
+      .home-tabs {
+        display: flex;
+        gap: 6px;
+        width: min(100%, 390px);
+        margin: 0 auto 24px;
+        padding: 5px;
+        border: 1px solid #d1d5db;
+        border-radius: 999px;
+        background: #ffffff;
+        box-shadow: 0 3px 10px rgba(0,0,0,.07);
+      }
+      .home-tab {
+        flex: 1;
+        min-height: 40px;
+        padding: 9px 16px;
+        border: 0;
+        border-radius: 999px;
+        color: #6b7280;
+        font: 700 13px/1 Arial, sans-serif;
+        background: transparent;
+        cursor: pointer;
+      }
+      .home-tab[aria-selected="true"] { color: #ffffff; background: #1a2b4a; }
+      .home-tab:focus-visible { outline: 3px solid rgba(200,149,42,.42); outline-offset: 2px; }
+      .home-panel[hidden] { display: none !important; }
+      .other-report-list { max-width: 860px; margin: 0 auto; }
+      .other-report-link {
+        display: grid;
+        grid-template-columns: minmax(0,1fr) auto;
+        gap: 20px;
+        align-items: center;
+        width: 100%;
+        padding: 20px 24px;
+        border: 1px solid #e5e7eb;
+        border-left: 5px solid #c8952a;
+        border-radius: 10px;
+        color: inherit;
+        text-decoration: none;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,.08);
+      }
+      .other-report-link:hover { border-color: #c8952a; }
+      .other-report-title { display: block; margin-bottom: 5px; color: #1f2937; font-size: 18px; font-weight: 700; }
+      .other-report-description { display: block; color: #6b7280; font-size: 14px; line-height: 1.5; }
+      .other-report-action { color: #8a6414; font-size: 14px; font-weight: 700; white-space: nowrap; }
+      @media (max-width: 520px) {
+        .other-report-link { grid-template-columns: 1fr; }
+      }
     </style>
   </head>
   <body style="margin: 0; background: #f7f4ef; color: #1f2937; font-family: Arial, sans-serif;">
     <main class="homepage" style="width: 100%; margin: 0 auto; padding: 24px;">
+      <div class="home-tabs" role="tablist" aria-label="Homepage sections">
+        <button id="home-enrollment-tab" class="home-tab" type="button" role="tab" aria-selected="true" aria-controls="home-enrollment-panel">Enrollment Tools</button>
+        <button id="home-other-tab" class="home-tab" type="button" role="tab" aria-selected="false" aria-controls="home-other-panel" tabindex="-1">Other</button>
+      </div>
+
+      <section id="home-enrollment-panel" class="home-panel" role="tabpanel" aria-labelledby="home-enrollment-tab">
       <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 20px;">
         <div style="width: 280px; padding: 24px; text-align: center; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); font-family: Arial, sans-serif; display: flex; flex-direction: column;">
           <h2 style="margin: 0 0 8px; color: #1f2937; font-size: 20px;">Funnel Overview</h2>
@@ -49,14 +103,6 @@
         </div>
 
         <div style="width: 280px; padding: 24px; text-align: center; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); font-family: Arial, sans-serif; display: flex; flex-direction: column;">
-          <h2 style="margin: 0 0 8px; color: #1f2937; font-size: 20px;">Public Event Registrants</h2>
-          <p style="margin: 0 0 18px; color: #6b7280; font-size: 14px; line-height: 1.5; flex-grow: 1;">
-            Review public events by start date and compare their registration totals.
-          </p>
-          <a href="https://enroll.gs.edu/portal/public_internal_events" style="display: inline-block; padding: 11px 20px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px;">Open Public Event Registrants</a>
-        </div>
-
-        <div style="width: 280px; padding: 24px; text-align: center; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); font-family: Arial, sans-serif; display: flex; flex-direction: column;">
           <h2 style="margin: 0 0 8px; color: #1f2937; font-size: 20px;">BetterQuery</h2>
           <p style="margin: 0 0 18px; color: #6b7280; font-size: 14px; line-height: 1.5; flex-grow: 1;">
             Query Slate using simple, natural-language requests.
@@ -72,6 +118,47 @@
           <a href="https://enroll.gs.edu/portal/record_lookup" style="display: inline-block; padding: 11px 20px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px;">Open Record Lookup</a>
         </div>
       </div>
+      </section>
+
+      <section id="home-other-panel" class="home-panel" role="tabpanel" aria-labelledby="home-other-tab" hidden>
+        <div class="other-report-list">
+          <a class="other-report-link" href="https://enroll.gs.edu/portal/public_internal_events">
+            <span>
+              <span class="other-report-title">Public Event Registrants</span>
+              <span class="other-report-description">Review public events by start date and compare their registration totals.</span>
+            </span>
+            <span class="other-report-action">Open report &rarr;</span>
+          </a>
+        </div>
+      </section>
     </main>
+    <script>
+    (function () {
+      'use strict';
+      const tabs = Array.from(document.querySelectorAll('.home-tab'));
+      function selectTab(selected, focus) {
+        tabs.forEach(function (tab) {
+          const active = tab === selected;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+          document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
+        });
+        if (focus) selected.focus();
+      }
+      tabs.forEach(function (tab, index) {
+        tab.addEventListener('click', function () { selectTab(tab, false); });
+        tab.addEventListener('keydown', function (event) {
+          if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+          event.preventDefault();
+          let next = index;
+          if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabs.length - 1;
+          selectTab(tabs[next], true);
+        });
+      });
+    }());
+    </script>
   </body>
 </html>
