@@ -295,7 +295,7 @@
       if (!record) return;
       currentProfile=record;
       const profileHeading=document.createElement('div'); profileHeading.className='profile-section-title'; profileHeading.textContent='Person Profile'; profile.appendChild(profileHeading);
-      const fields = [['Program','program'],['Status','status'],['Teaching Site','teachingsite'],['Pipeline','pipeline'],['Location Code','location_code'],['Email','email'],['Phone','phone'],['Birthdate','birthdate']];
+      const fields = [['SIS ID','SIS_ID'],['Program','program'],['Status','status'],['Teaching Site','teachingsite'],['Pipeline','pipeline'],['Location Code','location_code'],['Email','email'],['Phone','phone'],['Birthdate','birthdate']];
       fields.forEach(([label,key]) => { const el=document.createElement('div'); el.className='field' + (['program','status','teachingsite'].includes(key) ? ' feature' : ''); el.innerHTML=`<label>${label}</label><b></b>`; el.querySelector('b').textContent=text(record[key]); profile.appendChild(el); });
       setApplicationRecords(record, []);
       requestAdditionalApplications(record);
