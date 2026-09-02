@@ -187,6 +187,141 @@ function json(data, env, status = 200) {
 
 
 // ============================================================
+// PRIVACY-FRIENDLY PORTAL ANALYTICS
+// ============================================================
+
+const ANALYTICS_RETENTION_SECONDS = 90 * 24 * 60 * 60;
+const ANALYTICS_PATHS = new Set([
+  "/enrollmentgatewaytools/",
+  "/enrollmentgatewaytools/funnel-overview/",
+  "/enrollmentgatewaytools/pipeline-overview/",
+  "/enrollmentgatewaytools/teaching-site-overview/",
+  "/enrollmentgatewaytools/event-tracker/",
+  "/enrollmentgatewaytools/regional-campus/",
+  "/enrollmentgatewaytools/student-lookup/",
+  "/enrollmentgatewaytools/queryomatic/",
+  "/enrollmentgatewaytools/queryomatic/admin/",
+]);
+
+function analyticsLabel(path) {
+  const labels = {
+    "/enrollmentgatewaytools/": "Enrollment Intelligence Hub",
+    "/enrollmentgatewaytools/funnel-overview/": "Funnel Overview",
+    "/enrollmentgatewaytools/pipeline-overview/": "Pipeline Overview",
+    "/enrollmentgatewaytools/teaching-site-overview/": "Teaching Sites",
+    "/enrollmentgatewaytools/event-tracker/": "Event Tracker",
+    "/enrollmentgatewaytools/regional-campus/": "Regional Campus",
+    "/enrollmentgatewaytools/student-lookup/": "Record Lookup",
+    "/enrollmentgatewaytools/queryomatic/": "BetterQuery",
+    "/enrollmentgatewaytools/queryomatic/admin/": "BetterQuery Admin",
+  };
+
+  return labels[path] || path;
+}
+
+function cleanAnalyticsPath(value) {
+  let path;
+
+  try {
+    path = new URL(String(value || ""), "https://example.invalid").pathname;
+  } catch {
+    return null;
+  }
+
+  if (!path.endsWith("/")) path += "/";
+  return ANALYTICS_PATHS.has(path) ? path : null;
+}
+
+async function recordAnalyticsEvent(request, env) {
+  const origin = request.headers.get("Origin");
+  if (origin !== env.ALLOWED_ORIGIN) {
+    return json({ error: "Origin not allowed" }, env, 403);
+  }
+
+  const body = await request.json();
+  const path = cleanAnalyticsPath(body?.path);
+  const session = String(body?.session || "");
+
+  if (!path || !/^[a-f0-9-]{20,64}$/i.test(session)) {
+    return json({ error: "Invalid analytics event" }, env, 400);
+  }
+
+  const occurredAt = new Date().toISOString();
+  const key = `analytics:event:${occurredAt}:${crypto.randomUUID()}`;
+
+  await env.OPTIONS_CACHE.put(key, "1", {
+    expirationTtl: ANALYTICS_RETENTION_SECONDS,
+    metadata: { path, session, occurredAt },
+  });
+
+  return json({ recorded: true }, env, 202);
+}
+
+async function readAnalyticsSummary(url, env) {
+  const requestedDays = Number.parseInt(url.searchParams.get("days") || "30", 10);
+  const days = [7, 30, 90].includes(requestedDays) ? requestedDays : 30;
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const events = [];
+  let cursor;
+
+  do {
+    const page = await env.OPTIONS_CACHE.list({
+      prefix: "analytics:event:",
+      cursor,
+      limit: 1000,
+    });
+
+    for (const key of page.keys) {
+      const event = key.metadata;
+      const eventTime = Date.parse(event?.occurredAt || "");
+      if (event && eventTime >= cutoff && cleanAnalyticsPath(event.path)) {
+        events.push(event);
+      }
+    }
+
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+
+  const sessions = new Set();
+  const daily = new Map();
+  const pages = new Map();
+
+  for (const event of events) {
+    const date = event.occurredAt.slice(0, 10);
+    sessions.add(event.session);
+
+    if (!daily.has(date)) daily.set(date, { pageviews: 0, sessions: new Set() });
+    const day = daily.get(date);
+    day.pageviews += 1;
+    day.sessions.add(event.session);
+
+    if (!pages.has(event.path)) pages.set(event.path, { pageviews: 0, sessions: new Set() });
+    const page = pages.get(event.path);
+    page.pageviews += 1;
+    page.sessions.add(event.session);
+  }
+
+  return json({
+    days,
+    generatedAt: new Date().toISOString(),
+    pageviews: events.length,
+    visits: sessions.size,
+    daily: [...daily.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, value]) => ({ date, pageviews: value.pageviews, visits: value.sessions.size })),
+    pages: [...pages.entries()]
+      .map(([path, value]) => ({
+        path,
+        label: analyticsLabel(path),
+        pageviews: value.pageviews,
+        visits: value.sessions.size,
+      }))
+      .sort((a, b) => b.pageviews - a.pageviews || a.label.localeCompare(b.label)),
+  }, env);
+}
+
+
+// ============================================================
 // UTF-8 / BASE64
 // ============================================================
 
@@ -1592,6 +1727,20 @@ export default {
 
 
     try {
+
+      if (
+        url.pathname === "/api/analytics/event" &&
+        request.method === "POST"
+      ) {
+        return await recordAnalyticsEvent(request, env);
+      }
+
+      if (
+        url.pathname === "/api/analytics/summary" &&
+        request.method === "GET"
+      ) {
+        return await readAnalyticsSummary(url, env);
+      }
 
 
       // ======================================================

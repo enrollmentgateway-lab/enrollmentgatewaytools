@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Portal Analytics — Gateway Seminary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --navy:#1a2b4a; --navy-mid:#263d67; --gold:#c8952a; --cream:#f7f4ef; --white:#fff; --muted:#657087; --border:#dfe4ec; --red:#a43b3b; --shadow:0 3px 14px rgba(26,43,74,.09); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--navy); background:var(--cream); font-family:Inter,system-ui,sans-serif; }
+    .header { min-height:72px; display:flex; align-items:center; gap:20px; padding:14px max(24px,calc((100% - 1120px)/2)); color:#fff; background:linear-gradient(120deg,var(--navy),var(--navy-mid)); border-bottom:3px solid var(--gold); }
+    .wordmark { color:inherit; text-decoration:none; font:700 1.2rem/1.1 'Playfair Display',Georgia,serif; }
+    .wordmark span { display:block; margin-top:3px; color:#d8dfeb; font:600 .62rem/1.2 Inter,sans-serif; letter-spacing:.12em; text-transform:uppercase; }
+    .divider { width:1px; height:36px; background:rgba(255,255,255,.28); }
+    .page-title { color:rgba(255,255,255,.72); font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+    main { width:min(1120px,calc(100% - 32px)); margin:0 auto; padding:38px 0 60px; }
+    .intro { display:flex; justify-content:space-between; gap:24px; align-items:end; margin-bottom:24px; }
+    h1 { margin:0 0 7px; font:700 clamp(1.8rem,4vw,2.4rem)/1.15 'Playfair Display',Georgia,serif; }
+    .subtitle,.updated { margin:0; color:var(--muted); line-height:1.5; }
+    .controls { display:flex; align-items:center; gap:10px; }
+    label { color:var(--muted); font-size:.7rem; font-weight:750; letter-spacing:.1em; text-transform:uppercase; }
+    select { padding:9px 34px 9px 12px; color:var(--navy); font:650 .9rem Inter,sans-serif; border:1px solid var(--border); border-radius:8px; background:var(--white); box-shadow:var(--shadow); }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); overflow:hidden; margin-bottom:30px; border-radius:10px; background:linear-gradient(135deg,var(--navy),var(--navy-mid)); box-shadow:0 7px 24px rgba(26,43,74,.22); }
+    .stat { padding:24px 26px; color:#fff; border-right:1px solid rgba(255,255,255,.14); }
+    .stat:last-child { border-right:0; }
+    .stat-value { font:700 2.15rem/1.1 'Playfair Display',Georgia,serif; }
+    .stat-label { margin-top:7px; color:#d9e0eb; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr); gap:24px; }
+    .panel { overflow:hidden; border:1px solid var(--border); border-radius:10px; background:var(--white); box-shadow:var(--shadow); }
+    .panel-head { padding:18px 20px; border-bottom:1px solid var(--border); }
+    h2 { margin:0; font:700 1.25rem/1.2 'Playfair Display',Georgia,serif; }
+    .chart { height:270px; display:flex; align-items:end; gap:5px; padding:24px 20px 12px; }
+    .bar-wrap { min-width:0; height:100%; flex:1; display:flex; flex-direction:column; justify-content:end; align-items:center; gap:7px; }
+    .bar { width:100%; min-height:2px; border-radius:4px 4px 0 0; background:linear-gradient(180deg,#e0b04a,var(--gold)); }
+    .bar-label { color:var(--muted); font-size:.62rem; white-space:nowrap; }
+    table { width:100%; border-collapse:collapse; }
+    th { padding:11px 16px; color:#fff; background:var(--navy); font-size:.68rem; letter-spacing:.07em; text-align:left; text-transform:uppercase; }
+    td { padding:13px 16px; border-bottom:1px solid var(--border); font-size:.84rem; }
+    tbody tr:last-child td { border-bottom:0; }
+    .number { color:var(--navy); text-align:right; font-weight:750; font-variant-numeric:tabular-nums; }
+    .state { min-height:180px; display:grid; place-items:center; padding:32px; color:var(--muted); text-align:center; }
+    .error { color:var(--red); }
+    .updated { margin-top:18px; font-size:.75rem; text-align:right; }
+    @media (max-width:760px) { .intro { align-items:start; flex-direction:column; } .stats { grid-template-columns:1fr; } .stat { border-right:0; border-bottom:1px solid rgba(255,255,255,.14); } .grid { grid-template-columns:1fr; } .chart { overflow-x:auto; } .bar-wrap { min-width:18px; } }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a class="wordmark" href="../">Gateway Seminary<span>Admissions · Enrollment Intelligence</span></a>
+    <div class="divider"></div>
+    <div class="page-title">Portal Analytics</div>
+  </header>
+  <main>
+    <section class="intro">
+      <div>
+        <h1>Portal Analytics</h1>
+        <p class="subtitle">Anonymous usage across Enrollment Intelligence tools.</p>
+      </div>
+      <div class="controls">
+        <label for="range">Date range</label>
+        <select id="range"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="Usage totals">
+      <div class="stat"><div class="stat-value" id="pageviews">—</div><div class="stat-label">Page views</div></div>
+      <div class="stat"><div class="stat-value" id="visits">—</div><div class="stat-label">Anonymous sessions</div></div>
+      <div class="stat"><div class="stat-value" id="pagesUsed">—</div><div class="stat-label">Tools used</div></div>
+    </section>
+
+    <section id="loading" class="panel state">Loading analytics…</section>
+    <div id="dashboard" class="grid" hidden>
+      <section class="panel">
+        <div class="panel-head"><h2>Daily page views</h2></div>
+        <div class="chart" id="chart" aria-label="Daily page views chart"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Usage by tool</h2></div>
+        <table>
+          <thead><tr><th>Tool</th><th class="number">Views</th><th class="number">Sessions</th></tr></thead>
+          <tbody id="pages"></tbody>
+        </table>
+        <div id="empty" class="state" hidden>No activity recorded in this period.</div>
+      </section>
+    </div>
+    <p class="updated" id="updated"></p>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+      const API = 'https://slate-query-tool.queryomatic.workers.dev/api/analytics/summary';
+      const number = new Intl.NumberFormat();
+      const range = document.getElementById('range');
+
+      function fillDates(days, rows) {
+        const byDate = new Map(rows.map(row => [row.date, row]));
+        const result = [];
+        const today = new Date();
+        for (let offset = days - 1; offset >= 0; offset -= 1) {
+          const date = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - offset));
+          const key = date.toISOString().slice(0, 10);
+          result.push(byDate.get(key) || { date: key, pageviews: 0, visits: 0 });
+        }
+        return result;
+      }
+
+      function renderChart(days, rows) {
+        const chart = document.getElementById('chart');
+        const data = fillDates(days, rows);
+        const max = Math.max(1, ...data.map(row => row.pageviews));
+        chart.innerHTML = '';
+        data.forEach((row, index) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'bar-wrap';
+          wrap.title = `${row.date}: ${number.format(row.pageviews)} page views`;
+          const bar = document.createElement('div');
+          bar.className = 'bar';
+          bar.style.height = `${Math.max(row.pageviews ? 4 : 1, row.pageviews / max * 100)}%`;
+          const label = document.createElement('div');
+          label.className = 'bar-label';
+          label.textContent = (days === 7 || index % 5 === 0 || index === data.length - 1) ? row.date.slice(5) : '';
+          wrap.append(bar, label);
+          chart.appendChild(wrap);
+        });
+      }
+
+      function render(data) {
+        document.getElementById('pageviews').textContent = number.format(data.pageviews);
+        document.getElementById('visits').textContent = number.format(data.visits);
+        document.getElementById('pagesUsed').textContent = number.format(data.pages.length);
+        renderChart(data.days, data.daily);
+
+        const tbody = document.getElementById('pages');
+        tbody.innerHTML = '';
+        data.pages.forEach(page => {
+          const row = document.createElement('tr');
+          const label = document.createElement('td');
+          const views = document.createElement('td');
+          const visits = document.createElement('td');
+          label.textContent = page.label;
+          views.textContent = number.format(page.pageviews);
+          visits.textContent = number.format(page.visits);
+          views.className = visits.className = 'number';
+          row.append(label, views, visits);
+          tbody.appendChild(row);
+        });
+
+        document.getElementById('empty').hidden = data.pages.length !== 0;
+        document.querySelector('table').hidden = data.pages.length === 0;
+        document.getElementById('updated').textContent = `Updated ${new Date(data.generatedAt).toLocaleString()}`;
+      }
+
+      async function load() {
+        const loading = document.getElementById('loading');
+        const dashboard = document.getElementById('dashboard');
+        loading.hidden = false;
+        loading.className = 'panel state';
+        loading.textContent = 'Loading analytics…';
+        dashboard.hidden = true;
+
+        try {
+          const response = await fetch(`${API}?days=${range.value}`, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`Analytics request failed (${response.status})`);
+          render(await response.json());
+          loading.hidden = true;
+          dashboard.hidden = false;
+        } catch (error) {
+          loading.className = 'panel state error';
+          loading.textContent = error.message;
+        }
+      }
+
+      range.addEventListener('change', load);
+      load();
+    }());
+  </script>
+</body>
+</html>
