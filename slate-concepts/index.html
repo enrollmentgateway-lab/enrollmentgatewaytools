@@ -60,7 +60,7 @@
       <div class="section-intro centered">
         <p class="eyebrow">Start here</p>
         <h2 id="mental-model-title">One person. Many moments.</h2>
-        <p>Slate keeps one lasting person record and connects it to records for particular moments—like degree applications. Most confusion disappears once you know which record you mean.</p>
+        <p>Slate keeps one current person record and connects it to records for particular moments—like degree applications. Most confusion disappears once you know which record you mean.</p>
       </div>
 
       <div class="record-map" aria-label="Diagram showing one person connected to multiple applications">
@@ -80,12 +80,12 @@
         <div class="application-stack">
           <article class="record-card application-record muted-record">
             <div class="record-label"><span class="record-icon application-icon" aria-hidden="true"></span> Application</div>
-            <h3>M.Div. · Fall 2021</h3>
+            <h3>Certificate · Spring 2024</h3>
             <p><strong>Decided</strong> · Admit</p>
           </article>
           <article class="record-card application-record muted-record">
             <div class="record-label"><span class="record-icon application-icon" aria-hidden="true"></span> Application</div>
-            <h3>Certificate · Spring 2024</h3>
+            <h3>M.Div. · Fall 2021</h3>
             <p><strong>Decided</strong> · Admit</p>
           </article>
           <article class="record-card application-record active-record">
@@ -190,14 +190,14 @@
               <div class="field-card-heading"><span class="record-icon person-icon" aria-hidden="true"></span><div><p>One per individual</p><h3>Person fields</h3></div></div>
               <p>Facts about the individual across their relationship with Gateway.</p>
               <ul class="chip-list" aria-label="Examples of person fields">
-                <li>Preferred name</li><li>Email</li><li>Mobile phone</li><li>Mailing address</li><li>Person status</li><li>SIS ID</li>
+                <li>Preferred name</li><li>Email</li><li>Mobile phone</li><li>Mailing address</li><li>Person status</li><li>SIS ID</li><li>Teaching site</li>
               </ul>
             </article>
             <article class="field-card application-field-card">
               <div class="field-card-heading"><span class="record-icon application-icon" aria-hidden="true"></span><div><p>One set per application</p><h3>Application fields</h3></div></div>
               <p>Facts about a particular attempt to enter a program and term.</p>
               <ul class="chip-list" aria-label="Examples of application fields">
-                <li>Entry term</li><li>Degree program</li><li>Application status</li><li>Decision code</li><li>Decision date</li><li>Teaching site</li>
+                <li>Entry term</li><li>Degree program</li><li>Application status</li><li>Decision code</li><li>Decision date</li>
               </ul>
             </article>
           </div>
@@ -216,23 +216,25 @@
               <article class="status-lane person-lane">
                 <div class="lane-heading"><span>Person status</span><small>Furthest stage ever reached</small></div>
                 <ol class="person-status-line">
-                  <li><span>Inquiries</span><small>Inquirer</small></li>
-                  <li><span>Prospect</span><small>Prospect</small></li>
-                  <li><span>App</span><small>Applicant</small></li>
-                  <li><span>Student</span><small>Student</small></li>
-                  <li class="current"><span>Graduate</span><small>Graduate</small></li>
+                  <li data-status="Inquiries" role="button" tabindex="0"><span>Inquiries</span><small>Inquirer</small></li>
+                  <li data-status="Prospect" role="button" tabindex="0"><span>Prospect</span><small>Prospect</small></li>
+                  <li data-status="App" role="button" tabindex="0"><span>App</span><small>Applicant</small></li>
+                  <li data-status="Student" role="button" tabindex="0"><span>Student</span><small>Student</small></li>
+                  <li class="current" data-status="Graduate" role="button" tabindex="0"><span>Graduate</span><small>Graduate</small></li>
                 </ol>
                 <p class="lane-note">Moves forward; it does not reverse when a person begins a new interest.</p>
+                <div class="status-detail" aria-live="polite">Select a stage above for a fuller description.</div>
               </article>
               <article class="status-lane application-lane">
                 <div class="lane-heading"><span>Application status</span><small>Current state of one application</small></div>
                 <ol class="application-status-list">
-                  <li><span>01</span>Awaiting Submission</li>
-                  <li><span>02</span>Awaiting Payment</li>
-                  <li class="current"><span>03</span>Awaiting Materials</li>
-                  <li><span>04</span>Decided</li>
+                  <li data-status="Awaiting Submission" role="button" tabindex="0"><span>01</span>Awaiting Submission</li>
+                  <li data-status="Awaiting Payment" role="button" tabindex="0"><span>02</span>Awaiting Payment</li>
+                  <li class="current" data-status="Awaiting Materials" role="button" tabindex="0"><span>03</span>Awaiting Materials</li>
+                  <li data-status="Decided" role="button" tabindex="0"><span>04</span>Decided</li>
                 </ol>
                 <p class="lane-note">A different application belonging to the same person can be in a different state.</p>
+                <div class="status-detail" aria-live="polite">Select a status above for a fuller description.</div>
               </article>
             </div>
           </div>
@@ -244,9 +246,18 @@
               <p><strong>Decided</strong> is an application status. It does not tell you which decision was made.</p>
             </div>
             <div class="decision-codes" aria-label="Application decision codes">
-              <span class="admit"><i aria-hidden="true"></i>Admit</span>
-              <span class="provisional"><i aria-hidden="true"></i>Admit Provisional</span>
-              <span class="deny"><i aria-hidden="true"></i>Deny</span>
+              <div class="decision-code-row">
+                <button type="button" class="decision-code admit" aria-expanded="false" aria-controls="decision-detail-admit"><i aria-hidden="true"></i><span>Admit</span><svg class="decision-code-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                <div class="decision-code-detail" id="decision-detail-admit" hidden><p>The applicant is admitted to this program and entry term. The application status moves to Decided.</p></div>
+              </div>
+              <div class="decision-code-row">
+                <button type="button" class="decision-code provisional" aria-expanded="false" aria-controls="decision-detail-provisional"><i aria-hidden="true"></i><span>Admit Provisional</span><svg class="decision-code-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                <div class="decision-code-detail" id="decision-detail-provisional" hidden><p>The applicant is admitted with a condition still to satisfy—for example, a final transcript or a missing prerequisite—before enrollment is confirmed.</p></div>
+              </div>
+              <div class="decision-code-row">
+                <button type="button" class="decision-code deny" aria-expanded="false" aria-controls="decision-detail-deny"><i aria-hidden="true"></i><span>Deny</span><svg class="decision-code-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                <div class="decision-code-detail" id="decision-detail-deny" hidden><p>The application will not be admitted for the requested program and entry term. The same person may still apply to a different program or a later term.</p></div>
+              </div>
             </div>
             <p class="decision-warning"><strong>Never place a decision code on the person.</strong> A person can receive different decisions on different applications.</p>
           </div>

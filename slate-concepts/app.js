@@ -240,6 +240,55 @@
     });
   });
 
+  // Decision-code breakdown accordions
+  document.querySelectorAll('.decision-code').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const expanded = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!expanded));
+      const detail = byId(button.getAttribute('aria-controls'));
+      if (detail) detail.hidden = expanded;
+    });
+  });
+
+  // Status-ladder detail panels
+  const personStatusDetails = {
+    'Inquiries': 'The person has expressed interest and is recorded as an inquiry. No application exists yet.',
+    'Prospect': 'Interest has been qualified further, but the person has not yet started an application.',
+    'App': 'The person has at least one application in progress or decided.',
+    'Student': 'The person has enrolled in at least one program.',
+    'Graduate': 'The person has completed a program. Person status does not reverse even if the person shows new interest later.'
+  };
+  const applicationStatusDetails = {
+    'Awaiting Submission': 'The application has been started but not yet submitted for review.',
+    'Awaiting Payment': 'The application has been submitted; the application fee has not yet been received.',
+    'Awaiting Materials': 'The fee has been paid, but required supporting materials—transcripts, recommendations, and similar items—are still outstanding.',
+    'Decided': 'All required materials are in and a decision code (Admit, Admit Provisional, or Deny) has been recorded.'
+  };
+
+  function wireStatusLadder(listSelector, details) {
+    const list = document.querySelector(listSelector);
+    if (!list) return;
+    const detail = list.parentElement.querySelector('.status-detail');
+    const items = Array.from(list.querySelectorAll('li[data-status]'));
+
+    function select(item) {
+      items.forEach(function (candidate) { candidate.classList.toggle('selected', candidate === item); });
+      if (detail) detail.textContent = details[item.getAttribute('data-status')] || '';
+    }
+
+    items.forEach(function (item) {
+      item.addEventListener('click', function () { select(item); });
+      item.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        select(item);
+      });
+    });
+  }
+
+  wireStatusLadder('.person-status-line', personStatusDetails);
+  wireStatusLadder('.application-status-list', applicationStatusDetails);
+
   // Knowledge check
   const quizForm = byId('quiz-form');
   const resetQuiz = byId('reset-quiz');
