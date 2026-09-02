@@ -92,18 +92,37 @@
     .event-count { color: var(--navy); font: 700 1.8rem/1 'Playfair Display', Georgia, serif; font-variant-numeric: tabular-nums; }
     .event-empty { border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); }
     .registration-detail { min-width: 0; }
+    .registration-detail > .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 26px;
+      padding: 9px 14px;
+      border: 1px solid #d7dde6;
+      border-radius: 999px;
+      color: var(--navy);
+      font: 700 .78rem/1 Inter, sans-serif;
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 2px 8px rgba(26,43,74,.07);
+      cursor: pointer;
+      transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    .registration-detail > .back-button span { color: var(--gold); font-size: 1rem; transition: transform .18s ease; }
+    .registration-detail > .back-button:hover { border-color: rgba(200,149,42,.7); background: var(--white); box-shadow: 0 5px 14px rgba(26,43,74,.11); transform: translateY(-1px); }
+    .registration-detail > .back-button:hover span { transform: translateX(-2px); }
+    .registration-detail > .back-button:focus-visible { outline: 3px solid rgba(200,149,42,.3); outline-offset: 3px; }
     .registration-detail-head { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 24px; }
     .registration-detail-head .public-event-summary { width: min(420px, 100%); margin-bottom: 0; }
     .registration-detail-date { color: var(--muted); font-size: .88rem; font-weight: 650; }
     .registration-chart-panel { padding: 24px; }
     .registration-chart-heading { margin: 0; color: var(--navy); font: 700 1.3rem/1.25 'Playfair Display', Georgia, serif; }
     .registration-chart-copy { margin: 6px 0 24px; color: var(--muted); font-size: .84rem; line-height: 1.5; }
-    .registration-chart { width: 100%; min-height: 330px; overflow-x: auto; }
-    .registration-chart svg { display: block; width: 100%; min-width: 620px; height: 330px; }
+    .registration-chart { width: 100%; min-height: 340px; overflow-x: auto; }
+    .registration-chart svg { display: block; width: 100%; min-width: 620px; height: 340px; overflow: visible; }
     .chart-grid-line { stroke: #dfe4ec; stroke-width: 1; }
     .chart-axis-label { fill: var(--muted); font: 11px Inter, sans-serif; }
-    .chart-area { fill: rgba(200,149,42,.16); }
-    .chart-line { fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-area { fill: url(#registration-area-gradient); }
+    .chart-line { fill: none; stroke: #c78b18; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
     .chart-point { fill: var(--white); stroke: var(--gold); stroke-width: 3; }
     .chart-total-label { fill: var(--navy); font: 700 12px Inter, sans-serif; }
     .registration-chart-empty { border: 1px dashed var(--border); border-radius: 8px; }
@@ -286,6 +305,15 @@
       return element;
     }
 
+    function chartAxisMaximum(value) {
+      if (value <= 4) return 4;
+      const roughStep = value / 4;
+      const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+      const normalized = roughStep / magnitude;
+      const step = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 2.5 ? 2.5 : normalized <= 5 ? 5 : 10) * magnitude;
+      return step * 4;
+    }
+
     function renderRegistrationChart(record) {
       const chart = document.getElementById('registration-chart');
       const emptyChart = document.getElementById('registration-chart-empty');
@@ -300,22 +328,24 @@
       if (!timeline.points.length) return;
 
       const width = 760;
-      const height = 330;
-      const margin = { top:24, right:34, bottom:52, left:50 };
+      const height = 340;
+      const margin = { top:30, right:38, bottom:54, left:54 };
       const plotWidth = width - margin.left - margin.right;
       const plotHeight = height - margin.top - margin.bottom;
-      const maximum = Math.max(1, timeline.points[timeline.points.length - 1].cumulative);
-      const svg = svgElement('svg', { viewBox:'0 0 ' + width + ' ' + height, 'aria-hidden':'true' });
+      const maximum = chartAxisMaximum(timeline.points[timeline.points.length - 1].cumulative);
+      const svg = svgElement('svg', { viewBox:'0 0 ' + width + ' ' + height, preserveAspectRatio:'xMidYMid meet', 'aria-hidden':'true' });
+      const definitions = svgElement('defs');
+      const gradient = svgElement('linearGradient', { id:'registration-area-gradient', x1:'0', y1:'0', x2:'0', y2:'1' });
+      gradient.appendChild(svgElement('stop', { offset:'0%', 'stop-color':'#d9a332', 'stop-opacity':'.28' }));
+      gradient.appendChild(svgElement('stop', { offset:'100%', 'stop-color':'#d9a332', 'stop-opacity':'.03' }));
+      definitions.appendChild(gradient);
+      svg.appendChild(definitions);
 
-      const yLabels = new Set();
       for (let step = 0; step <= 4; step += 1) {
         const y = margin.top + plotHeight - (step / 4 * plotHeight);
-        const value = Math.round(maximum * step / 4);
+        const value = maximum * step / 4;
         svg.appendChild(svgElement('line', { x1:margin.left, y1:y, x2:width - margin.right, y2:y, class:'chart-grid-line' }));
-        if (!yLabels.has(value)) {
-          yLabels.add(value);
-          svg.appendChild(svgElement('text', { x:margin.left - 10, y:y + 4, 'text-anchor':'end', class:'chart-axis-label' }, value.toLocaleString()));
-        }
+        svg.appendChild(svgElement('text', { x:margin.left - 12, y:y + 4, 'text-anchor':'end', class:'chart-axis-label' }, value.toLocaleString()));
       }
 
       const firstTime = Date.parse(timeline.points[0].date);
@@ -328,18 +358,26 @@
         return { x:x, y:y, point:point };
       });
       const linePath = coordinates.map(function (item, index) { return (index ? 'L' : 'M') + item.x + ',' + item.y; }).join(' ');
-      const areaPath = 'M' + coordinates[0].x + ',' + (margin.top + plotHeight) + ' ' + linePath + ' L' + coordinates[coordinates.length - 1].x + ',' + (margin.top + plotHeight) + ' Z';
+      const areaPath = 'M' + coordinates[0].x + ',' + (margin.top + plotHeight) +
+        ' L' + coordinates[0].x + ',' + coordinates[0].y +
+        coordinates.slice(1).map(function (item) { return ' L' + item.x + ',' + item.y; }).join('') +
+        ' L' + coordinates[coordinates.length - 1].x + ',' + (margin.top + plotHeight) + ' Z';
       svg.appendChild(svgElement('path', { d:areaPath, class:'chart-area' }));
       svg.appendChild(svgElement('path', { d:linePath, class:'chart-line' }));
 
-      const labelInterval = Math.max(1, Math.ceil(coordinates.length / 6));
+      let lastLabelX = -Infinity;
       coordinates.forEach(function (item, index) {
         const date = parseDate(item.point.date);
         const point = svgElement('circle', { cx:item.x, cy:item.y, r:5, class:'chart-point' });
         point.appendChild(svgElement('title', {}, dateLabel(item.point.date) + ': ' + item.point.cumulative.toLocaleString() + ' total registrations'));
         svg.appendChild(point);
-        if (index % labelInterval === 0 || index === coordinates.length - 1) {
-          svg.appendChild(svgElement('text', { x:item.x, y:height - 22, 'text-anchor':'middle', class:'chart-axis-label' }, dateFormatter.format(date)));
+        const isFirst = index === 0;
+        const isLast = index === coordinates.length - 1;
+        const enoughRoom = item.x - lastLabelX >= 105 && coordinates[coordinates.length - 1].x - item.x >= 82;
+        if (isFirst || isLast || enoughRoom) {
+          const anchor = isFirst ? 'start' : isLast ? 'end' : 'middle';
+          svg.appendChild(svgElement('text', { x:item.x, y:height - 20, 'text-anchor':anchor, class:'chart-axis-label' }, dateFormatter.format(date)));
+          lastLabelX = item.x;
         }
       });
 
