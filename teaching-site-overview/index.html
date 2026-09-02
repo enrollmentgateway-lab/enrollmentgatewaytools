@@ -11,11 +11,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
 </head>
-<body class="classic-dashboard teaching-dashboard">
+<body class="teaching-dashboard">
   <header class="gs-header">
-    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Teaching Sites Overview">Gateway Seminary<span>Admissions · Enrollment Tools</span></button>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Teaching Sites Overview">Gateway Seminary<span>Admissions</span></button>
     <div class="header-divider"></div>
-    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Enrollment Tools">Home</a>
+    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
   </header>
 
   <div id="loading" class="loading">Waiting for Teaching Sites data from Slate…</div>
@@ -214,9 +214,9 @@
 
     function renderSiteFunnel() {
       const stages = [
-        { key:'inquiries', label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#0f766e' },
-        { key:'applications', label:'Applicants', count:ui.number(data.funnel.applications), color:'#2563eb' },
-        { key:'students', label:'Students', count:ui.number(data.funnel.students), color:'#d95d39' }
+        { key:'inquiries', label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#087c78' },
+        { key:'applications', label:'Applicants', count:ui.number(data.funnel.applications), color:'#1c3a5e' },
+        { key:'students', label:'Students', count:ui.number(data.funnel.students), color:'#d2a53e' }
       ];
       const root = document.getElementById('site-funnel'); root.replaceChildren();
       const empty = document.getElementById('site-funnel-empty');

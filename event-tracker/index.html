@@ -11,11 +11,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
 </head>
-<body class="classic-dashboard event-dashboard">
+<body class="event-dashboard">
   <header class="gs-header">
-    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Event Tracker">Gateway Seminary<span>Admissions · Enrollment Tools</span></button>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Event Tracker">Gateway Seminary<span>Admissions</span></button>
     <div class="header-divider"></div>
-    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Enrollment Tools">Home</a>
+    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
   </header>
 
   <div id="loading" class="loading">Waiting for Event data from Slate…</div>
@@ -321,9 +321,9 @@
 
     function renderEventFunnel(event) {
       const stages = [
-        { key:'inquiries', label:'Inquiries', count:inquiryCount(event), color:'#0f766e' },
-        { key:'applicants', label:'Applicants', count:event.applicants + event.students, color:'#2563eb' },
-        { key:'students', label:'Students', count:event.students, color:'#d95d39' }
+        { key:'inquiries', label:'Inquiries', count:inquiryCount(event), color:'#087c78' },
+        { key:'applicants', label:'Applicants', count:event.applicants + event.students, color:'#1c3a5e' },
+        { key:'students', label:'Students', count:event.students, color:'#d2a53e' }
       ];
       const root = document.getElementById('event-funnel'); root.replaceChildren();
       const empty = document.getElementById('event-funnel-empty');

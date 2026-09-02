@@ -208,7 +208,7 @@ const ANALYTICS_PATHS = new Set([
 
 function analyticsLabel(path) {
   const labels = {
-    "/enrollmentgatewaytools/": "Enrollment Tools",
+    "/enrollmentgatewaytools/": "Admissions",
     "/enrollmentgatewaytools/funnel-overview/": "Funnel Overview",
     "/enrollmentgatewaytools/pipeline-overview/": "Pipeline Overview",
     "/enrollmentgatewaytools/teaching-site-overview/": "Teaching Sites",

@@ -1,6 +1,6 @@
 # Enrollment Gateway Tools
 
-This repository is the single source of truth for the Enrollment Tools hub and its associated tools.
+This repository is the single source of truth for the Admissions hub and its associated tools.
 
 ## Structure
 

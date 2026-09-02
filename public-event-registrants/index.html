@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../assets/dashboard.css">
   <style>
     .public-event-dashboard .container { max-width: 1040px; }
-    .public-event-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 4px solid var(--gold); }
+    .public-event-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .public-event-summary .stat-cell { text-align: center; }
     .event-card-panel { overflow: visible; border: 0; background: transparent; box-shadow: none; }
     .event-sort-row {
@@ -143,11 +143,11 @@
     }
   </style>
 </head>
-<body class="classic-dashboard public-event-dashboard">
+<body class="public-event-dashboard">
   <header class="gs-header">
     <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Public Event Registrants">Gateway Seminary<span>Report</span></button>
     <div class="header-divider"></div>
-    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Enrollment Tools">Home</a>
+    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
   </header>
 
   <div id="loading" class="loading">Waiting for public event data from Slate&hellip;</div>
