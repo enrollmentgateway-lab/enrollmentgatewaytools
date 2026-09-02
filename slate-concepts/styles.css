@@ -1376,7 +1376,7 @@ svg {
 
 .person-status-line {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   margin: 32px 0 0;
   padding: 0;
   list-style: none;
