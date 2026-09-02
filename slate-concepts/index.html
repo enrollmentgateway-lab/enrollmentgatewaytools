@@ -447,6 +447,23 @@
             </div>
           </div>
 
+          <div class="llm-practice" id="llm-practice" hidden aria-labelledby="llm-practice-title">
+            <div class="builder-heading dark-heading">
+              <div><p class="eyebrow light">Try it live</p><h3 id="llm-practice-title">Get feedback from Claude</h3></div>
+              <span class="builder-note">Uses your own Claude usage</span>
+            </div>
+            <div class="llm-practice-body">
+              <label class="llm-practice-label" for="llm-practice-input">Write a research request you’d actually send</label>
+              <textarea id="llm-practice-input" rows="3" placeholder="e.g. Can you send me the Phoenix numbers for Fall 2027?"></textarea>
+              <div class="llm-practice-actions">
+                <button type="button" id="llm-practice-ask" class="button button-dark">Get feedback</button>
+                <button type="button" id="llm-practice-stop" class="text-button" hidden>Stop</button>
+              </div>
+              <div id="llm-practice-answer" class="llm-practice-answer" aria-live="polite" hidden></div>
+              <p id="llm-practice-status" class="llm-practice-status" aria-live="polite"></p>
+            </div>
+          </div>
+
           <details class="example-drawer">
             <summary>More before → after examples <span aria-hidden="true">+</span></summary>
             <div class="rewrite-list">

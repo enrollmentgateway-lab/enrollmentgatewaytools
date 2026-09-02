@@ -1978,7 +1978,8 @@ svg {
 }
 
 .segment-builder,
-.request-builder {
+.request-builder,
+.llm-practice {
   margin-top: 22px;
   overflow: hidden;
   background: var(--white);
@@ -2360,6 +2361,67 @@ select:focus {
 
 .request-builder {
   margin-top: 24px;
+}
+
+.llm-practice-body {
+  padding: 24px 26px 26px;
+}
+
+.llm-practice-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.llm-practice textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid #cfd2d2;
+  border-radius: 4px;
+  font: inherit;
+  font-size: .82rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.llm-practice textarea:focus-visible {
+  border-color: var(--gold-dark);
+}
+
+.llm-practice-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.llm-practice-answer {
+  margin-top: 16px;
+  padding: 16px 18px;
+  color: var(--ink);
+  background: #f6f6f3;
+  border-left: 4px solid var(--gold-dark);
+  font-size: .82rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.llm-practice-status {
+  min-height: 18px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+.llm-practice-status.error {
+  color: var(--rust);
 }
 
 .builder-heading.dark-heading {

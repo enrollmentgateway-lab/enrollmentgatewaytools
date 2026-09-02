@@ -224,6 +224,98 @@
     });
   }
 
+  // Practice with Claude: live feedback on a drafted research request
+  (function () {
+    const panel = byId('llm-practice');
+    if (!panel) return;
+    const input = byId('llm-practice-input');
+    const askButton = byId('llm-practice-ask');
+    const stopButton = byId('llm-practice-stop');
+    const answer = byId('llm-practice-answer');
+    const status = byId('llm-practice-status');
+    let sample = null;
+    let controller = null;
+
+    const FORMULA_GUIDE = 'A strong Slate research request names five things: (1) Decision — what the requester will do with the answer; (2) Unit — whether the count/list is of people or applications; (3) Criteria — the population or filter (for example, active applicants, admitted students, or a specific teaching site); (4) Timeframe — the term or cycle and an "as of" date; (5) Output — whether a count/report or a list/query is wanted, and how results should be grouped.';
+
+    function setStatus(text, isError) {
+      status.textContent = text;
+      status.classList.toggle('error', Boolean(isError));
+    }
+
+    function setBusy(busy) {
+      askButton.disabled = busy;
+      input.disabled = busy;
+      stopButton.hidden = !busy;
+    }
+
+    async function ask() {
+      const draft = input.value.trim();
+      if (!draft) {
+        setStatus('Write a request first.', true);
+        return;
+      }
+      if (!sample) return;
+
+      controller = new AbortController();
+      setBusy(true);
+      setStatus('Thinking…');
+      answer.hidden = true;
+      answer.textContent = '';
+
+      const prompt = 'You are a friendly Slate research partner at a graduate seminary’s admissions office, reviewing a colleague’s draft data request before it goes to the Slate reporting team.\n\n'
+        + FORMULA_GUIDE + '\n\n'
+        + 'Here is their draft request:\n"' + draft + '"\n\n'
+        + 'In under 120 words: note what’s already clear, name anything missing or ambiguous from the five parts above, and end with one rewritten version of the request that fixes it. Be specific and encouraging, not preachy.';
+
+      try {
+        const result = await sample(prompt, {
+          modelTier: 'quick',
+          cache: false,
+          signal: controller.signal,
+          onText: function (update) {
+            answer.hidden = false;
+            answer.textContent = update.text;
+          }
+        });
+        setStatus(result.truncated ? 'Cut short — try a shorter request.' : '');
+      } catch (error) {
+        if (error.text) {
+          answer.hidden = false;
+          answer.textContent = error.text;
+        }
+        if (error.code === 'cancelled') {
+          setStatus('Stopped.');
+        } else if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(error.code)) {
+          panel.hidden = true;
+        } else if (error.code === 'rate_limited') {
+          setStatus('Too many requests right now — try again in a moment.', true);
+        } else if (error.code === 'refused') {
+          answer.hidden = true;
+          setStatus('Claude declined to answer that one — try rephrasing.', true);
+        } else {
+          setStatus('Something went wrong — try again.', true);
+        }
+      } finally {
+        setBusy(false);
+        controller = null;
+      }
+    }
+
+    askButton.addEventListener('click', ask);
+    stopButton.addEventListener('click', function () {
+      if (controller) controller.abort();
+    });
+
+    if (window.claude && typeof window.claude.use === 'function') {
+      window.claude.use('sample').then(function (namespace) {
+        if (!namespace) return;
+        sample = namespace;
+        panel.hidden = false;
+      }).catch(function () {});
+    }
+  }());
+
   // Accessible sample-report tabs
   const reportTabs = Array.from(document.querySelectorAll('.report-tabs [role="tab"]'));
 
