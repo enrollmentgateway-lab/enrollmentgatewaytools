@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="origin">
+  <title>Public Event Registrants</title>
+  <script defer src="../assets/portal-analytics.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+  <style>
+    .public-event-dashboard .container { max-width: 1040px; }
+    .public-event-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 4px solid var(--gold); }
+    .public-event-summary .stat-cell { text-align: center; }
+    .event-card-panel { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+    .event-sort-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 190px 170px;
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 10px;
+      padding: 0 22px;
+    }
+    .event-sort-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 6px 0;
+      border: 0;
+      color: var(--muted);
+      font-size: .69rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-align: left;
+      text-transform: uppercase;
+      background: transparent;
+      cursor: pointer;
+    }
+    .event-sort-button:nth-child(n+2) { justify-content: flex-end; text-align: right; }
+    .event-sort-button:hover, .event-sort-button:focus-visible { color: var(--navy); }
+    .event-sort-button.active { color: var(--navy); }
+    .sort-indicator { width: 1rem; color: var(--gold); font-size: .9rem; text-align: center; }
+    .event-cards { display: grid; gap: 12px; }
+    .event-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 190px 170px;
+      gap: 16px;
+      align-items: center;
+      width: 100%;
+      min-height: 112px;
+      padding: 22px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+    .event-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: linear-gradient(180deg, var(--gold), #e2bb61);
+    }
+    .event-title { margin: 0; color: var(--navy); font: 700 clamp(1.08rem, 2.4vw, 1.35rem)/1.3 'Playfair Display', Georgia, serif; }
+    .event-link-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 0;
+      border: 0;
+      color: #315f91;
+      font-size: .76rem;
+      font-weight: 750;
+      background: transparent;
+      cursor: pointer;
+    }
+    .event-link-button:hover { color: var(--navy); text-decoration: underline; }
+    .event-detail { min-width: 0; text-align: right; }
+    .event-detail-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: .65rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+    .event-date { color: var(--ink); font-size: .91rem; font-weight: 650; }
+    .event-count { color: var(--navy); font: 700 1.8rem/1 'Playfair Display', Georgia, serif; font-variant-numeric: tabular-nums; }
+    .event-empty { border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); box-shadow: var(--shadow); }
+    @media (max-width: 720px) {
+      .event-sort-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0; }
+      .event-sort-button, .event-sort-button:nth-child(n+2) { justify-content: center; text-align: center; }
+      .event-card { grid-template-columns: minmax(0, 1fr) auto; gap: 18px 14px; padding: 20px; }
+      .event-card-title { grid-column: 1/-1; }
+      .event-detail { text-align: left; }
+      .event-detail:last-child { text-align: right; }
+    }
+    @media (max-width: 480px) {
+      .public-event-summary { grid-template-columns: 1fr 1fr; }
+      .public-event-summary .stat-cell { padding: 19px 12px; }
+      .event-sort-row { display: flex; flex-wrap: wrap; }
+      .event-sort-button, .event-sort-button:nth-child(n+2) { flex: 1 1 110px; }
+    }
+  </style>
+</head>
+<body class="classic-dashboard public-event-dashboard">
+  <header class="gs-header">
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Public Event Registrants">Gateway Seminary<span>Admissions &middot; Enrollment Intelligence</span></button>
+    <div class="header-divider"></div>
+    <a class="header-title header-home" href="../" target="_top" aria-label="Return to Enrollment Intelligence Hub">Home</a>
+  </header>
+
+  <div id="loading" class="loading">Waiting for public event data from Slate&hellip;</div>
+
+  <main id="app" class="container" hidden>
+    <div class="page-intro">
+      <h1 class="intro-heading">Public Event Registrants</h1>
+      <p class="intro-subtitle">Review public events by date and compare their registration totals.</p>
+    </div>
+
+    <div class="stat-bar public-event-summary">
+      <div class="stat-cell"><div id="event-total" class="stat-val">0</div><div class="stat-lbl">Events</div></div>
+      <div class="stat-cell"><div id="registrant-total" class="stat-val">0</div><div class="stat-lbl">Registrants</div></div>
+    </div>
+
+    <div class="section-divider">
+      <div class="section-eyebrow">Event Overview</div>
+      <div class="section-heading">Registration by Event</div>
+    </div>
+
+    <section class="panel event-card-panel" aria-labelledby="event-list-heading">
+      <h2 id="event-list-heading" hidden>Events</h2>
+      <div id="event-sort-row" class="event-sort-row" role="toolbar" aria-label="Sort events">
+        <button class="event-sort-button" type="button" data-sort="title">Event title <span class="sort-indicator" aria-hidden="true">&#8597;</span></button>
+        <button class="event-sort-button active" type="button" data-sort="date">Start date <span class="sort-indicator" aria-hidden="true">&#8593;</span></button>
+        <button class="event-sort-button" type="button" data-sort="registrants">Registrants <span class="sort-indicator" aria-hidden="true">&#8597;</span></button>
+      </div>
+      <div id="event-cards" class="event-cards"></div>
+      <div id="event-empty" class="empty-state event-empty" hidden>No public event registrations were provided.</div>
+    </section>
+  </main>
+
+  <script src="../assets/dashboard-common.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    const ui = window.DashboardUI;
+    const dateFormatter = new Intl.DateTimeFormat('en-US', { month:'short', day:'numeric', year:'numeric', timeZone:'UTC' });
+    const cards = document.getElementById('event-cards');
+    const empty = document.getElementById('event-empty');
+    const sortButtons = Array.from(document.querySelectorAll('[data-sort]'));
+    let eventRecords = [];
+    let totalRegistrants = 0;
+    let sortColumn = 'date';
+    let sortDirection = 'asc';
+
+    function clean(value) {
+      return ui.text(value, '').trim();
+    }
+
+    function parseDate(value) {
+      const raw = clean(value);
+      if (!raw) return null;
+      let parts = raw.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)/);
+      if (parts) return new Date(Date.UTC(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3])));
+      parts = raw.match(/^([01]?\d)[-\/]([0-3]?\d)[-\/](\d{4})/);
+      if (parts) return new Date(Date.UTC(Number(parts[3]), Number(parts[1]) - 1, Number(parts[2])));
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function dateLabel(value) {
+      const parsed = parseDate(value);
+      return parsed ? dateFormatter.format(parsed) : (clean(value) || 'Date not provided');
+    }
+
+    function normalizedRecords(records) {
+      return (Array.isArray(records) ? records : []).map(function (record) {
+        return {
+          title: clean(record && record.title) || 'Untitled event',
+          date: clean(record && record.date),
+          dateValue: parseDate(record && record.date),
+          registrants: Math.max(0, Math.round(ui.number(record && record.registrants))),
+          url: clean(record && record.url)
+        };
+      });
+    }
+
+    function sortedRecords() {
+      return eventRecords.slice().sort(function (left, right) {
+        let result = 0;
+        if (sortColumn === 'date') {
+          if (!left.dateValue && right.dateValue) return 1;
+          if (left.dateValue && !right.dateValue) return -1;
+          result = left.dateValue && right.dateValue ? left.dateValue.getTime() - right.dateValue.getTime() : 0;
+        } else if (sortColumn === 'registrants') {
+          result = left.registrants - right.registrants;
+        } else {
+          result = left.title.localeCompare(right.title, undefined, { sensitivity:'base', numeric:true });
+        }
+        if (result !== 0) return sortDirection === 'asc' ? result : -result;
+        return left.title.localeCompare(right.title, undefined, { sensitivity:'base', numeric:true });
+      });
+    }
+
+    function renderSortControls() {
+      sortButtons.forEach(function (button) {
+        const active = button.dataset.sort === sortColumn;
+        const indicator = button.querySelector('.sort-indicator');
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+        button.setAttribute('aria-label', 'Sort by ' + button.textContent.trim() + (active ? ', currently ' + (sortDirection === 'asc' ? 'ascending' : 'descending') : ''));
+        indicator.textContent = active ? (sortDirection === 'asc' ? '\u2191' : '\u2193') : '\u2195';
+      });
+    }
+
+    function renderCards() {
+      cards.replaceChildren();
+      const records = sortedRecords();
+      empty.hidden = records.length > 0;
+
+      records.forEach(function (record) {
+        const card = document.createElement('article');
+        card.className = 'event-card';
+
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'event-card-title';
+        const title = document.createElement('h3');
+        title.className = 'event-title';
+        title.textContent = record.title;
+        titleWrap.appendChild(title);
+        if (record.url) {
+          const eventLink = document.createElement('button');
+          eventLink.className = 'event-link-button';
+          eventLink.type = 'button';
+          eventLink.textContent = 'Open event in Slate \u2192';
+          eventLink.addEventListener('click', function () { eventBridge.openRecord(record.url); });
+          titleWrap.appendChild(eventLink);
+        }
+
+        const date = document.createElement('div');
+        date.className = 'event-detail';
+        const dateCaption = document.createElement('span');
+        dateCaption.className = 'event-detail-label';
+        dateCaption.textContent = 'Start date';
+        const dateValue = document.createElement('span');
+        dateValue.className = 'event-date';
+        dateValue.textContent = dateLabel(record.date);
+        date.append(dateCaption, dateValue);
+
+        const count = document.createElement('div');
+        count.className = 'event-detail';
+        const countCaption = document.createElement('span');
+        countCaption.className = 'event-detail-label';
+        countCaption.textContent = 'Registrants';
+        const countValue = document.createElement('span');
+        countValue.className = 'event-count';
+        countValue.textContent = record.registrants.toLocaleString();
+        count.append(countCaption, countValue);
+
+        card.append(titleWrap, date, count);
+        cards.appendChild(card);
+      });
+
+      renderSortControls();
+    }
+
+    function render(payload) {
+      eventRecords = normalizedRecords(payload.events);
+      const suppliedTotal = ui.number(payload.totalRegistrants);
+      totalRegistrants = suppliedTotal >= 0 ? suppliedTotal : eventRecords.reduce(function (sum, event) { return sum + event.registrants; }, 0);
+      document.getElementById('event-total').textContent = eventRecords.length.toLocaleString();
+      document.getElementById('registrant-total').textContent = totalRegistrants.toLocaleString();
+      renderCards();
+      ui.showApp();
+    }
+
+    sortButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        const nextColumn = button.dataset.sort;
+        if (sortColumn === nextColumn) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        else {
+          sortColumn = nextColumn;
+          sortDirection = nextColumn === 'registrants' ? 'desc' : 'asc';
+        }
+        renderCards();
+      });
+    });
+
+    const eventBridge = window.DashboardBridge.create('public-event-registrants', render);
+    document.getElementById('portal-home').addEventListener('click', function () { window.location.reload(); });
+  }());
+  </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!--
+  Public Event Registrants Slate wrapper.
+  The portal query/export name must remain public_events_registrants and must
+  expose ev_title, reg_date, and ev_link_slate for one row per event registrant.
+
+  Liquid renders the complete export before JavaScript reads or groups it.
+  The Liquid size filter supplies the authoritative source-row total; the
+  per-event counts are calculated from those rendered rows in the browser.
+-->
+<div id="publicEventRegistrantData" style="display:none">
+  <span class="source-total">{{ public_events_registrants | size }}</span>
+  <div class="registrations">
+    {% for registrant in public_events_registrants %}
+      <div class="registration">
+        <span class="event-title">{{ registrant.ev_title | escape }}</span>
+        <span class="event-date">{{ registrant.reg_date | escape }}</span>
+        <span class="event-link">{{ registrant.ev_link_slate | escape }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<iframe id="publicEventRegistrantFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/public-event-registrants/" title="Public Event Registrants" referrerpolicy="origin" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+
+<script>
+(function () {
+  'use strict';
+
+  const dashboard = 'public-event-registrants';
+  const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const frame = document.getElementById('publicEventRegistrantFrame');
+  const root = document.getElementById('publicEventRegistrantData');
+
+  function read(node, selector) {
+    const element = node && node.querySelector(selector);
+    return element ? element.textContent.trim() : '';
+  }
+
+  function decodeEntities(value) {
+    const named = { amp:'&', apos:"'", quot:'"', lt:'<', gt:'>', nbsp:'\u00a0' };
+    let decoded = String(value == null ? '' : value);
+    for (let pass = 0; pass < 3; pass += 1) {
+      const next = decoded
+        .replace(/&#x([0-9a-f]+);/gi, function (match, digits) {
+          const code = parseInt(digits, 16);
+          return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+        })
+        .replace(/&#(\d+);/g, function (match, digits) {
+          const code = parseInt(digits, 10);
+          return Number.isInteger(code) && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+        })
+        .replace(/&([a-z]+);/gi, function (match, name) {
+          return Object.prototype.hasOwnProperty.call(named, name.toLowerCase()) ? named[name.toLowerCase()] : match;
+        });
+      if (next === decoded) break;
+      decoded = next;
+    }
+    return decoded;
+  }
+
+  function eventLink(value) {
+    const raw = decodeEntities(value).trim();
+    const href = raw.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const candidate = String(href ? (href[1] || href[2] || href[3]) : raw).trim();
+    if (!candidate) return '';
+    try {
+      const url = new URL(candidate, window.location.origin);
+      return url.origin === window.location.origin ? url.href : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  const registrationRows = Array.from(root.querySelectorAll('.registration')).map(function (node) {
+    return {
+      title: read(node, '.event-title') || 'Untitled event',
+      date: read(node, '.event-date'),
+      url: eventLink(read(node, '.event-link'))
+    };
+  });
+
+  const eventGroups = new Map();
+  registrationRows.forEach(function (registration) {
+    const key = registration.title.toLocaleLowerCase() + '\u0000' + registration.date;
+    const existing = eventGroups.get(key);
+    if (existing) {
+      existing.registrants += 1;
+      if (!existing.url && registration.url) existing.url = registration.url;
+    } else {
+      eventGroups.set(key, { title:registration.title, date:registration.date, registrants:1, url:registration.url });
+    }
+  });
+
+  const liquidTotal = Number(read(root, '.source-total'));
+  const payload = {
+    events: Array.from(eventGroups.values()),
+    totalRegistrants: Number.isFinite(liquidTotal) ? liquidTotal : registrationRows.length
+  };
+
+  function sendData() {
+    if (frame.contentWindow) {
+      frame.contentWindow.postMessage({
+        type: 'enrollment-dashboard-data',
+        dashboard: dashboard,
+        payload: payload
+      }, frameOrigin);
+    }
+  }
+
+  function openEvent(value) {
+    try {
+      const url = new URL(String(value || ''), window.location.origin);
+      if (url.origin === window.location.origin) window.open(url.href, '_blank', 'noopener');
+    } catch (_) {}
+  }
+
+  window.addEventListener('message', function (event) {
+    if (event.origin !== frameOrigin || event.source !== frame.contentWindow || !event.data || event.data.dashboard !== dashboard) return;
+    if (event.data.type === 'enrollment-dashboard-ready') sendData();
+    if (event.data.type === 'enrollment-dashboard-open-record') openEvent(event.data.url);
+    if (event.data.type === 'enrollment-dashboard-resize') {
+      frame.style.height = Math.max(600, Math.min(Number(event.data.height) || 600, 10000)) + 'px';
+    }
+  });
+
+  frame.addEventListener('load', sendData);
+}());
+</script>

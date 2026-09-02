@@ -11,6 +11,7 @@ This repository is the single source of truth for the Enrollment Intelligence Hu
 - `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Record Lookup portal.
 - `regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
 - `slate-templates/wrappers/regional-campus-wrapper.liquid.html` — the Slate query wrapper for the Regional Campus portal.
+- `public-event-registrants/` — GitHub-hosted public-event registrant count interface.
 - `pipeline-overview/`, `teaching-site-overview/`, `event-tracker/`, and `funnel-overview/` — GitHub-hosted dashboard interfaces.
 - `assets/dashboard.css` and `assets/dashboard-common.js` — shared dashboard presentation, iframe bridge, and academic-period definitions.
 - `slate-templates/wrappers/*-wrapper.liquid.html` — thin Slate templates that serialize query results and host the corresponding dashboard iframe.
@@ -30,9 +31,9 @@ To enable collection:
 
 1. In the existing Cloudflare account, open **Web Analytics**, add `enrollmentgateway-lab.github.io` as a site, and copy its beacon token.
 2. Paste the public token into `SITE_TOKEN` in `assets/portal-analytics.js`.
-3. Push the change to `main`, repaste the six iframe wrappers in Slate to activate their explicit referrer safeguards, and verify a visit in the Cloudflare Web Analytics dashboard.
+3. Push the change to `main`, repaste the seven iframe wrappers in Slate to activate their explicit referrer safeguards, and verify a visit in the Cloudflare Web Analytics dashboard.
 
-An empty `SITE_TOKEN` disables collection, and the loader also refuses to run outside the production GitHub Pages hostname so local development does not affect the reports. The dashboard paths distinguish the hub, Funnel Overview, Pipeline Overview, Teaching Sites, Event Tracker, Regional Campus, Record Lookup, BetterQuery, and `/queryomatic/admin/`. The Slate wrapper iframes use an origin-only referrer policy so parent portal paths and query values are not disclosed to the hosted interfaces or analytics beacon.
+An empty `SITE_TOKEN` disables collection, and the loader also refuses to run outside the production GitHub Pages hostname so local development does not affect the reports. The dashboard paths distinguish the hub, Funnel Overview, Pipeline Overview, Teaching Sites, Event Tracker, Public Event Registrants, Regional Campus, Record Lookup, BetterQuery, and `/queryomatic/admin/`. The Slate wrapper iframes use an origin-only referrer policy so parent portal paths and query values are not disclosed to the hosted interfaces or analytics beacon.
 
 ## Wrapper rollout
 
@@ -65,6 +66,8 @@ The Pipeline wrapper's `total_apps`, `total_inquiries`, `total_prospects`, and `
 The Regional Campus wrapper does not require a Liquid query export. It reads `campus` key/value rows from Queryomatic's Slate prompt/options service (falling back to the current static campus-prompt values in the wrapper), excludes `Doctor of Ministry`, then queries two configured JSON services for every remaining campus. The general service supplies Applicant and Student rows using `campus`, `term`, and `year`; it must export `first`, `last`, `email`, `phone`, `sisid`, `status`, `app_status`, and `program`. The inquiry-only service accepts `campus` and exports `first`, `last`, `email`, `phone`, and `sisid`; the wrapper assigns `Inquiry` as the status for those rows. Inquiry counts are therefore all-time and do not change with the academic-period selector. The wrapper uses `sisid` to link individual profiles to Slate's record lookup. It tags each returned row with the requested campus, combines the responses, and sends them to the hosted interface. Campus cards are shown only when their current combined record count is at least 20. Choosing a campus limits the next page load to that campus's two service calls.
 
 The Event Tracker uses its `event_people` portal query only to associate a person identity (SIS ID or email) with an event. It retrieves current person status and drilldown details from the shared `all_people` JSON service with `alt_form_type=Event`; the service must continue exporting the `per_*` person fields and `app_degree`. If the service is later configured to return an event-title field (`event_title`, `alt_form_title`, `form_title`, or `title`), the wrapper can use those rows without the identity-association query.
+
+The Public Event Registrants portal uses the `public_events_registrants` Liquid query export and does not call a JSON service. Each registrant row exports `ev_title`, `reg_date`, and `ev_link_slate`. Liquid renders the complete export and supplies its total through the `size` filter before JavaScript groups identical event-title/date rows into full-width event cards. Each card can open its event record in Slate through `ev_link_slate`.
 
 The Event Tracker, Teaching Sites, and Regional Campus funnel drilldowns can export their currently filtered record tables as CSV files.
 

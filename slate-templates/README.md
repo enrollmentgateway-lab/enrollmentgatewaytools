@@ -7,6 +7,7 @@ These are the current production templates. Each file sends Slate query results 
 - `pipeline-overview-wrapper.liquid.html`
 - `teaching-site-overview-wrapper.liquid.html`
 - `event-tracker-wrapper.liquid.html`
+- `public-event-registrants-wrapper.liquid.html`
 - `funnel-overview-wrapper.liquid.html`
 - `student-lookup-wrapper.liquid.html`
 - `regional-campus-wrapper.liquid.html`
@@ -20,3 +21,5 @@ The Regional Campus portal loads the `campus` values from Queryomatic's Slate pr
 The Record Lookup wrapper does not require a portal query. It fetches the configured `all_people` Slate JSON service after a name or SIS-ID search. That service must export `per_status`, `per_name`, `per_email`, `per_phone`, `per_pipeline`, `per_teachingsite`, `per_birthdate`, `per_url`, `per_location_code`, `app_created_date`, `app_degree`, `app_round`, `app_status`, `app_term`, `app_year`, `app_f1`, `app_url`, `app_missing_mats_list`, and `app_full_mats_list`. The application degree also supplies the profile's Program card. The material-list fields may be comma-separated plaintext or HTML list content; the interface compares them to mark each full-list item as **Missing** or **Received**. The `per_url` export must point to the person record in Slate. The application URL is retained only as an application-presence signal; the interface does not expose an applicant-facing application link. Legacy export names are accepted temporarily as fallbacks during rollout.
 
 The Event Tracker wrapper also fetches `all_people`, always passing `alt_form_type=Event`. Its `event_people` portal query needs only the event title plus a stable person identity (`sisid`/`per_sisid` or `email`/`per_email`) so the fetched person details can be associated with the correct event without rendering complex person exports through Liquid.
+
+The Public Event Registrants wrapper uses only the `public_events_registrants` Liquid query export. Each registrant row must expose `ev_title`, `reg_date`, and `ev_link_slate`, where `reg_date` is the event start date displayed on the card and `ev_link_slate` links to the Slate event record. Liquid renders all rows and supplies the source total with `public_events_registrants | size`; JavaScript then groups matching event-title/date rows into per-event registrant counts. It does not fetch an API.
