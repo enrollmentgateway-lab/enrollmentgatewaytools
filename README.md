@@ -10,7 +10,7 @@ This repository is the single source of truth for the Admissions hub and its ass
 - `student-lookup/` — GitHub-hosted record search/profile interface.
 - `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Record Lookup portal.
 - `regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
-- `slate-concepts/` — conceptual Slate glossary and guided staff training experience.
+- `slate-concepts/` — source for the conceptual Slate glossary and guided staff training lesson. The hub's Training Materials tab links to a bundled copy of this page published as a Claude Artifact (comments enabled) rather than the GitHub Pages copy, so staff can leave feedback comments directly on the lesson; Claude applies accepted feedback back to these source files, regenerates the bundle with `node slate-concepts/build-artifact.js`, and republishes it to the same artifact URL.
 - `slate-templates/wrappers/regional-campus-wrapper.liquid.html` — the Slate query wrapper for the Regional Campus portal.
 - `public-event-registrants/` — GitHub-hosted public-event registrant count interface.
 - `pipeline-overview/`, `teaching-site-overview/`, `event-tracker/`, and `funnel-overview/` — GitHub-hosted dashboard interfaces.
