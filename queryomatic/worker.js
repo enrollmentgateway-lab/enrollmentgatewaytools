@@ -201,6 +201,7 @@ const ANALYTICS_PATHS = new Set([
   "/enrollmentgatewaytools/public-event-registrants/",
   "/enrollmentgatewaytools/regional-campus/",
   "/enrollmentgatewaytools/student-lookup/",
+  "/enrollmentgatewaytools/slate-concepts/",
   "/enrollmentgatewaytools/queryomatic/",
   "/enrollmentgatewaytools/queryomatic/admin/",
 ]);
@@ -215,6 +216,7 @@ function analyticsLabel(path) {
     "/enrollmentgatewaytools/public-event-registrants/": "Public Event Registrants",
     "/enrollmentgatewaytools/regional-campus/": "Regional Campus",
     "/enrollmentgatewaytools/student-lookup/": "Record Lookup",
+    "/enrollmentgatewaytools/slate-concepts/": "Slate Concepts",
     "/enrollmentgatewaytools/queryomatic/": "BetterQuery",
     "/enrollmentgatewaytools/queryomatic/admin/": "BetterQuery Admin",
   };

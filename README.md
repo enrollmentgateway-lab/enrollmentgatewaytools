@@ -10,6 +10,7 @@ This repository is the single source of truth for the Enrollment Tools hub and i
 - `student-lookup/` — GitHub-hosted record search/profile interface.
 - `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Record Lookup portal.
 - `regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
+- `slate-concepts/` — conceptual Slate glossary and guided staff training experience.
 - `slate-templates/wrappers/regional-campus-wrapper.liquid.html` — the Slate query wrapper for the Regional Campus portal.
 - `public-event-registrants/` — GitHub-hosted public-event registrant count interface.
 - `pipeline-overview/`, `teaching-site-overview/`, `event-tracker/`, and `funnel-overview/` — GitHub-hosted dashboard interfaces.
@@ -33,7 +34,7 @@ To enable collection:
 2. Paste the public token into `SITE_TOKEN` in `assets/portal-analytics.js`.
 3. Push the change to `main`, repaste the seven iframe wrappers in Slate to activate their explicit referrer safeguards, and verify a visit in the Cloudflare Web Analytics dashboard.
 
-An empty `SITE_TOKEN` disables collection, and the loader also refuses to run outside the production GitHub Pages hostname so local development does not affect the reports. The dashboard paths distinguish the hub, Funnel Overview, Pipeline Overview, Teaching Sites, Event Tracker, Public Event Registrants, Regional Campus, Record Lookup, BetterQuery, and `/queryomatic/admin/`. The Slate wrapper iframes use an origin-only referrer policy so parent portal paths and query values are not disclosed to the hosted interfaces or analytics beacon.
+An empty `SITE_TOKEN` disables collection, and the loader also refuses to run outside the production GitHub Pages hostname so local development does not affect the reports. The dashboard paths distinguish the hub, Funnel Overview, Pipeline Overview, Teaching Sites, Event Tracker, Public Event Registrants, Regional Campus, Record Lookup, Slate Concepts, BetterQuery, and `/queryomatic/admin/`. The Slate wrapper iframes use an origin-only referrer policy so parent portal paths and query values are not disclosed to the hosted interfaces or analytics beacon.
 
 ## Wrapper rollout
 
