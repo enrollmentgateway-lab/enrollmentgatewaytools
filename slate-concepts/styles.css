@@ -996,6 +996,54 @@ svg {
   transform: translateY(-50%);
 }
 
+.mini-output-view {
+  display: grid;
+  gap: 6px;
+}
+
+.mini-output span small {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: .58rem;
+  font-weight: 600;
+}
+
+.mini-output-toggle {
+  display: flex;
+  gap: 6px;
+  margin-top: 23px;
+}
+
+.mini-output-toggle + .mini-output {
+  margin-top: 10px;
+}
+
+.mini-output-choice {
+  padding: 5px 10px;
+  color: var(--muted);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.mini-output-choice.active {
+  color: var(--white);
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.mini-output-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: .68rem;
+}
+
 .mini-bars {
   display: grid;
   gap: 10px;

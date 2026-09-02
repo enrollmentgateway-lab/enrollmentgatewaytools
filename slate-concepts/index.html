@@ -131,9 +131,22 @@
               <div class="definition-top"><span class="definition-glyph">?</span><span class="type-tag">Query</span></div>
               <p class="answer-word">Who <small>or</small> which?</p>
               <p>Returns the people, applications, or other records that meet stated criteria.</p>
-              <div class="mini-output" aria-label="Example query output">
-                <span>Jordan Lee</span><span>Maya Ortiz</span><span>Samuel Cho</span>
+              <div class="mini-output-toggle" role="group" aria-label="Query result view">
+                <button type="button" class="mini-output-choice active" data-mini-output-view="people" aria-pressed="true">Unique people</button>
+                <button type="button" class="mini-output-choice" data-mini-output-view="applications" aria-pressed="false">Application rows</button>
               </div>
+              <div class="mini-output" aria-label="Example query output">
+                <div class="mini-output-view" data-mini-output-view="people">
+                  <span>Jordan Lee</span><span>Maya Ortiz</span><span>Samuel Cho</span>
+                </div>
+                <div class="mini-output-view" data-mini-output-view="applications" hidden>
+                  <span>Jordan Lee<small>D.Min. · Fall 2027</small></span>
+                  <span>Jordan Lee<small>M.Div. · Fall 2021</small></span>
+                  <span>Maya Ortiz<small>Certificate · Spring 2027</small></span>
+                  <span>Samuel Cho<small>M.Div. · Fall 2027</small></span>
+                </div>
+              </div>
+              <p class="mini-output-note" data-mini-output-view="applications" hidden>Jordan Lee appears twice here because the same person submitted two applications—the reason a query over applications can show duplicate names.</p>
               <p class="use-when"><strong>Use when:</strong> someone needs a list, follow-up, review, or export.</p>
             </article>
             <article class="definition-card report-card">
@@ -268,7 +281,7 @@
             <span class="lesson-number">03</span>
             <div><p class="eyebrow">The audience</p><h2 id="status-populations-title">Status remembers. Populations respond.</h2></div>
           </div>
-          <p class="section-lede">Person status is valuable history. It is usually a poor stand-alone audience for communications because history may not describe someone’s current relationship.</p>
+          <p class="section-lede">It is usually a poor stand-alone audience for communications because history may not describe someone’s current relationship.</p>
 
           <div class="scenario-panel">
             <div class="scenario-person">
@@ -320,8 +333,8 @@
             <article>
               <span class="segment-letter">P</span>
               <h3>Population</h3>
-              <p><strong>Who is relevant now?</strong></p>
-              <small>A current audience, such as current inquiries or deposited students.</small>
+              <p><strong>Which records match a query?</strong></p>
+              <small>Defined by a query filter—on fields like teaching site, term, or application year—that places matching records into one audience bucket. A campaign then sends its message to the records in that bucket.</small>
             </article>
             <span class="segment-plus" aria-hidden="true">+</span>
             <article>
@@ -569,7 +582,8 @@
           <article data-search="person status inq app student graduate historical furthest lifetime"><h3>Person status</h3><p>The furthest stage a person has reached: Inquiries, Prospect, App, Student, or Graduate. It does not reverse.</p></article>
           <article data-search="application status awaiting submission payment materials decided current"><h3>Application status</h3><p>The current state of one application: Awaiting Submission, Payment, Materials, or Decided.</p></article>
           <article data-search="decision code admit provisional deny outcome application"><h3>Decision code</h3><p>The outcome on a decided application: Admit, Admit Provisional, or Deny. It does not belong to a person.</p></article>
-          <article data-search="population segment audience current relevance communication"><h3>Population</h3><p>A maintained segment that represents current relevance—usually the better lens for communication audiences.</p></article>
+          <article data-search="population segment audience current relevance communication query bucket"><h3>Population</h3><p>A bucket of records defined by a query filter—on fields like teaching site, term, or application year—rather than a fixed list. Usually the better lens for communication audiences than person status.</p></article>
+          <article data-search="campaign message communication population send"><h3>Campaign</h3><p>The message sent to the records inside a population. A population defines <strong>who</strong>; a campaign defines <strong>what gets sent</strong>.</p></article>
           <article data-search="pipeline recruiting stream pathway initiative cultivation"><h3>Pipeline</h3><p>The recruiting stream, pathway, or initiative connecting people to a particular effort.</p></article>
           <article data-search="teaching site location context campus online Ontario Phoenix"><h3>Teaching site</h3><p>The local or online context associated with a person’s interest or application.</p></article>
           <article data-search="content block reusable message section email paragraph signature"><h3>Content block</h3><p>A reusable piece of communication, such as a program section, event details, or signature.</p></article>

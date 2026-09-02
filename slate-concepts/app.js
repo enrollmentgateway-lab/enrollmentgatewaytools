@@ -15,6 +15,28 @@
     return value.charAt(0).toUpperCase() + value.slice(1);
   }
 
+  // Query example: unique people vs. application rows
+  document.querySelectorAll('.mini-output-toggle').forEach(function (toggle) {
+    const buttons = Array.from(toggle.querySelectorAll('.mini-output-choice'));
+    const card = toggle.closest('.definition-card');
+    if (!card) return;
+    const views = Array.from(card.querySelectorAll('.mini-output-view, .mini-output-note'));
+
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        const view = button.getAttribute('data-mini-output-view');
+        buttons.forEach(function (candidate) {
+          const active = candidate === button;
+          candidate.classList.toggle('active', active);
+          candidate.setAttribute('aria-pressed', String(active));
+        });
+        views.forEach(function (el) {
+          el.hidden = el.getAttribute('data-mini-output-view') !== view;
+        });
+      });
+    });
+  });
+
   // Query or report practice
   const outputQuestions = [
     {
