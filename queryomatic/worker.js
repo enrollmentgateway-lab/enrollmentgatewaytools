@@ -191,6 +191,7 @@ function json(data, env, status = 200) {
 // ============================================================
 
 const ANALYTICS_RETENTION_SECONDS = 90 * 24 * 60 * 60;
+const ANALYTICS_IDENTIFIER_PATTERN = /^[a-f0-9-]{20,64}$/i;
 const ANALYTICS_PATHS = new Set([
   "/enrollmentgatewaytools/",
   "/enrollmentgatewaytools/funnel-overview/",
@@ -243,17 +244,25 @@ async function recordAnalyticsEvent(request, env) {
   const body = await request.json();
   const path = cleanAnalyticsPath(body?.path);
   const session = String(body?.session || "");
+  const visitor = String(body?.visitor || "");
 
-  if (!path || !/^[a-f0-9-]{20,64}$/i.test(session)) {
+  if (
+    !path ||
+    !ANALYTICS_IDENTIFIER_PATTERN.test(session) ||
+    (visitor && !ANALYTICS_IDENTIFIER_PATTERN.test(visitor))
+  ) {
     return json({ error: "Invalid analytics event" }, env, 400);
   }
 
   const occurredAt = new Date().toISOString();
   const key = `analytics:event:${occurredAt}:${crypto.randomUUID()}`;
 
+  const metadata = { path, session, occurredAt };
+  if (visitor) metadata.visitor = visitor;
+
   await env.OPTIONS_CACHE.put(key, "1", {
     expirationTtl: ANALYTICS_RETENTION_SECONDS,
-    metadata: { path, session, occurredAt },
+    metadata,
   });
 
   return json({ recorded: true }, env, 202);
@@ -285,22 +294,26 @@ async function readAnalyticsSummary(url, env) {
   } while (cursor);
 
   const sessions = new Set();
+  const browsers = new Set();
   const daily = new Map();
   const pages = new Map();
 
   for (const event of events) {
     const date = event.occurredAt.slice(0, 10);
     sessions.add(event.session);
+    if (ANALYTICS_IDENTIFIER_PATTERN.test(event.visitor || "")) browsers.add(event.visitor);
 
-    if (!daily.has(date)) daily.set(date, { pageviews: 0, sessions: new Set() });
+    if (!daily.has(date)) daily.set(date, { pageviews: 0, sessions: new Set(), browsers: new Set() });
     const day = daily.get(date);
     day.pageviews += 1;
     day.sessions.add(event.session);
+    if (ANALYTICS_IDENTIFIER_PATTERN.test(event.visitor || "")) day.browsers.add(event.visitor);
 
-    if (!pages.has(event.path)) pages.set(event.path, { pageviews: 0, sessions: new Set() });
+    if (!pages.has(event.path)) pages.set(event.path, { pageviews: 0, sessions: new Set(), browsers: new Set() });
     const page = pages.get(event.path);
     page.pageviews += 1;
     page.sessions.add(event.session);
+    if (ANALYTICS_IDENTIFIER_PATTERN.test(event.visitor || "")) page.browsers.add(event.visitor);
   }
 
   return json({
@@ -308,15 +321,17 @@ async function readAnalyticsSummary(url, env) {
     generatedAt: new Date().toISOString(),
     pageviews: events.length,
     visits: sessions.size,
+    uniqueBrowsers: browsers.size,
     daily: [...daily.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, value]) => ({ date, pageviews: value.pageviews, visits: value.sessions.size })),
+      .map(([date, value]) => ({ date, pageviews: value.pageviews, visits: value.sessions.size, uniqueBrowsers: value.browsers.size })),
     pages: [...pages.entries()]
       .map(([path, value]) => ({
         path,
         label: analyticsLabel(path),
         pageviews: value.pageviews,
         visits: value.sessions.size,
+        uniqueBrowsers: value.browsers.size,
       }))
       .sort((a, b) => b.pageviews - a.pageviews || a.label.localeCompare(b.label)),
   }, env);

@@ -25,11 +25,12 @@
     .controls { display:flex; align-items:center; gap:10px; }
     label { color:var(--muted); font-size:.7rem; font-weight:750; letter-spacing:.1em; text-transform:uppercase; }
     select { padding:9px 34px 9px 12px; color:var(--navy); font:650 .9rem Inter,sans-serif; border:1px solid var(--border); border-radius:8px; background:var(--white); box-shadow:var(--shadow); }
-    .stats { display:grid; grid-template-columns:repeat(3,1fr); overflow:hidden; margin-bottom:30px; border-radius:10px; background:linear-gradient(135deg,var(--navy),var(--navy-mid)); box-shadow:0 7px 24px rgba(26,43,74,.22); }
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); overflow:hidden; margin-bottom:10px; border-radius:10px; background:linear-gradient(135deg,var(--navy),var(--navy-mid)); box-shadow:0 7px 24px rgba(26,43,74,.22); }
     .stat { padding:24px 26px; color:#fff; border-right:1px solid rgba(255,255,255,.14); }
     .stat:last-child { border-right:0; }
     .stat-value { font:700 2.15rem/1.1 'Playfair Display',Georgia,serif; }
     .stat-label { margin-top:7px; color:#d9e0eb; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .browser-note { margin:0 0 30px; color:var(--muted); font-size:.75rem; line-height:1.5; text-align:right; }
     .grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr); gap:24px; }
     .panel { overflow:hidden; border:1px solid var(--border); border-radius:10px; background:var(--white); box-shadow:var(--shadow); }
     .panel-head { padding:18px 20px; border-bottom:1px solid var(--border); }
@@ -69,9 +70,11 @@
 
     <section class="stats" aria-label="Usage totals">
       <div class="stat"><div class="stat-value" id="pageviews">—</div><div class="stat-label">Page views</div></div>
+      <div class="stat"><div class="stat-value" id="browsers">—</div><div class="stat-label">Unique browsers</div></div>
       <div class="stat"><div class="stat-value" id="visits">—</div><div class="stat-label">Anonymous sessions</div></div>
       <div class="stat"><div class="stat-value" id="pagesUsed">—</div><div class="stat-label">Tools used</div></div>
     </section>
+    <p class="browser-note">Unique browsers is an anonymous estimate. The identifier rotates after 90 days and resets when browser storage is cleared.</p>
 
     <section id="loading" class="panel state">Loading analytics…</section>
     <div id="dashboard" class="grid" hidden>
@@ -82,7 +85,7 @@
       <section class="panel">
         <div class="panel-head"><h2>Usage by tool</h2></div>
         <table>
-          <thead><tr><th>Tool</th><th class="number">Views</th><th class="number">Sessions</th></tr></thead>
+          <thead><tr><th>Tool</th><th class="number">Views</th><th class="number">Browsers</th><th class="number">Sessions</th></tr></thead>
           <tbody id="pages"></tbody>
         </table>
         <div id="empty" class="state" hidden>No activity recorded in this period.</div>
@@ -105,7 +108,7 @@
         for (let offset = days - 1; offset >= 0; offset -= 1) {
           const date = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - offset));
           const key = date.toISOString().slice(0, 10);
-          result.push(byDate.get(key) || { date: key, pageviews: 0, visits: 0 });
+          result.push(byDate.get(key) || { date: key, pageviews: 0, visits: 0, uniqueBrowsers: 0 });
         }
         return result;
       }
@@ -118,7 +121,7 @@
         data.forEach((row, index) => {
           const wrap = document.createElement('div');
           wrap.className = 'bar-wrap';
-          wrap.title = `${row.date}: ${number.format(row.pageviews)} page views`;
+          wrap.title = `${row.date}: ${number.format(row.pageviews)} page views · ${number.format(row.uniqueBrowsers || 0)} unique browsers`;
           const bar = document.createElement('div');
           bar.className = 'bar';
           bar.style.height = `${Math.max(row.pageviews ? 4 : 1, row.pageviews / max * 100)}%`;
@@ -132,6 +135,7 @@
 
       function render(data) {
         document.getElementById('pageviews').textContent = number.format(data.pageviews);
+        document.getElementById('browsers').textContent = number.format(data.uniqueBrowsers || 0);
         document.getElementById('visits').textContent = number.format(data.visits);
         document.getElementById('pagesUsed').textContent = number.format(data.pages.length);
         renderChart(data.days, data.daily);
@@ -142,12 +146,14 @@
           const row = document.createElement('tr');
           const label = document.createElement('td');
           const views = document.createElement('td');
+          const browsers = document.createElement('td');
           const visits = document.createElement('td');
           label.textContent = page.label;
           views.textContent = number.format(page.pageviews);
+          browsers.textContent = number.format(page.uniqueBrowsers || 0);
           visits.textContent = number.format(page.visits);
-          views.className = visits.className = 'number';
-          row.append(label, views, visits);
+          views.className = browsers.className = visits.className = 'number';
+          row.append(label, views, browsers, visits);
           tbody.appendChild(row);
         });
 

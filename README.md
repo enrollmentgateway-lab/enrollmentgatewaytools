@@ -25,7 +25,7 @@ Use the files in `slate-templates/wrappers/` for the iframe-based portals. Norma
 
 ## Usage analytics
 
-The GitHub-hosted hub and portal interfaces support Cloudflare Web Analytics for aggregate page views and visits. They also send the current route and a random tab-session identifier to the Queryomatic Worker so the unlisted `/analytics/` dashboard can show rolling 7-, 30-, and 90-day totals. Neither integration sends search text, student IDs, names, record URLs, or query results.
+The GitHub-hosted hub and portal interfaces support Cloudflare Web Analytics for aggregate page views and visits. They also send the current route, a random tab-session identifier, and a random browser identifier to the Queryomatic Worker so the unlisted `/analytics/` dashboard can show rolling 7-, 30-, and 90-day totals. The browser identifier is stored locally, rotates after 90 days, and is used only for aggregate unique-browser counts. Neither integration sends IP addresses, search text, student IDs, names, record URLs, or query results.
 
 To enable collection:
 
