@@ -2,20 +2,22 @@
   Teaching Sites Slate wrapper.
   Configure teaching_sites_persons to return all teaching-site records and use
   only the term and year URL parameters.
-  The site funnel reuses the all_people JSON service from Record Lookup and calls
-  it with teachingsite, status, term, and year. Its current person fields are
-  per_name, per_email, per_phone, per_sisid, per_status, per_url, and app_degree.
-  Legacy field aliases remain as fallbacks during rollout.
+  Funnel counts come from the teaching-site population service. Record
+  drilldowns use the all_people JSON service from Record Lookup with
+  teachingsite, status, term, and year. Its current person fields are per_name,
+  per_email, per_phone, per_sisid, per_status, per_teachingsite, per_url, and
+  app_degree. Legacy field aliases remain as fallbacks during rollout.
 -->
 <div id="teachingSiteOverviewData" style="display:none">
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
 </div>
-<iframe id="teachingSiteOverviewFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/teaching-site-overview/" title="Teaching Sites Overview" referrerpolicy="origin" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<iframe id="teachingSiteOverviewFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/teaching-site-overview/?v=teaching-sites-v2" title="Teaching Sites Overview" referrerpolicy="origin" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
   const dashboard = 'teaching-site-overview';
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const countsService = 'https://enroll.gs.edu/manage/query/run?id=3095d9eb-e68c-4253-bd57-e57f310e0f14&cmd=service&output=json&h=65d38d9a-bfb3-4931-a95c-e74dc6cf9d5d';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
   const funnelStatuses = { inquiries:'inquiry', applications:'applicant', students:'student' };
   const frame = document.getElementById('teachingSiteOverviewFrame');
@@ -29,8 +31,10 @@
   }
   const payload = {
     filters: { term: pageUrl.searchParams.get('term') || '', year: pageUrl.searchParams.get('year') || '', site: pageUrl.searchParams.get('site') || '' },
+    summary: { inquiries:0, applications:0, students:0 },
     funnel: { inquiries:0, applications:0, students:0 },
     funnelRecords: { inquiries:[], applications:[], students:[] },
+    funnelRecordErrors: {},
     records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') }))
   };
   const allowedParams = new Set(['term', 'year', 'site']);
@@ -40,9 +44,17 @@
     if (response && Array.isArray(response.row)) return response.row;
     return response && response.row ? [response.row] : [];
   }
+  function scalar(value, preferredKeys) {
+    if (!value || typeof value !== 'object') return value;
+    const keys = preferredKeys || ['display','label','name','value','text','url','href'];
+    for (let index = 0; index < keys.length; index += 1) {
+      if (value[keys[index]] != null) return value[keys[index]];
+    }
+    return '';
+  }
   function decodeEntities(value) {
     const textarea = document.createElement('textarea');
-    textarea.innerHTML = value == null ? '' : String(value);
+    textarea.innerHTML = value == null ? '' : String(scalar(value));
     return textarea.value;
   }
   function plain(value) {
@@ -64,16 +76,28 @@
   function field(row, keys) {
     const names = Array.isArray(keys) ? keys : [keys];
     for (let index = 0; index < names.length; index += 1) {
-      const value = row && row[names[index]];
-      if (value != null && String(value).trim()) return String(value).trim();
+      const value = scalar(row && row[names[index]]);
+      if (value != null && String(value).trim()) return value;
     }
     const available = row && typeof row === 'object' ? Object.keys(row) : [];
     for (let index = 0; index < names.length; index += 1) {
       const normalized = names[index].toLowerCase().replace(/[^a-z0-9]/g, '');
-      const match = available.find(key => key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized && row[key] != null && String(row[key]).trim());
-      if (match) return String(row[match]).trim();
+      const match = available.find(key => key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized && plain(row[key]));
+      if (match) return scalar(row[match]);
     }
     return '';
+  }
+  function teachingSite(row) {
+    return plain(field(row, ['per_teachingsite','title','teachingsite','teaching_site','site']));
+  }
+  function sameSite(left, right) {
+    return plain(left).toLocaleLowerCase() === plain(right).toLocaleLowerCase();
+  }
+  function countRowsForSite(rows, site) {
+    return rows.filter(row => {
+      const rowSite = teachingSite(row);
+      return site ? sameSite(rowSite, site) : Boolean(rowSite);
+    }).length;
   }
   function normalizeRecord(row, stage) {
     const rawName = field(row, ['per_name','name','display_name','full_name','person_name']);
@@ -91,26 +115,50 @@
       record_url: recordLink(rawUrl || rawName) || (sisid ? window.location.origin + '/manage/database/record?lookup=' + encodeURIComponent(sisid) : '')
     };
   }
+  async function requestRows(url, label) {
+    const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
+    if (!response.ok) throw new Error(label + ' returned ' + response.status);
+    return rowsFrom(await response.json());
+  }
+  async function loadStage(stage) {
+    const countUrl = new URL(countsService);
+    countUrl.searchParams.set('status', funnelStatuses[stage]);
+    countUrl.searchParams.set('year', payload.filters.year);
+    countUrl.searchParams.set('term', payload.filters.term);
+    if (payload.filters.site) countUrl.searchParams.set('site', payload.filters.site);
+    const countRows = await requestRows(countUrl, 'Teaching site count query');
+    const count = countRowsForSite(countRows, payload.filters.site);
+    let records = [];
+    if (payload.filters.site && count > 0) {
+      const recordsUrl = new URL(recordsService);
+      recordsUrl.searchParams.set('status', funnelStatuses[stage]);
+      recordsUrl.searchParams.set('year', payload.filters.year);
+      recordsUrl.searchParams.set('term', payload.filters.term);
+      recordsUrl.searchParams.set('teachingsite', payload.filters.site);
+      try {
+        const detailRows = await requestRows(recordsUrl, 'Teaching site detail query');
+        records = detailRows
+          .filter(row => { const rowSite = teachingSite(row); return !rowSite || sameSite(rowSite, payload.filters.site); })
+          .map(row => normalizeRecord(row, stage));
+      } catch (error) {
+        payload.funnelRecordErrors[stage] = 'Unable to load record details from Slate. Please try again.';
+        console.error('Teaching site drilldown query failed for ' + stage + '.', error);
+      }
+    }
+    return { stage:stage, count:count, records:records };
+  }
   async function loadFunnel() {
-    if (!payload.filters.site) return payload;
     try {
       const stages = Object.keys(funnelStatuses);
-      const records = await Promise.all(stages.map(async stage => {
-        const url = new URL(recordsService);
-        url.searchParams.set('status', funnelStatuses[stage]);
-        url.searchParams.set('year', payload.filters.year);
-        url.searchParams.set('term', payload.filters.term);
-        url.searchParams.set('teachingsite', payload.filters.site);
-        const response = await fetch(url.toString().replace(/\+/g, '%20'), { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
-        if (!response.ok) throw new Error('Teaching site query returned ' + response.status);
-        return rowsFrom(await response.json()).map(row => normalizeRecord(row, stage));
-      }));
-      stages.forEach((stage, index) => {
-        payload.funnelRecords[stage] = records[index];
-        payload.funnel[stage] = records[index].length;
+      const results = await Promise.all(stages.map(loadStage));
+      results.forEach(result => {
+        payload.summary[result.stage] = result.count;
+        payload.funnel[result.stage] = result.count;
+        payload.funnelRecords[result.stage] = result.records;
       });
     } catch (error) {
-      payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
+      if (payload.filters.site) payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
+      else payload.summaryError = 'Unable to load period totals from Slate. Please try again.';
       console.error('Teaching site funnel query failed.', error);
     }
     return payload;

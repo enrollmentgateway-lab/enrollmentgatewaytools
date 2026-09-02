@@ -48,13 +48,17 @@ Before publishing the Pipeline and Teaching Sites wrappers, configure their prim
 - `pipeline_persons` must apply `status`, `term`, and `year`.
 - `teaching_sites_persons` must return all teaching-site records and apply only `term` and `year`. Do not filter this export by `status`; the overview displays total records per site.
 
-The Teaching Sites wrapper also powers the site-specific funnel inside the same tool. It reuses Record Lookup's `all_people` JSON service and calls it three times with these `status` values whenever a site detail page loads or its period dropdown changes:
+The Teaching Sites wrapper also powers the site-specific funnel inside the same tool. It calls the teaching-site population service with these `status` values to populate the overview's period totals and the selected site's authoritative funnel counts:
 
 - `inquiry` → Inquiries
 - `applicant` → Applicants
 - `student` → Students
 
-The service applies `status`, `teachingsite`, `term`, and `year` and returns JSON in the form `{ "row": [...] }`. Its person-detail exports are `per_name`, `per_email`, `per_phone`, `per_sisid`, `per_status`, `per_url`, and `app_degree`; the wrapper retains legacy aliases as fallbacks. The `teachingsite` parameter must be an exact text match against the same teaching-site title returned as `teaching_sites_persons.title`. The wrapper writes spaces as `%20`; standard query parsing also decodes `+` as a space, so either encoding represents the same site name. No separate `teaching_site_*` Liquid exports or count-only service are required.
+The population service applies `status`, `site`, `term`, and `year`, returns JSON in the form `{ "row": [...] }`, and exports the teaching-site title as `title`. With no `site`, the wrapper counts only rows whose title is populated, preventing non-teaching-site records from entering the overview totals.
+
+The population service must explicitly return rows for all three status values, including `inquiry`; the wrapper does not estimate inquiry counts from applicant or student rows.
+
+For a selected site's record drilldowns, the wrapper separately calls Record Lookup's `all_people` JSON service with `status`, `teachingsite`, `term`, and `year`. Its current person-detail exports are `per_name`, `per_email`, `per_phone`, `per_sisid`, `per_status`, `per_url`, `per_teachingsite`, and `app_degree`; the wrapper retains legacy aliases as fallbacks and accepts scalar or display/value-shaped JSON fields. The count remains authoritative when the person-detail service cannot supply every row. The `site` and `teachingsite` parameters must exactly match the title returned as `teaching_sites_persons.title`. The wrapper writes spaces as `%20`; standard query parsing also decodes `+` as a space, so either encoding represents the same site name. No separate `teaching_site_*` Liquid exports are required.
 
 The Pipeline wrapper's `total_apps`, `total_inquiries`, `total_prospects`, and `total_students` exports are fixed comparison populations used as percentage denominators. Do not apply the `term` or `year` URL parameters to those total exports. The Teaching Sites wrapper no longer uses comparison-total exports.
 

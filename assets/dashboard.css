@@ -217,6 +217,7 @@ button, select { font: inherit; }
 .pipeline-dashboard .bar-value { font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; }
 
 .teaching-dashboard .stat-bar { grid-template-columns: 1fr; margin-bottom: 14px; }
+.teaching-dashboard .teaching-overview-stat-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .teaching-dashboard .stat-cell { padding: 24px 32px; }
 .teaching-dashboard .stat-val { font-family: 'Playfair Display', Georgia, serif; font-size: 2.2rem; }
 .teaching-dashboard .stat-sub { padding: 10px 32px; }
@@ -359,6 +360,7 @@ button, select { font: inherit; }
   .pipeline-dashboard .stat-bar, .funnel-dashboard .stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .funnel-dashboard .conversion-mode-control { width: 100%; }
   .teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .teaching-dashboard .teaching-overview-stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pipeline-dashboard .stat-cell { padding: 24px 14px; }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }
   .pipeline-dashboard .bar-row, .teaching-dashboard .bar-row { grid-template-columns: 110px 1fr 40px; }

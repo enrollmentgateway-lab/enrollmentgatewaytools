@@ -33,8 +33,11 @@
       </div>
     </div>
 
-    <div class="stat-bar">
+    <div class="stat-bar teaching-overview-stat-bar">
       <div class="stat-cell"><div id="site-count" class="stat-val">0</div><div class="stat-lbl">Active Teaching Sites</div></div>
+      <div class="stat-cell"><div id="overview-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries</div></div>
+      <div class="stat-cell"><div id="overview-applications" class="stat-val">0</div><div class="stat-lbl">Applicants</div></div>
+      <div class="stat-cell"><div id="overview-students" class="stat-val">0</div><div class="stat-lbl">Students</div></div>
       <div class="stat-sub"><div id="record-total" class="stat-sub-val">0</div><div class="stat-sub-lbl">total records across active teaching sites</div></div>
     </div>
 
@@ -103,6 +106,7 @@
   (function () {
     'use strict';
     const allTeachingSites = [
+      'Agricola in Finland',
       'Bakersfield Site at Kern Country Southern Baptist Association',
       'Boston School of Ministry',
       'Burbank Site at Story City Church',
@@ -113,12 +117,14 @@
       'Honk Kong Site at Kwun Tong Swatow Baptist Church',
       'Honk Kong Site at Saddleback Church',
       'Honolulu Site at Hawaii Pacific School of Theology',
+      'Lake Havasu Site at Calvary Baptist Church',
       'Las Vegas Site at Nevada Southern Baptist Convention',
       'Lviv Site at Ukrainian Baptist Theological Seminary',
       'Mesa Site at HiWay Baptist Church',
       'Milpitas Site at New Vision Church',
       'Phoenix Site at Valley Life Church',
-      'Sacramento Site at SOL Bible Academy'
+      'Sacramento Site at SOL Bible Academy',
+      'San Diego Site at Grace Church'
     ];
     const ui = window.DashboardUI;
     let data = {};
@@ -138,8 +144,10 @@
       data = payload || {};
       data.filters = data.filters || {};
       data.filters.site = ui.text(data.filters.site, '').trim();
+      data.summary = data.summary || {};
       data.funnel = data.funnel || {};
       data.funnelRecords = data.funnelRecords || {};
+      data.funnelRecordErrors = data.funnelRecordErrors || {};
       const detailActive = Boolean(data.filters.site);
 
       document.getElementById('overview-view').hidden = detailActive;
@@ -160,6 +168,10 @@
 
       window.AcademicPeriods.populate(document.getElementById('overview-period'), data.filters.term, data.filters.year);
       ui.setText('site-count', grouped.length);
+      const summaryUnavailable = Boolean(data.summaryError);
+      document.getElementById('overview-inquiries').textContent = summaryUnavailable ? '\u2014' : ui.number(data.summary.inquiries).toLocaleString();
+      document.getElementById('overview-applications').textContent = summaryUnavailable ? '\u2014' : ui.number(data.summary.applications).toLocaleString();
+      document.getElementById('overview-students').textContent = summaryUnavailable ? '\u2014' : ui.number(data.summary.students).toLocaleString();
       ui.setText('record-total', recordCount.toLocaleString());
       renderInactive(inactive);
       renderBars(grouped);
@@ -277,15 +289,18 @@
     function renderSiteStageRecords(stage) {
       const body = document.getElementById('site-stage-records');
       const records = siteStageRecords(stage);
-      const total = Array.isArray(data.funnelRecords[stage.key]) ? data.funnelRecords[stage.key].length : 0;
+      const loaded = Array.isArray(data.funnelRecords[stage.key]) ? data.funnelRecords[stage.key].length : 0;
+      const total = ui.number(data.funnel[stage.key]);
       body.replaceChildren();
-      document.getElementById('site-stage-summary').textContent = records.length.toLocaleString() + ' of ' + total.toLocaleString() + ' record' + (total === 1 ? '' : 's') + ' shown for ' + data.filters.site + '.';
+      const availability = loaded < total ? '; ' + loaded.toLocaleString() + ' record detail' + (loaded === 1 ? '' : 's') + ' available' : '';
+      document.getElementById('site-stage-summary').textContent = records.length.toLocaleString() + ' of ' + total.toLocaleString() + ' record' + (total === 1 ? '' : 's') + ' shown for ' + data.filters.site + availability + '.';
       document.getElementById('site-stage-export').disabled = !records.length;
       if (!records.length) {
         const row = body.insertRow();
         const cell = row.insertCell();
         cell.colSpan = 4;
-        cell.appendChild(ui.emptyState(total ? 'No records match this search.' : 'Record details are not available for this stage.'));
+        const detailError = ui.text(data.funnelRecordErrors[stage.key], '');
+        cell.appendChild(ui.emptyState(detailError || (loaded ? 'No records match this search.' : (total ? 'Record details are not available for this stage.' : 'No records are available for this stage.'))));
         return;
       }
       records.slice().sort(function (a, b) { return clean(a.name).localeCompare(clean(b.name), undefined, { sensitivity:'base' }); }).forEach(function (record, index) {
