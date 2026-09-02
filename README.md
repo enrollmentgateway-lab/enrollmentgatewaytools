@@ -67,7 +67,7 @@ The Regional Campus wrapper does not require a Liquid query export. It reads `ca
 
 The Event Tracker uses its `event_people` portal query only to associate a person identity (SIS ID or email) with an event. It retrieves current person status and drilldown details from the shared `all_people` JSON service with `alt_form_type=Event`; the service must continue exporting the `per_*` person fields and `app_degree`. If the service is later configured to return an event-title field (`event_title`, `alt_form_title`, `form_title`, or `title`), the wrapper can use those rows without the identity-association query.
 
-The Public Event Registrants portal uses the `public_events_registrants` Liquid query export and does not call a JSON service. Each registrant row exports `ev_title`, `reg_date`, and `ev_link_slate`. Liquid renders the complete export and supplies its total through the `size` filter before JavaScript groups identical event-title/date rows into full-width event cards. Each card can open its event record in Slate through `ev_link_slate`.
+The Public Event Registrants portal uses the `public_events_registrants` Liquid query export and does not call a JSON service. Each registrant row exports `ev_title`, `reg_date`, `ev_date`, and `ev_link_slate`. Liquid renders the complete export and supplies its total through the `size` filter before JavaScript groups all matching `ev_title` rows into one event. `reg_date` supplies the cumulative registration-growth chart; `ev_date` supplies the event date once for the grouped card. Each card can open its analytics detail or its event record in Slate through `ev_link_slate`.
 
 The Event Tracker, Teaching Sites, and Regional Campus funnel drilldowns can export their currently filtered record tables as CSV files.
 

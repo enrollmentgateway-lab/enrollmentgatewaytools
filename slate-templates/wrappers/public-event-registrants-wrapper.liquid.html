@@ -1,7 +1,8 @@
 <!--
   Public Event Registrants Slate wrapper.
   The portal query/export name must remain public_events_registrants and must
-  expose ev_title, reg_date, and ev_link_slate for one row per event registrant.
+  expose ev_title, reg_date, ev_date, and ev_link_slate for one row per event
+  registrant. reg_date is the registration date; ev_date is the event date.
 
   Liquid renders the complete export before JavaScript reads or groups it.
   The Liquid size filter supplies the authoritative source-row total; the
@@ -13,14 +14,15 @@
     {% for registrant in public_events_registrants %}
       <div class="registration">
         <span class="event-title">{{ registrant.ev_title | escape }}</span>
-        <span class="event-date">{{ registrant.reg_date | escape }}</span>
+        <span class="registration-date">{{ registrant.reg_date | escape }}</span>
+        <span class="event-date">{{ registrant.ev_date | escape }}</span>
         <span class="event-link">{{ registrant.ev_link_slate | escape }}</span>
       </div>
     {% endfor %}
   </div>
 </div>
 
-<iframe id="publicEventRegistrantFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/public-event-registrants/" title="Public Event Registrants" referrerpolicy="origin" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
+<iframe id="publicEventRegistrantFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/public-event-registrants/?v=registration-growth-v2" title="Public Event Registrants" referrerpolicy="origin" style="width:100%;height:100vh;min-height:600px;border:0;display:block"></iframe>
 
 <script>
 (function () {
@@ -74,20 +76,29 @@
   const registrationRows = Array.from(root.querySelectorAll('.registration')).map(function (node) {
     return {
       title: read(node, '.event-title') || 'Untitled event',
-      date: read(node, '.event-date'),
+      registrationDate: read(node, '.registration-date'),
+      eventDate: read(node, '.event-date'),
       url: eventLink(read(node, '.event-link'))
     };
   });
 
   const eventGroups = new Map();
   registrationRows.forEach(function (registration) {
-    const key = registration.title.toLocaleLowerCase() + '\u0000' + registration.date;
+    const key = registration.title.trim().toLocaleLowerCase();
     const existing = eventGroups.get(key);
     if (existing) {
       existing.registrants += 1;
+      existing.registrationDates.push(registration.registrationDate);
+      if (!existing.date && registration.eventDate) existing.date = registration.eventDate;
       if (!existing.url && registration.url) existing.url = registration.url;
     } else {
-      eventGroups.set(key, { title:registration.title, date:registration.date, registrants:1, url:registration.url });
+      eventGroups.set(key, {
+        title: registration.title,
+        date: registration.eventDate,
+        registrants: 1,
+        registrationDates: [registration.registrationDate],
+        url: registration.url
+      });
     }
   });
 
