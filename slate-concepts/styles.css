@@ -2934,6 +2934,14 @@ select:focus {
   background: var(--rust-soft);
 }
 
+.quiz-bonus {
+  margin: 8px 0 0;
+  padding: 11px 12px;
+  color: #6f5304;
+  background: var(--gold-soft);
+  font-size: .74rem;
+}
+
 .quiz-actions {
   display: flex;
   align-items: center;

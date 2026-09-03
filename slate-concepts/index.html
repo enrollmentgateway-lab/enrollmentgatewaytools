@@ -565,6 +565,7 @@
               <label><input type="radio" name="q4" value="status"><span>Person status alone</span></label>
               <label><input type="radio" name="q4" value="population"><span>A relevant population</span></label>
               <p class="quiz-explanation" hidden>A population can express current relevance; person status alone may reflect only an old milestone.</p>
+              <p class="quiz-bonus" data-bonus-for="population" hidden><strong>Bonus:</strong> No relevant population yet? You create one — populations are built from a query on fields like teaching site, term, or application year (see Segmentation, above).</p>
             </fieldset>
             <fieldset data-answer="merge">
               <legend><span>5</span>You want “Hello, Jordan” to use each recipient’s preferred name. What is Jordan?</legend>
@@ -577,6 +578,12 @@
               <label><input type="radio" name="q6" value="254"><span>Exactly 254</span></label>
               <label><input type="radio" name="q6" value="cannot"><span>Cannot be known from that total alone</span></label>
               <p class="quiz-explanation" hidden>One person can have multiple applications, so a unique-person count must be explicitly requested.</p>
+            </fieldset>
+            <fieldset data-answer="block">
+              <legend><span>7</span>You want every student interested in a specific degree to see information and offers tailored to that degree. What do you need?</legend>
+              <label><input type="radio" name="q7" value="merge"><span>One merge field for the degree name</span></label>
+              <label><input type="radio" name="q7" value="block"><span>A content block for each degree</span></label>
+              <p class="quiz-explanation" hidden>A merge field can only insert one stored value, like the degree’s name. Showing different information or offers per degree needs prewritten content blocks, selected by degree.</p>
             </fieldset>
             <div class="quiz-actions"><button class="button button-dark" type="submit">Check my answers</button><button id="reset-quiz" class="text-button" type="button" hidden>Try again</button></div>
             <div id="quiz-result" class="quiz-result" aria-live="polite" hidden></div>

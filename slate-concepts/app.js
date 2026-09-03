@@ -435,13 +435,15 @@
         question.classList.toggle('incorrect', !correct);
         const explanation = question.querySelector('.quiz-explanation');
         if (explanation) explanation.hidden = false;
+        const bonus = question.querySelector('.quiz-bonus');
+        if (bonus) bonus.hidden = !checked || checked.value !== bonus.getAttribute('data-bonus-for');
       });
 
       const message = score === questions.length
         ? 'You kept the output, record, audience, and denominator distinct.'
         : score >= 4
           ? 'Strong foundation. Review the explanations on the scenarios you missed.'
-          : 'Review the marked explanations, then try the six scenarios again.';
+          : 'Review the marked explanations, then try the scenarios again.';
       quizResult.innerHTML = '<strong>' + score + ' of ' + questions.length + ' correct</strong><p>' + message + '</p>';
       quizResult.hidden = false;
       resetQuiz.hidden = false;
@@ -456,6 +458,8 @@
         question.classList.remove('correct', 'incorrect');
         const explanation = question.querySelector('.quiz-explanation');
         if (explanation) explanation.hidden = true;
+        const bonus = question.querySelector('.quiz-bonus');
+        if (bonus) bonus.hidden = true;
       });
       quizResult.hidden = true;
       quizResult.textContent = '';
