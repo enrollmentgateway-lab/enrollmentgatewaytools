@@ -129,7 +129,7 @@ svg {
 .brand-unit {
   margin-top: 3px;
   color: var(--gold);
-  font-size: .58rem;
+  font-size: .74rem;
   font-weight: 700;
   letter-spacing: .17em;
   text-transform: uppercase;
@@ -194,7 +194,7 @@ svg {
 }
 
 .hero-inner {
-  width: min(1180px, calc(100% - 48px));
+  width: min(1360px, calc(100% - 32px));
   min-height: 590px;
   margin: 0 auto;
   padding: 88px 0 96px;
@@ -257,7 +257,7 @@ svg {
 .eyebrow {
   margin: 0 0 12px;
   color: var(--rust);
-  font-size: .68rem;
+  font-size: .78rem;
   font-weight: 800;
   letter-spacing: .18em;
   line-height: 1.4;
@@ -382,7 +382,7 @@ svg {
 .card-kicker {
   margin: 0 0 5px;
   color: var(--rust);
-  font-size: .64rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .16em;
   text-transform: uppercase;
@@ -438,7 +438,7 @@ svg {
   padding-top: 16px;
   color: var(--muted);
   border-top: 1px solid var(--line);
-  font-size: .7rem;
+  font-size: .8rem;
   font-weight: 600;
 }
 
@@ -452,7 +452,7 @@ svg {
 }
 
 .section-shell {
-  width: min(1180px, calc(100% - 48px));
+  width: min(1360px, calc(100% - 32px));
   margin: 0 auto;
 }
 
@@ -513,7 +513,7 @@ svg {
   align-items: center;
   gap: 9px;
   color: var(--muted);
-  font-size: .62rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -605,7 +605,7 @@ svg {
   padding: 10px 24px;
   color: var(--rust);
   background: var(--rust-soft);
-  font-size: .66rem;
+  font-size: .76rem;
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -698,7 +698,7 @@ svg {
   color: #6f5304;
   background: var(--gold-soft);
   border-radius: 99px;
-  font-size: .57rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -740,7 +740,7 @@ svg {
   justify-content: space-between;
   align-items: center;
   color: var(--muted);
-  font-size: .66rem;
+  font-size: .76rem;
   font-weight: 700;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -779,7 +779,7 @@ svg {
   min-height: 43px;
   color: var(--muted);
   border-left: 2px solid transparent;
-  font-size: .69rem;
+  font-size: .79rem;
   font-weight: 700;
   line-height: 1.3;
   text-decoration: none;
@@ -809,7 +809,7 @@ svg {
   gap: 9px;
   margin-top: 18px;
   color: var(--ink);
-  font-size: .7rem;
+  font-size: .8rem;
   font-weight: 800;
   text-decoration: none;
 }
@@ -938,7 +938,7 @@ svg {
 
 .type-tag {
   color: var(--muted);
-  font-size: .62rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -956,7 +956,7 @@ svg {
 .answer-word small {
   color: var(--muted);
   font-family: var(--sans);
-  font-size: .62rem;
+  font-size: .74rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -980,7 +980,7 @@ svg {
   color: var(--slate);
   background: var(--blue-soft);
   border-radius: 4px;
-  font-size: .65rem;
+  font-size: .75rem;
   font-weight: 700;
 }
 
@@ -1005,7 +1005,7 @@ svg {
   display: block;
   margin-top: 1px;
   color: var(--muted);
-  font-size: .58rem;
+  font-size: .74rem;
   font-weight: 600;
 }
 
@@ -1025,7 +1025,7 @@ svg {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 99px;
-  font-size: .58rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -1041,7 +1041,7 @@ svg {
 .mini-output-note {
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: .68rem;
+  font-size: .78rem;
 }
 
 .mini-bars {
@@ -1055,7 +1055,7 @@ svg {
   grid-template-columns: 64px 1fr 22px;
   gap: 8px;
   align-items: center;
-  font-size: .57rem;
+  font-size: .74rem;
 }
 
 .mini-bars b {
@@ -1080,7 +1080,7 @@ svg {
 .use-when {
   padding-top: 17px;
   border-top: 1px solid var(--line);
-  font-size: .7rem !important;
+  font-size: .8rem !important;
 }
 
 .practice-panel {
@@ -1164,7 +1164,7 @@ svg {
   min-height: 22px;
   margin: 14px 0 0;
   color: rgba(255, 255, 255, .58);
-  font-size: .7rem;
+  font-size: .8rem;
 }
 
 .practice-feedback.success {
@@ -1231,7 +1231,7 @@ svg {
 .example-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: .7rem;
+  font-size: .8rem;
 }
 
 .example-table th,
@@ -1245,7 +1245,7 @@ svg {
 .example-table th {
   color: var(--muted);
   background: #f1f1ef;
-  font-size: .59rem;
+  font-size: .74rem;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -1254,7 +1254,7 @@ svg {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 99px;
-  font-size: .58rem;
+  font-size: .74rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -1299,7 +1299,7 @@ svg {
 .field-card-heading p {
   margin: 0;
   color: var(--muted);
-  font-size: .58rem;
+  font-size: .74rem;
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -1333,7 +1333,7 @@ svg {
   color: var(--slate);
   background: #f0f0ed;
   border-radius: 99px;
-  font-size: .62rem;
+  font-size: .74rem;
   font-weight: 600;
 }
 
@@ -1416,7 +1416,7 @@ svg {
 
 .lane-heading small {
   color: rgba(255, 255, 255, .46);
-  font-size: .54rem;
+  font-size: .74rem;
   font-weight: 700;
   text-align: right;
   text-transform: uppercase;
@@ -1474,20 +1474,20 @@ svg {
 
 .person-status-line span {
   display: block;
-  font-size: .6rem;
+  font-size: .74rem;
   font-weight: 800;
 }
 
 .person-status-line small {
   display: block;
   margin-top: 2px;
-  font-size: .51rem;
+  font-size: .74rem;
 }
 
 .lane-note {
   margin: 26px 0 0;
   color: rgba(255, 255, 255, .52);
-  font-size: .64rem;
+  font-size: .74rem;
   line-height: 1.6;
 }
 
@@ -1520,7 +1520,7 @@ svg {
   color: rgba(255, 255, 255, .74);
   background: rgba(255, 255, 255, .06);
   border: 1px solid rgba(255, 255, 255, .13);
-  font-size: .67rem;
+  font-size: .77rem;
   line-height: 1.6;
 }
 
@@ -1539,14 +1539,14 @@ svg {
   padding: 8px 11px;
   color: rgba(255, 255, 255, .54);
   border: 1px solid rgba(255, 255, 255, .1);
-  font-size: .61rem;
+  font-size: .74rem;
   font-weight: 700;
 }
 
 .application-status-list li span {
   color: rgba(255, 255, 255, .3);
   font-family: var(--serif);
-  font-size: .7rem;
+  font-size: .8rem;
 }
 
 .application-status-list li.current {
@@ -1601,7 +1601,7 @@ svg {
   background: #f1f1ef;
   border: 0;
   font: inherit;
-  font-size: .63rem;
+  font-size: .74rem;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -1634,7 +1634,7 @@ svg {
 .decision-code-detail {
   padding: 2px 11px 12px 30px;
   color: var(--muted);
-  font-size: .68rem;
+  font-size: .78rem;
   line-height: 1.6;
 }
 
@@ -1663,7 +1663,7 @@ svg {
   padding-top: 18px;
   color: var(--rust);
   border-top: 1px solid var(--line);
-  font-size: .68rem;
+  font-size: .78rem;
 }
 
 .scenario-panel {
@@ -1762,18 +1762,18 @@ svg {
 
 .scenario-timeline span {
   color: var(--muted);
-  font-size: .55rem;
+  font-size: .74rem;
   font-weight: 700;
 }
 
 .scenario-timeline strong {
   margin-top: 2px;
-  font-size: .68rem;
+  font-size: .78rem;
 }
 
 .scenario-timeline small {
   color: var(--muted);
-  font-size: .52rem;
+  font-size: .74rem;
 }
 
 .scenario-comparison {
@@ -1793,7 +1793,7 @@ svg {
 
 .comparison-label {
   color: var(--muted);
-  font-size: .56rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -1808,14 +1808,14 @@ svg {
 .scenario-comparison p {
   margin: 0 0 17px;
   color: var(--muted);
-  font-size: .67rem;
+  font-size: .77rem;
 }
 
 .result-badge {
   display: inline-block;
   padding: 4px 9px;
   border-radius: 99px;
-  font-size: .55rem;
+  font-size: .74rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -1865,7 +1865,7 @@ svg {
 .population-definition div > p:last-child {
   margin: 7px 0 0;
   color: rgba(255, 255, 255, .58);
-  font-size: .7rem;
+  font-size: .8rem;
 }
 
 .compare-strip {
@@ -1888,7 +1888,7 @@ svg {
 
 .compare-strip span {
   color: var(--gold-dark);
-  font-size: .56rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -1902,7 +1902,7 @@ svg {
 
 .compare-strip small {
   color: var(--muted);
-  font-size: .6rem;
+  font-size: .74rem;
 }
 
 .versus {
@@ -1914,7 +1914,7 @@ svg {
   background: var(--gold-dark);
   border-radius: 50%;
   font-family: var(--serif);
-  font-size: .63rem;
+  font-size: .74rem;
   font-style: italic;
 }
 
@@ -1960,13 +1960,13 @@ svg {
 
 .segment-concepts p {
   margin: 10px 0 5px;
-  font-size: .66rem;
+  font-size: .76rem;
 }
 
 .segment-concepts small {
   display: block;
   color: var(--muted);
-  font-size: .58rem;
+  font-size: .74rem;
   line-height: 1.55;
 }
 
@@ -2013,7 +2013,7 @@ svg {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 99px;
-  font-size: .53rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -2044,7 +2044,7 @@ svg {
 .segment-controls label > span,
 .form-grid label > span {
   color: var(--muted);
-  font-size: .57rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -2062,7 +2062,7 @@ select {
   border: 1px solid #cfd2d2;
   border-radius: 4px;
   appearance: none;
-  font-size: .67rem;
+  font-size: .77rem;
   font-weight: 600;
 }
 
@@ -2096,7 +2096,7 @@ select:focus {
 
 .segment-result small {
   color: rgba(255, 255, 255, .46);
-  font-size: .52rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -2109,7 +2109,7 @@ select:focus {
 .precision-note {
   margin: 18px 0 0;
   color: var(--muted);
-  font-size: .68rem;
+  font-size: .78rem;
   line-height: 1.65;
 }
 
@@ -2163,11 +2163,11 @@ select:focus {
 .legend-swatch.merge { background: var(--rust); border-radius: 50%; }
 
 .legend-item strong {
-  font-size: .65rem;
+  font-size: .75rem;
 }
 
 .legend-item small {
-  font-size: .52rem;
+  font-size: .74rem;
 }
 
 .email-preview {
@@ -2187,7 +2187,7 @@ select:focus {
   color: var(--muted);
   background: #f3f3f1;
   border-bottom: 1px solid var(--line);
-  font-size: .53rem;
+  font-size: .74rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -2241,7 +2241,7 @@ select:focus {
   color: #705304;
   background: var(--gold-soft);
   font-family: var(--sans);
-  font-size: .48rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -2291,7 +2291,7 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: .61rem;
+  font-size: .74rem;
   font-weight: 800;
 }
 
@@ -2331,7 +2331,7 @@ select:focus {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 99px;
-  font-size: .53rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -2351,7 +2351,7 @@ select:focus {
 .before-after p {
   margin: 0;
   color: var(--muted);
-  font-size: .61rem;
+  font-size: .74rem;
 }
 
 .transform-arrow {
@@ -2371,7 +2371,7 @@ select:focus {
   display: block;
   margin-bottom: 8px;
   color: var(--muted);
-  font-size: .68rem;
+  font-size: .78rem;
   font-weight: 800;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -2417,7 +2417,7 @@ select:focus {
   min-height: 18px;
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: .68rem;
+  font-size: .78rem;
 }
 
 .llm-practice-status.error {
@@ -2462,7 +2462,7 @@ select:focus {
 
 .output-label > span {
   color: var(--gold);
-  font-size: .58rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -2478,7 +2478,7 @@ select:focus {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, .24);
   border-radius: 3px;
-  font-size: .58rem;
+  font-size: .74rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2528,7 +2528,7 @@ select:focus {
 .rewrite-list p {
   margin: 0;
   color: var(--muted);
-  font-size: .64rem;
+  font-size: .74rem;
 }
 
 .rewrite-list p:first-child {
@@ -2559,7 +2559,7 @@ select:focus {
 
 .report-header span {
   color: var(--gold);
-  font-size: .55rem;
+  font-size: .74rem;
   font-weight: 800;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -2575,7 +2575,7 @@ select:focus {
 .report-header p {
   margin: 0;
   color: rgba(255, 255, 255, .5);
-  font-size: .6rem;
+  font-size: .74rem;
 }
 
 .report-total {
@@ -2593,7 +2593,7 @@ select:focus {
 
 .report-total small {
   color: rgba(255, 255, 255, .5);
-  font-size: .52rem;
+  font-size: .74rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -2620,7 +2620,7 @@ select:focus {
   background: transparent;
   border: 0;
   border-bottom: 3px solid transparent;
-  font-size: .61rem;
+  font-size: .74rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2634,7 +2634,7 @@ select:focus {
   width: 100%;
   min-width: 720px;
   border-collapse: collapse;
-  font-size: .66rem;
+  font-size: .76rem;
 }
 
 .mock-report-table th,
@@ -2653,7 +2653,7 @@ select:focus {
 .mock-report-table thead th {
   color: var(--muted);
   background: #fbfbfa;
-  font-size: .52rem;
+  font-size: .74rem;
   letter-spacing: .04em;
   line-height: 1.4;
   text-transform: uppercase;
@@ -2685,7 +2685,7 @@ select:focus {
   color: var(--muted);
   background: #f1f1ef;
   border-top: 1px solid var(--line);
-  font-size: .54rem;
+  font-size: .74rem;
 }
 
 .decision-view {
@@ -2706,7 +2706,7 @@ select:focus {
 
 .decision-summary small {
   color: var(--muted);
-  font-size: .62rem;
+  font-size: .74rem;
   font-weight: 700;
 }
 
@@ -2784,7 +2784,7 @@ select:focus {
 .reading-checklist p {
   margin: 0;
   color: var(--muted);
-  font-size: .61rem;
+  font-size: .74rem;
 }
 
 .conclusion-lab {
@@ -2810,7 +2810,7 @@ select:focus {
   color: var(--ink);
   background: var(--white);
   border: 0;
-  font-size: .7rem;
+  font-size: .8rem;
   font-weight: 800;
   text-align: left;
   cursor: pointer;
@@ -2836,7 +2836,7 @@ select:focus {
   padding: 0 20px 18px;
   color: var(--muted);
   background: var(--white);
-  font-size: .68rem;
+  font-size: .78rem;
 }
 
 .conclusion-list article > div strong {
@@ -2886,7 +2886,7 @@ select:focus {
   border: 1px solid var(--rust);
   border-radius: 50%;
   font-family: var(--serif);
-  font-size: .7rem;
+  font-size: .8rem;
 }
 
 .quiz-form label {
@@ -2900,7 +2900,7 @@ select:focus {
   background: #f5f5f2;
   border: 1px solid transparent;
   border-radius: 4px;
-  font-size: .66rem;
+  font-size: .76rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2927,7 +2927,7 @@ select:focus {
   padding: 11px 12px;
   color: var(--muted);
   background: var(--sage-soft);
-  font-size: .62rem;
+  font-size: .74rem;
 }
 
 .incorrect .quiz-explanation {
@@ -2946,7 +2946,7 @@ select:focus {
   color: var(--rust);
   background: transparent;
   border: 0;
-  font-size: .68rem;
+  font-size: .78rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2972,7 +2972,7 @@ select:focus {
 .quiz-result p {
   margin: 5px 0 0;
   color: rgba(255, 255, 255, .65);
-  font-size: .68rem;
+  font-size: .78rem;
 }
 
 .glossary-section {
@@ -3027,7 +3027,7 @@ select:focus {
   background: transparent;
   border: 0;
   outline: 0;
-  font-size: .7rem;
+  font-size: .8rem;
 }
 
 .glossary-search input::placeholder {
@@ -3063,7 +3063,7 @@ select:focus {
 .glossary-grid p {
   margin: 0;
   color: rgba(255, 255, 255, .55);
-  font-size: .64rem;
+  font-size: .74rem;
   line-height: 1.7;
 }
 
@@ -3114,7 +3114,7 @@ select:focus {
 .text-link {
   padding: 10px;
   color: var(--rust);
-  font-size: .7rem;
+  font-size: .8rem;
   font-weight: 800;
   text-decoration: none;
 }
@@ -3132,7 +3132,7 @@ select:focus {
   color: rgba(255, 255, 255, .55);
   background: var(--ink);
   border-top: 3px solid var(--gold);
-  font-size: .59rem;
+  font-size: .74rem;
 }
 
 .site-footer > div {
@@ -3322,7 +3322,7 @@ select:focus {
 @media (max-width: 620px) {
   .section-shell,
   .hero-inner {
-    width: min(100% - 32px, 1180px);
+    width: min(100% - 32px, 1360px);
   }
 
   .site-header {
@@ -3514,7 +3514,7 @@ select:focus {
   }
 
   .question-formula span {
-    font-size: .47rem;
+    font-size: .74rem;
   }
 
   .before-after {
