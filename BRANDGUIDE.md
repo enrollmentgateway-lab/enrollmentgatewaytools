@@ -72,6 +72,34 @@ one following the same pattern) rather than a hardcoded `border-radius`,
 so it inherits the sharp-corner treatment automatically under the new
 brand.
 
+### Divider lines — short accent rules, not full-width borders
+
+Reference screenshots: `C:\Users\CadeMacritchie\Desktop\brand-assets\gs.edu
+example images\`. gs.edu repeatedly breaks up sections with a short (~40px),
+thin (2–3px) horizontal rule in an accent color, instead of a full-width
+border:
+
+- An eyebrow label flanked by two short rules on either side — `— ACADEMICS —`.
+- A short rule directly under a big serif headline, before the body copy.
+- A short rule under a card's subheading (gold on dark cards, rust on white
+  cards), replacing what would otherwise be a full-width `border-bottom`.
+
+Implemented on the analytics page:
+
+- `.intro::after` — already existed pre-rebrand; the hero card's short gold
+  rule under the heading. Already brand-aware via `var(--gold)`, no change
+  needed.
+- `.page-title` (header eyebrow) — under the new brand, gains flanking
+  `::before`/`::after` rules in `var(--gold)`, matching the "— ACADEMICS —"
+  treatment.
+- `.panel-head` — under the new brand, its full-width `border-bottom` is
+  dropped in favor of a short `var(--red)` (rust) rule under the `h2`,
+  matching the white-card examples.
+
+When adding a new section header, prefer this short-rule pattern for the
+new brand over a full-width border — pick gold on dark surfaces, rust on
+white ones, matching what's above.
+
 ### Fonts (three-tier system)
 
 1. **Heading** — Tiempos Fine VF (Klim Type Foundry). We only have the free
@@ -97,6 +125,9 @@ rather than picking the right tier. Check explicitly.
 - Logo PNGs: `C:\Users\CadeMacritchie\Desktop\brand-assets\pngs\` (horizontal,
   primary, secondary, and mark variants × black/white)
 - Tiempos Fine test OTFs: `C:\Users\CadeMacritchie\Desktop\brand-assets\fonts_tiempo\`
+- Reference screenshots of the live gs.edu site (corner radius, divider
+  lines, button styling): `C:\Users\CadeMacritchie\Desktop\brand-assets\gs.edu
+  example images\`
 - In-repo copies actually served to the browser:
   - `assets/brand-new/gs-logo-horizontal-{white,black}.png`, `gs-logomark-white.png`
   - `assets/fonts/TiemposFine-{Regular,Semibold,Bold}.woff2`
