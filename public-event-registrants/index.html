@@ -8,9 +8,72 @@
   <script defer src="../assets/portal-analytics.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
   <style>
+    /* GS 2026 brand refresh. Scoped to .public-event-dashboard, using
+       namespaced --nb-* vars rather than assets/dashboard.css's shared
+       --navy/--teal/--gold/--border/--radius (those stay untouched — see
+       BRANDGUIDE.md). */
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    .public-event-dashboard {
+      --nb-black:#0c0f14; --nb-darkgray:#2c343a; --nb-teal:#234048; --nb-rust:#c44329; --nb-gold:#d3a422; --nb-grayblue:#708aa2;
+      --nb-radius:4px;
+      --nb-font-heading:'Tiempos Fine',Georgia,serif; --nb-font-subheading:Montserrat,'Segoe UI',sans-serif; --nb-font-body:'Open Sans',system-ui,sans-serif;
+    }
+    .public-event-dashboard .gs-header { background: linear-gradient(120deg, var(--nb-black), var(--nb-darkgray)); }
+    .public-event-dashboard .wordmark { display: flex; align-items: center; }
+    .public-event-dashboard .wordmark-logo { height: 26px; width: auto; }
+    .public-event-dashboard .header-title { display: inline-flex; align-items: center; gap: 10px; color: var(--nb-gold); font-family: var(--nb-font-subheading); }
+    .public-event-dashboard .header-title::before, .public-event-dashboard .header-title::after { content: ''; width: 16px; height: 1px; background: var(--nb-gold); }
+
+    .public-event-dashboard .page-intro { background: linear-gradient(122deg, var(--nb-black), var(--nb-darkgray)); border-radius: var(--nb-radius); }
+    .public-event-dashboard .page-intro::before {
+      border: 0; box-shadow: none; border-radius: 0;
+      width: 260px; height: 260px; top: auto; right: -30px; bottom: -30px;
+      background: url('../assets/brand-new/gs-logomark-white.png') no-repeat center / contain;
+      opacity: .14;
+    }
+    .public-event-dashboard .page-intro::after { background: var(--nb-gold); }
+    .public-event-dashboard .intro-heading { font-family: var(--nb-font-heading); }
+    .public-event-dashboard .intro-subtitle { color: rgba(255,255,255,.82); }
+
+    .public-event-dashboard .stat-cell { border-radius: var(--nb-radius); }
+    .public-event-dashboard .stat-val { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .public-event-dashboard .stat-lbl { font-family: var(--nb-font-subheading); }
+    .public-event-dashboard .stat-cell:nth-child(1)::before { background: var(--nb-black); }
+    .public-event-dashboard .stat-cell:nth-child(2)::before { background: var(--nb-gold); }
+
+    .public-event-dashboard .event-sort-button:hover, .public-event-dashboard .event-sort-button:focus-visible, .public-event-dashboard .event-sort-button.active { color: var(--nb-black); }
+    .public-event-dashboard .sort-indicator { color: var(--nb-gold); }
+    .public-event-dashboard .event-card { border-radius: var(--nb-radius); }
+    .public-event-dashboard .event-card:hover, .public-event-dashboard .event-card:focus-visible { border-color: var(--nb-rust); }
+    .public-event-dashboard .event-card::before { background: var(--nb-gold); }
+    .public-event-dashboard .event-title { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .public-event-dashboard .event-analytics-button:hover { text-decoration-color: var(--nb-gold); }
+    .public-event-dashboard .event-link-button { color: var(--nb-teal); }
+    .public-event-dashboard .event-link-button:hover { color: var(--nb-black); }
+    .public-event-dashboard .event-detail-label { font-family: var(--nb-font-subheading); }
+    .public-event-dashboard .event-count { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .public-event-dashboard .event-empty { border-radius: var(--nb-radius); }
+
+    .public-event-dashboard .registration-detail > .back-button {
+      border-radius: var(--nb-radius);
+      color: var(--nb-black);
+      font-family: var(--nb-font-subheading);
+    }
+    .public-event-dashboard .registration-detail > .back-button span { color: var(--nb-gold); }
+    .public-event-dashboard .registration-detail > .back-button:hover { border-color: rgba(211,164,34,.6); }
+    .public-event-dashboard .registration-detail > .back-button:focus-visible { outline-color: rgba(211,164,34,.35); }
+    .public-event-dashboard .registration-chart-heading { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .public-event-dashboard .chart-axis-label { font-family: var(--nb-font-body); }
+    .public-event-dashboard .chart-line { stroke: var(--nb-gold); }
+    .public-event-dashboard .chart-point { stroke: var(--nb-gold); }
+    .public-event-dashboard .chart-total-label { fill: var(--nb-black); font-family: var(--nb-font-subheading); }
+    .public-event-dashboard .registration-chart-empty { border-radius: var(--nb-radius); }
+
     .public-event-dashboard .container { max-width: 1040px; }
     .public-event-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .public-event-summary .stat-cell { text-align: center; }
@@ -145,7 +208,7 @@
 </head>
 <body class="public-event-dashboard">
   <header class="gs-header">
-    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Public Event Registrants">Gateway Seminary<span>Report</span></button>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Public Event Registrants"><img class="wordmark-logo" src="../assets/brand-new/gs-logo-horizontal-white.png" alt="Gateway Seminary"></button>
     <div class="header-divider"></div>
     <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
   </header>
@@ -336,8 +399,8 @@
       const svg = svgElement('svg', { viewBox:'0 0 ' + width + ' ' + height, preserveAspectRatio:'xMidYMid meet', 'aria-hidden':'true' });
       const definitions = svgElement('defs');
       const gradient = svgElement('linearGradient', { id:'registration-area-gradient', x1:'0', y1:'0', x2:'0', y2:'1' });
-      gradient.appendChild(svgElement('stop', { offset:'0%', 'stop-color':'#d9a332', 'stop-opacity':'.28' }));
-      gradient.appendChild(svgElement('stop', { offset:'100%', 'stop-color':'#d9a332', 'stop-opacity':'.03' }));
+      gradient.appendChild(svgElement('stop', { offset:'0%', 'stop-color':'#d3a422', 'stop-opacity':'.28' }));
+      gradient.appendChild(svgElement('stop', { offset:'100%', 'stop-color':'#d3a422', 'stop-opacity':'.03' }));
       definitions.appendChild(gradient);
       svg.appendChild(definitions);
 

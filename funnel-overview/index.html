@@ -8,12 +8,79 @@
   <script defer src="../assets/portal-analytics.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
+  <style>
+    /* GS 2026 brand refresh. Scoped to .funnel-dashboard, using namespaced
+       --nb-* vars rather than assets/dashboard.css's shared --navy/--teal/
+       --gold/--border/--radius (those stay untouched — see BRANDGUIDE.md). */
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    .funnel-dashboard {
+      --nb-black:#0c0f14; --nb-darkgray:#2c343a; --nb-teal:#234048; --nb-rust:#c44329; --nb-gold:#d3a422; --nb-grayblue:#708aa2;
+      --nb-radius:4px;
+      --nb-font-heading:'Tiempos Fine',Georgia,serif; --nb-font-subheading:Montserrat,'Segoe UI',sans-serif; --nb-font-body:'Open Sans',system-ui,sans-serif;
+    }
+    .funnel-dashboard .gs-header { background: linear-gradient(120deg, var(--nb-black), var(--nb-darkgray)); }
+    .funnel-dashboard .wordmark { display: flex; align-items: center; }
+    .funnel-dashboard .wordmark-logo { height: 26px; width: auto; }
+    .funnel-dashboard .header-title { display: inline-flex; align-items: center; gap: 10px; color: var(--nb-gold); font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .header-title::before, .funnel-dashboard .header-title::after { content: ''; width: 16px; height: 1px; background: var(--nb-gold); }
+    .funnel-dashboard .notification-count { background: var(--nb-rust); }
+    .funnel-dashboard .drawer-head h2 { color: var(--nb-black); font-family: var(--nb-font-heading); }
+
+    .funnel-dashboard .page-intro { background: linear-gradient(122deg, var(--nb-black), var(--nb-darkgray)); border-radius: var(--nb-radius); }
+    .funnel-dashboard .page-intro::before {
+      border: 0; box-shadow: none; border-radius: 0;
+      width: 260px; height: 260px; top: auto; right: -30px; bottom: -30px;
+      background: url('../assets/brand-new/gs-logomark-white.png') no-repeat center / contain;
+      opacity: .14;
+    }
+    .funnel-dashboard .page-intro::after { background: var(--nb-gold); }
+    .funnel-dashboard .intro-heading { font-family: var(--nb-font-heading); }
+    .funnel-dashboard .intro-subtitle { color: rgba(255,255,255,.82); }
+
+    .funnel-dashboard .controls-row { border-radius: var(--nb-radius); }
+    .funnel-dashboard .ctrl-label { font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .control-select { border-radius: var(--nb-radius); font-family: var(--nb-font-body); }
+    .funnel-dashboard .control-select:hover { border-color: var(--nb-rust); }
+    .funnel-dashboard .toggle-group { border-radius: var(--nb-radius); }
+    .funnel-dashboard .toggle-btn { font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .toggle-btn.active { background: var(--nb-black); }
+    .funnel-dashboard .csv-export-button { border-color: var(--nb-black); background: var(--nb-black); border-radius: var(--nb-radius); font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .csv-export-button:hover, .funnel-dashboard .csv-export-button:focus-visible { color: var(--nb-black); }
+    .funnel-dashboard .choke-info-button:hover { color: var(--nb-black); }
+    .funnel-dashboard .choke-info-popover { border-radius: var(--nb-radius); }
+    .funnel-dashboard .choke-info-title { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .funnel-dashboard .choke-info-eyebrow { font-family: var(--nb-font-subheading); }
+
+    .funnel-dashboard .stat-cell { border-radius: var(--nb-radius); }
+    .funnel-dashboard .stat-val { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .funnel-dashboard .stat-lbl { font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .stat-cell:nth-child(1)::before { background: var(--nb-black); }
+    .funnel-dashboard .stat-cell:nth-child(2)::before { background: var(--nb-darkgray); }
+    .funnel-dashboard .stat-cell:nth-child(3)::before { background: var(--nb-gold); }
+    .funnel-dashboard .stat-cell:nth-child(4)::before { background: var(--nb-teal); }
+
+    .funnel-dashboard .funnel-stage .stage-name { font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .funnel-stage .stage-count { font-family: var(--nb-font-heading); }
+
+    .funnel-dashboard .section-divider::before { background: var(--nb-rust); }
+    .funnel-dashboard .section-eyebrow { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .section-heading { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .funnel-dashboard .panel { border-radius: var(--nb-radius); }
+    .funnel-dashboard .data-table th { background: var(--nb-black); font-family: var(--nb-font-subheading); }
+    .funnel-dashboard .badge { background: rgba(12,15,20,.08); color: var(--nb-black); }
+    .funnel-dashboard .badge-bad { background: rgba(196,67,41,.12); color: var(--nb-rust); }
+    .funnel-dashboard .badge-gold { background: rgba(211,164,34,.16); color: var(--nb-black); }
+    .funnel-dashboard .page-button { border-radius: var(--nb-radius); }
+    .funnel-dashboard .page-button.active { background: var(--nb-black); border-color: var(--nb-black); }
+  </style>
 </head>
 <body class="funnel-dashboard">
   <header class="gs-header">
-    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Funnel Overview">Gateway Seminary<span>Admissions</span></button>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Funnel Overview"><img class="wordmark-logo" src="../assets/brand-new/gs-logo-horizontal-white.png" alt="Gateway Seminary"></button>
     <div class="header-divider"></div>
     <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
     <div class="header-spacer"></div>
@@ -192,10 +259,10 @@
 
     function buildStages() {
       return [
-        { label:'Inquiries', count:ui.number(data.counts.inquiries), color:'#132a46' },
-        { label:'Applied', count:ui.number(data.counts.applications), color:'#244663' },
-        { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#d2a53e' },
-        { label:'Admitted', count:ui.number(data.counts.admitted), color:'#2a6b3c' }
+        { label:'Inquiries', count:ui.number(data.counts.inquiries), color:'#0c0f14' },
+        { label:'Applied', count:ui.number(data.counts.applications), color:'#2c343a' },
+        { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#d3a422' },
+        { label:'Admitted', count:ui.number(data.counts.admitted), color:'#234048' }
       ];
     }
 

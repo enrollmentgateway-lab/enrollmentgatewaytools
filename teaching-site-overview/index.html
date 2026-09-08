@@ -8,12 +8,72 @@
   <script defer src="../assets/portal-analytics.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
+  <style>
+    /* GS 2026 brand refresh. Scoped to .teaching-dashboard, using namespaced
+       --nb-* vars rather than assets/dashboard.css's shared --navy/--teal/
+       --gold/--border/--radius (those stay untouched — see BRANDGUIDE.md). */
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    .teaching-dashboard {
+      --nb-black:#0c0f14; --nb-darkgray:#2c343a; --nb-teal:#234048; --nb-rust:#c44329; --nb-gold:#d3a422; --nb-grayblue:#708aa2;
+      --nb-radius:4px;
+      --nb-font-heading:'Tiempos Fine',Georgia,serif; --nb-font-subheading:Montserrat,'Segoe UI',sans-serif; --nb-font-body:'Open Sans',system-ui,sans-serif;
+    }
+    .teaching-dashboard .gs-header { background: linear-gradient(120deg, var(--nb-black), var(--nb-darkgray)); }
+    .teaching-dashboard .wordmark { display: flex; align-items: center; }
+    .teaching-dashboard .wordmark-logo { height: 26px; width: auto; }
+    .teaching-dashboard .header-title { display: inline-flex; align-items: center; gap: 10px; color: var(--nb-gold); font-family: var(--nb-font-subheading); }
+    .teaching-dashboard .header-title::before, .teaching-dashboard .header-title::after { content: ''; width: 16px; height: 1px; background: var(--nb-gold); }
+
+    .teaching-dashboard .page-intro { background: linear-gradient(122deg, var(--nb-black), var(--nb-darkgray)); border-radius: var(--nb-radius); }
+    .teaching-dashboard .page-intro::before {
+      border: 0; box-shadow: none; border-radius: 0;
+      width: 260px; height: 260px; top: auto; right: -30px; bottom: -30px;
+      background: url('../assets/brand-new/gs-logomark-white.png') no-repeat center / contain;
+      opacity: .14;
+    }
+    .teaching-dashboard .page-intro::after { background: var(--nb-gold); }
+    .teaching-dashboard .intro-heading { font-family: var(--nb-font-heading); }
+    .teaching-dashboard .intro-subtitle { color: rgba(255,255,255,.82); }
+    .teaching-dashboard .site-detail-intro .section-eyebrow { color: var(--nb-gold); }
+
+    .teaching-dashboard .controls-row { border-radius: var(--nb-radius); }
+    .teaching-dashboard .ctrl-label { font-family: var(--nb-font-subheading); }
+    .teaching-dashboard .control-select { border-radius: var(--nb-radius); font-family: var(--nb-font-body); }
+    .teaching-dashboard .control-select:hover { border-color: var(--nb-rust); }
+    .teaching-dashboard .back-button { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
+
+    .teaching-dashboard .stat-cell { border-radius: var(--nb-radius); }
+    .teaching-dashboard .stat-val { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .teaching-dashboard .stat-lbl { font-family: var(--nb-font-subheading); }
+    .teaching-dashboard .stat-cell:nth-child(1)::before { background: var(--nb-black); }
+    .teaching-dashboard .stat-cell:nth-child(2)::before { background: var(--nb-teal); }
+    .teaching-dashboard .stat-cell:nth-child(3)::before { background: var(--nb-gold); }
+    .teaching-dashboard .stat-cell:nth-child(4)::before { background: var(--nb-grayblue); }
+    .teaching-dashboard .stat-sub-val { color: var(--nb-teal); font-family: var(--nb-font-heading); }
+
+    .teaching-dashboard .inactive-toggle, .teaching-dashboard .inactive-list, .teaching-dashboard .inactive-list ul { color: var(--nb-rust); }
+
+    .teaching-dashboard .section-divider::before { background: var(--nb-rust); }
+    .teaching-dashboard .section-eyebrow { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
+    .teaching-dashboard .section-heading { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .teaching-dashboard .bar-chart { border-radius: var(--nb-radius); }
+    .teaching-dashboard .bar-label { font-family: var(--nb-font-body); }
+    .teaching-dashboard .bar-fill { background: var(--nb-teal); }
+    .teaching-dashboard .bar-value { color: var(--nb-black); }
+    .teaching-dashboard .clickable-site:hover { background: rgba(35,64,72,.07); }
+    .teaching-dashboard .clickable-site:focus-visible { outline-color: rgba(35,64,72,.35); }
+
+    .teaching-site-detail .funnel-stage .stage-name { font-family: var(--nb-font-subheading); }
+    .teaching-site-detail .funnel-stage .stage-count { font-family: var(--nb-font-heading); }
+  </style>
 </head>
 <body class="teaching-dashboard">
   <header class="gs-header">
-    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Teaching Sites Overview">Gateway Seminary<span>Admissions</span></button>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Teaching Sites Overview"><img class="wordmark-logo" src="../assets/brand-new/gs-logo-horizontal-white.png" alt="Gateway Seminary"></button>
     <div class="header-divider"></div>
     <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
   </header>
@@ -214,9 +274,9 @@
 
     function renderSiteFunnel() {
       const stages = [
-        { key:'inquiries', label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#087c78' },
-        { key:'applications', label:'Applicants', count:ui.number(data.funnel.applications), color:'#1c3a5e' },
-        { key:'students', label:'Students', count:ui.number(data.funnel.students), color:'#d2a53e' }
+        { key:'inquiries', label:'Inquiries', count:ui.number(data.funnel.inquiries), color:'#234048' },
+        { key:'applications', label:'Applicants', count:ui.number(data.funnel.applications), color:'#2c343a' },
+        { key:'students', label:'Students', count:ui.number(data.funnel.students), color:'#d3a422' }
       ];
       const root = document.getElementById('site-funnel'); root.replaceChildren();
       const empty = document.getElementById('site-funnel-empty');

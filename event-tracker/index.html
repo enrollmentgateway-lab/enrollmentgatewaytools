@@ -8,12 +8,84 @@
   <script defer src="../assets/portal-analytics.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
+  <style>
+    /* GS 2026 brand refresh. Scoped to .event-dashboard, using namespaced
+       --nb-* vars rather than assets/dashboard.css's shared --navy/--teal/
+       --gold/--border/--radius (those stay untouched — see BRANDGUIDE.md). */
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    .event-dashboard {
+      --nb-black:#0c0f14; --nb-darkgray:#2c343a; --nb-teal:#234048; --nb-rust:#c44329; --nb-gold:#d3a422; --nb-grayblue:#708aa2;
+      --nb-radius:4px;
+      --nb-font-heading:'Tiempos Fine',Georgia,serif; --nb-font-subheading:Montserrat,'Segoe UI',sans-serif; --nb-font-body:'Open Sans',system-ui,sans-serif;
+    }
+    .event-dashboard .gs-header { background: linear-gradient(120deg, var(--nb-black), var(--nb-darkgray)); }
+    .event-dashboard .wordmark { display: flex; align-items: center; }
+    .event-dashboard .wordmark-logo { height: 26px; width: auto; }
+    .event-dashboard .header-title { display: inline-flex; align-items: center; gap: 10px; color: var(--nb-gold); font-family: var(--nb-font-subheading); }
+    .event-dashboard .header-title::before, .event-dashboard .header-title::after { content: ''; width: 16px; height: 1px; background: var(--nb-gold); }
+
+    .event-dashboard .page-intro { background: linear-gradient(122deg, var(--nb-black), var(--nb-darkgray)); border-radius: var(--nb-radius); }
+    .event-dashboard .page-intro::before {
+      border: 0; box-shadow: none; border-radius: 0;
+      width: 260px; height: 260px; top: auto; right: -30px; bottom: -30px;
+      background: url('../assets/brand-new/gs-logomark-white.png') no-repeat center / contain;
+      opacity: .14;
+    }
+    .event-dashboard .page-intro::after { background: var(--nb-gold); }
+    .event-dashboard .intro-heading { font-family: var(--nb-font-heading); }
+    .event-dashboard .intro-subtitle { color: rgba(255,255,255,.82); }
+    .event-dashboard .event-detail-intro .section-eyebrow { color: var(--nb-gold); }
+
+    .event-dashboard .controls-row { border-radius: var(--nb-radius); }
+    .event-dashboard .ctrl-label { font-family: var(--nb-font-subheading); }
+    .event-dashboard .control-select, .event-dashboard .event-search-input, .event-dashboard .control-date { border-radius: var(--nb-radius); font-family: var(--nb-font-body); }
+    .event-dashboard .control-select:hover { border-color: var(--nb-rust); }
+    .event-dashboard .event-search-input:focus, .event-dashboard .control-date:focus { outline-color: rgba(35,64,72,.3); border-color: var(--nb-teal); }
+    .event-dashboard .adjustment-toggle { color: var(--nb-black); }
+    .event-dashboard .adjustment-toggle input { accent-color: var(--nb-teal); }
+    .event-dashboard .event-advanced-controls { border-radius: var(--nb-radius); }
+    .event-dashboard .percentage-input { border-radius: var(--nb-radius); }
+    .event-dashboard .percentage-input:focus-within { outline-color: rgba(35,64,72,.3); }
+    .event-dashboard .back-button { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
+
+    .event-dashboard .stat-cell { border-radius: var(--nb-radius); }
+    .event-dashboard .stat-val { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .event-dashboard .stat-lbl { font-family: var(--nb-font-subheading); }
+    .event-dashboard .stat-cell:nth-child(1)::before { background: var(--nb-black); }
+    .event-dashboard .stat-cell:nth-child(2)::before { background: var(--nb-gold); }
+    .event-dashboard .stat-cell:nth-child(3)::before { background: var(--nb-grayblue); }
+    .event-dashboard .stat-cell:nth-child(4)::before { background: var(--nb-teal); }
+    .event-dashboard .stat-cell:nth-child(5)::before { background: var(--nb-gold); }
+    .event-dashboard .stat-sub-val { color: var(--nb-teal); font-family: var(--nb-font-heading); }
+    .event-dashboard .event-stage-info-button:hover, .event-dashboard .event-stage-info-button:focus-visible { color: var(--nb-black); }
+    .event-dashboard .event-stage-info-popover { border-radius: var(--nb-radius); }
+
+    .event-dashboard .section-divider::before { background: var(--nb-rust); }
+    .event-dashboard .section-eyebrow { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
+    .event-dashboard .section-heading { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .event-dashboard .panel { border-radius: var(--nb-radius); }
+    .event-dashboard .data-table th { background: var(--nb-black); font-family: var(--nb-font-subheading); }
+    .event-dashboard .event-sort-button:hover, .event-dashboard .event-sort-button:focus-visible { color: var(--nb-gold); }
+    .event-dashboard .sort-indicator { color: var(--nb-gold); }
+    .event-dashboard .event-title { color: var(--nb-black); }
+    .event-dashboard .badge { background: rgba(12,15,20,.08); color: var(--nb-black); }
+    .event-dashboard .badge-good { background: rgba(35,64,72,.12); color: var(--nb-teal); border-color: rgba(35,64,72,.3); }
+    .event-dashboard .badge-bad { background: rgba(196,67,41,.12); color: var(--nb-rust); border-color: rgba(196,67,41,.3); }
+    .event-dashboard .page-button { border-radius: var(--nb-radius); }
+    .event-dashboard .page-button.active { background: var(--nb-black); border-color: var(--nb-black); }
+
+    .event-dashboard .funnel-stage .stage-name, .event-dashboard .event-detail .stage-name { font-family: var(--nb-font-subheading); }
+    .event-dashboard .funnel-stage .stage-count, .event-dashboard .event-detail .stage-count { font-family: var(--nb-font-heading); }
+    .event-dashboard .stage-rate { background: rgba(12,15,20,.22); }
+  </style>
 </head>
 <body class="event-dashboard">
   <header class="gs-header">
-    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Event Tracker">Gateway Seminary<span>Admissions</span></button>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Event Tracker"><img class="wordmark-logo" src="../assets/brand-new/gs-logo-horizontal-white.png" alt="Gateway Seminary"></button>
     <div class="header-divider"></div>
     <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
   </header>
@@ -321,9 +393,9 @@
 
     function renderEventFunnel(event) {
       const stages = [
-        { key:'inquiries', label:'Inquiries', count:inquiryCount(event), color:'#087c78' },
-        { key:'applicants', label:'Applicants', count:event.applicants + event.students, color:'#1c3a5e' },
-        { key:'students', label:'Students', count:event.students, color:'#d2a53e' }
+        { key:'inquiries', label:'Inquiries', count:inquiryCount(event), color:'#234048' },
+        { key:'applicants', label:'Applicants', count:event.applicants + event.students, color:'#2c343a' },
+        { key:'students', label:'Students', count:event.students, color:'#d3a422' }
       ];
       const root = document.getElementById('event-funnel'); root.replaceChildren();
       const empty = document.getElementById('event-funnel-empty');

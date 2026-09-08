@@ -8,9 +8,93 @@
   <script defer src="../assets/portal-analytics.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/dashboard.css">
   <style>
+    /* GS 2026 brand refresh. Scoped to .regional-dashboard, using namespaced
+       --nb-* vars rather than assets/dashboard.css's shared --navy/--teal/
+       --gold/--border/--radius (those stay untouched — see BRANDGUIDE.md). */
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    .regional-dashboard {
+      --nb-black:#0c0f14; --nb-darkgray:#2c343a; --nb-teal:#234048; --nb-rust:#c44329; --nb-gold:#d3a422; --nb-grayblue:#708aa2;
+      --nb-radius:4px;
+      --nb-font-heading:'Tiempos Fine',Georgia,serif; --nb-font-subheading:Montserrat,'Segoe UI',sans-serif; --nb-font-body:'Open Sans',system-ui,sans-serif;
+    }
+    .regional-dashboard .gs-header { background: linear-gradient(120deg, var(--nb-black), var(--nb-darkgray)); }
+    .regional-dashboard .wordmark { display: flex; align-items: center; }
+    .regional-dashboard .wordmark-logo { height: 26px; width: auto; }
+    .regional-dashboard .header-title { display: inline-flex; align-items: center; gap: 10px; color: var(--nb-gold); font-family: var(--nb-font-subheading); }
+    .regional-dashboard .header-title::before, .regional-dashboard .header-title::after { content: ''; width: 16px; height: 1px; background: var(--nb-gold); }
+
+    .regional-dashboard .page-intro { background: linear-gradient(122deg, var(--nb-black), var(--nb-darkgray)); border-radius: var(--nb-radius); }
+    .regional-dashboard .page-intro::before {
+      border: 0; box-shadow: none; border-radius: 0;
+      width: 260px; height: 260px; top: auto; right: -30px; bottom: -30px;
+      background: url('../assets/brand-new/gs-logomark-white.png') no-repeat center / contain;
+      opacity: .14;
+    }
+    .regional-dashboard .page-intro::after { background: var(--nb-gold); }
+    .regional-dashboard .intro-heading { font-family: var(--nb-font-heading); }
+    .regional-dashboard .intro-subtitle { color: rgba(255,255,255,.82); }
+    .regional-dashboard .section-eyebrow { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
+    .regional-dashboard #records-view .section-eyebrow { color: var(--nb-gold); }
+
+    .regional-dashboard .controls-row { border-radius: var(--nb-radius); }
+    .regional-dashboard .ctrl-label { font-family: var(--nb-font-subheading); }
+    .regional-dashboard .control-select { border-radius: var(--nb-radius); font-family: var(--nb-font-body); }
+    .regional-dashboard .control-select:hover { border-color: var(--nb-rust); }
+    .regional-dashboard .back-button { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
+
+    .regional-dashboard .stat-cell { border-radius: var(--nb-radius); }
+    .regional-dashboard .stat-val { color: var(--nb-black); font-family: var(--nb-font-heading); }
+    .regional-dashboard .stat-lbl { font-family: var(--nb-font-subheading); }
+    .regional-dashboard .stat-cell:nth-child(1)::before { background: var(--nb-black); }
+    .regional-dashboard .stat-cell:nth-child(2)::before { background: var(--nb-gold); }
+    .regional-dashboard .stat-cell:nth-child(3)::before { background: var(--nb-teal); }
+
+    .regional-dashboard .section-divider::before { background: var(--nb-rust); }
+    .regional-dashboard .section-heading { color: var(--nb-black); font-family: var(--nb-font-heading); }
+
+    .regional-dashboard .campus-card { border-radius: var(--nb-radius); }
+    .regional-dashboard .campus-card::after { color: var(--nb-rust); }
+    .regional-dashboard .campus-card:hover { border-color: rgba(196,67,41,.5); }
+    .regional-dashboard .campus-card-name { font-family: var(--nb-font-heading); }
+    .regional-dashboard .campus-card-count { font-family: var(--nb-font-subheading); }
+    .regional-dashboard .campus-card-meter::after { background: var(--nb-teal); }
+
+    .regional-dashboard .regional-funnel { border-radius: var(--nb-radius); }
+    .regional-dashboard .regional-stage { border-radius: var(--nb-radius); }
+    .regional-dashboard .regional-stage-step, .regional-dashboard .regional-stage-label { font-family: var(--nb-font-subheading); }
+    .regional-dashboard .regional-stage-count { font-family: var(--nb-font-heading); }
+
+    .regional-dashboard .filter-chip { border-radius: var(--nb-radius); color: var(--nb-black); background: rgba(211,164,34,.16); }
+    .regional-dashboard .filter-chip button:hover { background: rgba(12,15,20,.08); }
+
+    .regional-dashboard .lookup-panel { border-radius: var(--nb-radius); }
+    .regional-dashboard .lookup-label { font-family: var(--nb-font-subheading); }
+    .regional-dashboard .lookup-input { border-radius: var(--nb-radius); }
+    .regional-dashboard .lookup-input:focus { outline-color: rgba(35,64,72,.3); border-color: var(--nb-teal); }
+    .regional-dashboard .record-name { color: var(--nb-black); }
+    .regional-dashboard .profile-field-label { font-family: var(--nb-font-subheading); }
+    .regional-dashboard .record-sort-button:hover, .regional-dashboard .record-sort-button:focus-visible { color: var(--nb-gold); }
+    .regional-dashboard .record-sort-indicator { color: var(--nb-gold); }
+    .regional-dashboard .csv-export-button { border-color: var(--nb-black); background: var(--nb-black); border-radius: var(--nb-radius); font-family: var(--nb-font-subheading); }
+    .regional-dashboard .csv-export-button:hover, .regional-dashboard .csv-export-button:focus-visible { color: var(--nb-black); }
+    .regional-dashboard .data-table th { background: var(--nb-black); font-family: var(--nb-font-subheading); }
+    .regional-dashboard .badge-gold { background: rgba(211,164,34,.16); color: var(--nb-black); }
+    .regional-dashboard .data-warning { border-color: rgba(196,67,41,.4); border-radius: var(--nb-radius); color: var(--nb-rust); background: rgba(196,67,41,.08); }
+    .regional-dashboard #records-view .lookup-panel > .panel { border-radius: var(--nb-radius); }
+
+    .regional-dashboard .profile-card { border-radius: var(--nb-radius); }
+    .regional-dashboard .profile-hero { background: linear-gradient(122deg, var(--nb-black), var(--nb-darkgray)); border-bottom-color: var(--nb-gold); }
+    .regional-dashboard .profile-hero::after { content: none; }
+    .regional-dashboard .profile-kicker { color: var(--nb-gold); font-family: var(--nb-font-subheading); }
+    .regional-dashboard .profile-name { font-family: var(--nb-font-heading); }
+    .regional-dashboard .profile-field-value { color: var(--nb-black); }
+    .regional-dashboard .profile-field-value a { color: var(--nb-teal); }
+
     .regional-dashboard .container { max-width: 1040px; }
     .data-warning { margin: 0 0 18px; padding: 12px 14px; border: 1px solid #e5b94c; border-radius: var(--radius); color: var(--gold-ink); font-size: .82rem; font-weight: 650; background: #fff7dc; }
 
@@ -92,7 +176,7 @@
 </head>
 <body class="regional-dashboard">
   <header class="gs-header">
-    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Regional Campus Portal">Gateway Seminary<span>Admissions</span></button>
+    <button id="portal-home" class="wordmark portal-home" type="button" aria-label="Reset Regional Campus Portal"><img class="wordmark-logo" src="../assets/brand-new/gs-logo-horizontal-white.png" alt="Gateway Seminary"></button>
     <div class="header-divider"></div>
     <a class="header-title header-home" href="../" target="_top" aria-label="Return to Admissions">Home</a>
   </header>
@@ -186,7 +270,7 @@
     'use strict';
     const ui = window.DashboardUI;
     const bridge = window.DashboardBridge.create('regional-campus', render);
-    const colors = ['#173552', '#19465e', '#18586a', '#176b75', '#147b7c', '#0f7972', '#2a846f', '#39785e'];
+    const colors = ['#0c0f14', '#2c343a', '#234048', '#708aa2', '#c44329', '#d3a422'];
     const statusOrder = ['inquiry', 'prospect', 'applicant', 'application', 'awaiting approval', 'admitted', 'student', 'enrolled'];
     const recordSortColumns = ['name', 'program', 'status', 'app_status', 'campus'];
     const minimumCampusRecords = 20;
