@@ -62,8 +62,9 @@
           </div>
         </div>
       </div>
-      <div class="control-group" style="margin-left:auto">
-        <button id="funnel-export" class="csv-export-button" type="button">Export CSV</button>
+      <div class="control-group" style="margin-left:auto;gap:8px">
+        <button id="funnel-export" class="csv-export-button" type="button">Export Summary</button>
+        <button id="funnel-export-records" class="csv-export-button" type="button">Export Records</button>
       </div>
     </div>
 
@@ -101,7 +102,7 @@
       FA27: { label:'FA27 — Fall 2027', start:'2027-01-16', end:'2027-08-15', term:'Fall', year:'2027-2028' }
     };
     const ui = window.DashboardUI;
-    let data = { counts:{}, awaiting:[], actions:[], filters:{} };
+    let data = { counts:{}, awaiting:[], actions:[], filters:{}, funnelRecords:{} };
     let conversionMode = sessionStorage.getItem('funnel-conversion-mode') || 'cumulative';
     let currentPage = 1;
     let perPage = 25;
@@ -113,6 +114,10 @@
       data.counts = data.counts || {}; data.filters = data.filters || {};
       data.awaiting = Array.isArray(data.awaiting) ? data.awaiting : [];
       data.actions = Array.isArray(data.actions) ? data.actions : [];
+      data.funnelRecords = data.funnelRecords || {};
+      data.funnelRecords.inquiries = Array.isArray(data.funnelRecords.inquiries) ? data.funnelRecords.inquiries : [];
+      data.funnelRecords.applications = Array.isArray(data.funnelRecords.applications) ? data.funnelRecords.applications : [];
+      data.funnelRecords.admitted = Array.isArray(data.funnelRecords.admitted) ? data.funnelRecords.admitted : [];
       if (!sessionStorage.getItem('funnel-conversion-mode') && ['cumulative','sequential'].includes(data.filters.convMode)) conversionMode = data.filters.convMode;
       populatePeriod(); updateModeButtons();
       ui.setText('sum-inquiries', ui.number(data.counts.inquiries).toLocaleString());
@@ -258,6 +263,28 @@
       ], rows);
     }
 
+    function exportFunnelRecords() {
+      const period = funnelPeriods[document.getElementById('period').value] || funnelPeriods.total;
+      const stages = [
+        { label:'Inquiry', records:data.funnelRecords.inquiries },
+        { label:'Applied', records:data.funnelRecords.applications },
+        { label:'Awaiting Approval', records:data.awaiting },
+        { label:'Admitted', records:data.funnelRecords.admitted }
+      ];
+      const rows = [];
+      stages.forEach(function (stage) {
+        stage.records.forEach(function (record) {
+          rows.push({ name:ui.text(record.name), email:ui.text(record.email), program:ui.text(record.program), status:stage.label });
+        });
+      });
+      ui.downloadCsv(period.label + '-funnel-records', [
+        { key:'name', label:'Name' },
+        { key:'email', label:'Email' },
+        { key:'program', label:'Program' },
+        { key:'status', label:'Status' }
+      ], rows);
+    }
+
     function dismissedIds() {
       try { const value = JSON.parse(localStorage.getItem('funnel-dismissed-actions') || '[]'); return Array.isArray(value) ? value : []; }
       catch (_) { return []; }
@@ -335,6 +362,7 @@
       else bridge.navigate({ start_date:period.start, end_date:period.end, term_app:period.term, year_app:period.year, conv_mode:conversionMode }, []);
     });
     document.getElementById('funnel-export').addEventListener('click', exportFunnel);
+    document.getElementById('funnel-export-records').addEventListener('click', exportFunnelRecords);
     document.getElementById('cumulative').addEventListener('click', function () { setMode('cumulative'); });
     document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
     document.getElementById('portal-home').addEventListener('click', function () {
