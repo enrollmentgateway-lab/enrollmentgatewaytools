@@ -47,23 +47,25 @@ them reads as an off, muddy color rather than "the brand teal." Prefer flat
 fills; the analytics chart bars are flat `var(--teal)` under the new brand
 for this reason.
 
-### Shape language — sharp corners, not rounded
+### Shape language — slight rounding, not pill-shaped
 
-The live marketing site (gs.edu, e.g. `/academics/`) uses square/sharp
-corners throughout — no rounded cards, buttons, or panels, and a flat
-design with minimal shadow. That's a deliberate departure from the current
-portal, which leans on pill-shaped controls and 13–16px rounded corners
-everywhere. The new brand should carry that squared-off language over.
+The live marketing site (gs.edu, e.g. `/academics/`) uses square-ish
+buttons/cards with just a slight corner radius (see reference screenshot:
+"Find Your Program" / "Request Info" buttons — a few px, not fully sharp
+and nowhere near the current portal's pill-shaped controls). That's a
+deliberate departure from the current portal, which leans on pill-shaped
+controls and 13–16px rounded corners everywhere. The new brand should
+carry that subtler, squarer language over — not zero radius, just small.
 
-Implemented as a radius scale, all zeroed out under the new brand:
+Implemented as a radius scale, uniformly reduced under the new brand:
 
 | Var | Current brand | New brand | Used for |
 |---|---|---|---|
-| `--radius-sm` | `9px` | `0` | Form controls (date-range select) |
-| `--radius-stat` | `13px` | `0` | Stat cards |
-| `--radius-panel` | `14px` | `0` | Panels, brand-toggle pill |
-| `--radius-lg` | `16px` | `0` | Hero/intro card |
-| `--radius-bar` | `4px` | `0` | Chart bar top corners |
+| `--radius-sm` | `9px` | `4px` | Form controls (date-range select) |
+| `--radius-stat` | `13px` | `4px` | Stat cards |
+| `--radius-panel` | `14px` | `4px` | Panels, brand-toggle pill |
+| `--radius-lg` | `16px` | `4px` | Hero/intro card |
+| `--radius-bar` | `4px` | `4px` | Chart bar top corners |
 
 Any new rounded element should route through one of these vars (or a new
 one following the same pattern) rather than a hardcoded `border-radius`,
