@@ -17,8 +17,11 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
     :root {
       --navy:#132a46; --navy-mid:#244663; --teal:#087c78; --teal-light:#0a9a95; --gold:#d2a53e; --gold-light:#e8c66f;
       --accent3:#52729a; --canvas:#f2f5f6; --white:#fff; --muted:#5d6b7b; --border:#dce4e7; --red:#a43b3b;
@@ -26,15 +29,12 @@
       --font-heading:'Playfair Display',Georgia,serif; --font-body:Inter,system-ui,sans-serif;
       --header-glow-1:rgba(8,124,120,.07); --header-glow-2:rgba(210,165,62,.09);
     }
-    /* New brand palette — GS 2026 refresh (see brandguide/BrandGuidelines_Gateway.pdf).
-       Heading font is Fraunces (free, SIL OFL), standing in for Tiempo Fine VF until
-       Gateway buys an actual web license — the only files on hand are Klim's free
-       Test Fonts, which are not licensed for production/public use. */
+    /* New brand palette — GS 2026 refresh (see brandguide/BrandGuidelines_Gateway.pdf). */
     html[data-brand="new"] {
       --navy:#0c0f14; --navy-mid:#2c343a; --teal:#234048; --teal-light:#3a616b; --gold:#d3a422; --gold-light:#e3bd5a;
       --accent3:#708aa2; --canvas:#f4f2ee; --white:#fff; --muted:#5c6670; --border:#dcd8d0; --red:#c44329;
       --shadow:0 4px 16px rgba(12,15,20,.08);
-      --font-heading:Fraunces,Georgia,serif; --font-body:'Open Sans',system-ui,sans-serif;
+      --font-heading:'Tiempos Fine',Georgia,serif; --font-body:'Open Sans',system-ui,sans-serif;
       --header-glow-1:rgba(35,64,72,.09); --header-glow-2:rgba(211,164,34,.1);
     }
     * { box-sizing:border-box; }
