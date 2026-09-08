@@ -62,6 +62,9 @@
           </div>
         </div>
       </div>
+      <div class="control-group" style="margin-left:auto">
+        <button id="funnel-export" class="csv-export-button" type="button">Export CSV</button>
+      </div>
     </div>
 
     <div class="stat-bar">
@@ -180,13 +183,17 @@
       explanation.textContent = point.stalled.toLocaleString() + ' of ' + point.base.toLocaleString() + ' people who reached ' + point.from + ' (' + point.stalledRate + '%) currently remain in that stage. ' + point.advanced.toLocaleString() + ' (' + point.conversionRate + '%) have advanced to ' + point.to + ' or beyond.';
     }
 
-    function renderFunnel() {
-      const stages = [
+    function buildStages() {
+      return [
         { label:'Inquiries', count:ui.number(data.counts.inquiries), color:'#132a46' },
         { label:'Applied', count:ui.number(data.counts.applications), color:'#244663' },
         { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#d2a53e' },
         { label:'Admitted', count:ui.number(data.counts.admitted), color:'#2a6b3c' }
       ];
+    }
+
+    function renderFunnel() {
+      const stages = buildStages();
       renderChokePoint(stages);
       const root = document.getElementById('funnel'); root.replaceChildren();
       const maxWidth = 680;
@@ -233,6 +240,22 @@
         }
         element.append(svg, label); root.appendChild(element);
       });
+    }
+
+    function exportFunnel() {
+      const stages = buildStages();
+      const period = funnelPeriods[document.getElementById('period').value] || funnelPeriods.total;
+      const rateLabel = conversionMode === 'cumulative' ? 'Conversion From Inquiries' : 'Conversion From Previous Stage';
+      const rows = stages.map(function (stage, index) {
+        if (!index) return { label:stage.label, count:stage.count, rate:'' };
+        const conversion = conversionValues(stages, index, conversionMode);
+        return { label:stage.label, count:stage.count, rate:percent(conversion.value, conversion.base) + '%' };
+      });
+      ui.downloadCsv(period.label + '-funnel', [
+        { key:'label', label:'Stage' },
+        { key:'count', label:'Count' },
+        { key:'rate', label:rateLabel }
+      ], rows);
     }
 
     function dismissedIds() {
@@ -311,6 +334,7 @@
       if (!period.start) bridge.navigate({ conv_mode:conversionMode }, ['start_date','end_date','term_app','year_app']);
       else bridge.navigate({ start_date:period.start, end_date:period.end, term_app:period.term, year_app:period.year, conv_mode:conversionMode }, []);
     });
+    document.getElementById('funnel-export').addEventListener('click', exportFunnel);
     document.getElementById('cumulative').addEventListener('click', function () { setMode('cumulative'); });
     document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
     document.getElementById('portal-home').addEventListener('click', function () {
