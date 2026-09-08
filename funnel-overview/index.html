@@ -64,7 +64,7 @@
       </div>
       <div class="control-group" style="margin-left:auto;gap:8px">
         <button id="funnel-export" class="csv-export-button" type="button">Export Summary</button>
-        <button id="funnel-export-records" class="csv-export-button" type="button">Export Records</button>
+        <button id="funnel-export-records" class="csv-export-button" type="button">Export Records (XLSX)</button>
       </div>
     </div>
 
@@ -91,6 +91,7 @@
     </div>
   </main>
 
+  <script src="../assets/vendor/exceljs.min.js"></script>
   <script src="../assets/dashboard-common.js"></script>
   <script>
   (function () {
@@ -102,6 +103,7 @@
       FA27: { label:'FA27 — Fall 2027', start:'2027-01-16', end:'2027-08-15', term:'Fall', year:'2027-2028' }
     };
     const ui = window.DashboardUI;
+    const STATUS_ORDER = ['Inquiry', 'Applied', 'Awaiting Approval', 'Admitted'];
     let data = { counts:{}, awaiting:[], actions:[], filters:{}, funnelRecords:{} };
     let conversionMode = sessionStorage.getItem('funnel-conversion-mode') || 'cumulative';
     let currentPage = 1;
@@ -263,7 +265,279 @@
       ], rows);
     }
 
-    function exportFunnelRecords() {
+    function isBlankProgram(value) {
+      const text = String(value == null ? '' : value).trim();
+      return text === '' || text === '—' || text === '-' || text === 'N/A';
+    }
+    function deriveFunnelStatuses(rows) {
+      const seen = {};
+      const found = [];
+      rows.forEach(function (record) {
+        const status = String(record.status == null ? '' : record.status).trim();
+        if (status && !seen[status]) { seen[status] = true; found.push(status); }
+      });
+      const extra = found.filter(function (status) { return STATUS_ORDER.indexOf(status) === -1; }).sort();
+      return STATUS_ORDER.concat(extra);
+    }
+    function deriveFunnelPrograms(rows) {
+      const seen = {};
+      const found = [];
+      rows.forEach(function (record) {
+        const program = String(record.program == null ? '' : record.program).trim();
+        if (!isBlankProgram(program) && !seen[program]) { seen[program] = true; found.push(program); }
+      });
+      return found.sort(function (a, b) { return a.localeCompare(b); });
+    }
+    function xlsxColumnLetter(n) {
+      let s = '';
+      while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; }
+      return s;
+    }
+    function xlsxFill(argb) { return { type:'pattern', pattern:'solid', fgColor:{ argb:argb } }; }
+
+    // Reports tab is formula-driven (COUNTIFS) so the crosstab keeps recalculating
+    // in Excel after the user edits the Applicants tab or adds new program rows.
+    function buildFunnelWorkbook(rows) {
+      const statuses = deriveFunnelStatuses(rows);
+      const programs = deriveFunnelPrograms(rows);
+      const FONT = 'Arial';
+      const NAVY = 'FF1F3864';
+      const YELLOW = 'FFFFFF00';
+      const GREY = 'FFF2F2F2';
+      const BORDER = {
+        top:    { style:'thin', color:{ argb:'FFBFBFBF' } },
+        left:   { style:'thin', color:{ argb:'FFBFBFBF' } },
+        bottom: { style:'thin', color:{ argb:'FFBFBFBF' } },
+        right:  { style:'thin', color:{ argb:'FFBFBFBF' } }
+      };
+      const NUM = '#,##0;-#,##0;-';
+      const PCT = '0.0%;-0.0%;-';
+
+      const workbook = new window.ExcelJS.Workbook();
+      workbook.created = new Date();
+
+      const ws = workbook.addWorksheet('Applicants');
+      ws.columns = [
+        { key:'name', width:18 },
+        { key:'email', width:36 },
+        { key:'program', width:26 },
+        { key:'status', width:18 }
+      ];
+
+      const head = ws.getRow(1);
+      ['Name', 'Email', 'Program', 'Status'].forEach(function (label, index) {
+        const cell = head.getCell(index + 1);
+        cell.value = label;
+        cell.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+        cell.fill = xlsxFill(NAVY);
+        cell.border = BORDER;
+        cell.alignment = { vertical:'middle' };
+      });
+      head.height = 20;
+
+      rows.forEach(function (record, index) {
+        const row = ws.getRow(index + 2);
+        [record.name, record.email, record.program, record.status].forEach(function (value, column) {
+          const cell = row.getCell(column + 1);
+          cell.value = value || '';
+          cell.font = { name:FONT, size:11 };
+          cell.border = BORDER;
+        });
+      });
+
+      ws.views = [{ state:'frozen', ySplit:1 }];
+      ws.autoFilter = { from:'A1', to:'D' + (rows.length + 1) };
+
+      const rs = workbook.addWorksheet('Reports', { views:[{ showGridLines:false }] });
+
+      const HDR = 5;
+      const P0 = HDR + 1;
+      const SPARE = 5;
+      const PN = P0 + Math.max(programs.length + SPARE, 10) - 1;
+      const UNS = PN + 1;
+      const TR = UNS + 1;
+
+      const nStat = statuses.length;
+      const LAST = xlsxColumnLetter(1 + nStat);
+      const TOTC = 2 + nStat;
+      const TOTL = xlsxColumnLetter(TOTC);
+
+      const SCAN = Math.max(rows.length + 200, 500);
+      const DP = 'Applicants!$C$2:$C$' + SCAN;
+      const DS = 'Applicants!$D$2:$D$' + SCAN;
+
+      rs.getCell('A1').value = 'Applications by Program and Status';
+      rs.getCell('A1').font = { name:FONT, size:16, bold:true, color:{ argb:NAVY } };
+      rs.getCell('A2').value = 'Counts pull automatically from the Applicants tab (rows 2–' + SCAN + ').';
+      rs.getCell('A2').font = { name:FONT, size:10, italic:true, color:{ argb:'FF808080' } };
+      rs.getCell('A3').value = 'Legend: yellow = type here (one row per program) · white = calculated, do not type over';
+      rs.getCell('A3').font = { name:FONT, size:9, italic:true, color:{ argb:'FF808080' } };
+
+      const header = rs.getCell(HDR, 1);
+      header.value = 'Program';
+      header.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+      header.fill = xlsxFill(NAVY);
+      header.border = BORDER;
+      header.alignment = { vertical:'middle' };
+
+      statuses.forEach(function (status, index) {
+        const cell = rs.getCell(HDR, 2 + index);
+        cell.value = status;
+        cell.font = { name:FONT, size:11, bold:true };
+        cell.fill = xlsxFill(YELLOW);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+      });
+
+      const totalHeader = rs.getCell(HDR, TOTC);
+      totalHeader.value = 'Total';
+      totalHeader.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+      totalHeader.fill = xlsxFill(NAVY);
+      totalHeader.border = BORDER;
+      totalHeader.alignment = { horizontal:'center', vertical:'middle' };
+      rs.getRow(HDR).height = 30;
+
+      for (let r = P0; r <= PN; r += 1) {
+        const label = rs.getCell(r, 1);
+        label.value = programs[r - P0] || null;
+        label.font = { name:FONT, size:11 };
+        label.fill = xlsxFill(YELLOW);
+        label.border = BORDER;
+
+        for (let j = 0; j < nStat; j += 1) {
+          const columnLetter = xlsxColumnLetter(2 + j);
+          const cell = rs.getCell(r, 2 + j);
+          cell.value = { formula:'IF($A' + r + '="","",COUNTIFS(' + DP + ',$A' + r + ',' + DS + ',' + columnLetter + '$' + HDR + '))' };
+          cell.font = { name:FONT, size:11 };
+          cell.border = BORDER;
+          cell.alignment = { horizontal:'center' };
+          cell.numFmt = NUM;
+        }
+        const total = rs.getCell(r, TOTC);
+        total.value = { formula:'IF($A' + r + '="","",SUM(B' + r + ':' + LAST + r + '))' };
+        total.font = { name:FONT, size:11, bold:true };
+        total.border = BORDER;
+        total.alignment = { horizontal:'center' };
+        total.numFmt = NUM;
+      }
+
+      const unlisted = rs.getCell(UNS, 1);
+      unlisted.value = 'No program listed';
+      unlisted.font = { name:FONT, size:11, italic:true };
+      unlisted.border = BORDER;
+      for (let k = 0; k < nStat; k += 1) {
+        const columnLetter = xlsxColumnLetter(2 + k);
+        const cell = rs.getCell(UNS, 2 + k);
+        cell.value = { formula:'COUNTIFS(' + DS + ',' + columnLetter + '$' + HDR + ')-SUM(' + columnLetter + P0 + ':' + columnLetter + PN + ')' };
+        cell.font = { name:FONT, size:11, italic:true };
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center' };
+        cell.numFmt = NUM;
+      }
+      const unsTotal = rs.getCell(UNS, TOTC);
+      unsTotal.value = { formula:'SUM(B' + UNS + ':' + LAST + UNS + ')' };
+      unsTotal.font = { name:FONT, size:11, bold:true, italic:true };
+      unsTotal.border = BORDER;
+      unsTotal.alignment = { horizontal:'center' };
+      unsTotal.numFmt = NUM;
+
+      const totalLabel = rs.getCell(TR, 1);
+      totalLabel.value = 'Total';
+      totalLabel.font = { name:FONT, size:11, bold:true };
+      totalLabel.fill = xlsxFill(GREY);
+      totalLabel.border = BORDER;
+      for (let m = 0; m < nStat; m += 1) {
+        const columnLetter = xlsxColumnLetter(2 + m);
+        const cell = rs.getCell(TR, 2 + m);
+        cell.value = { formula:'SUM(' + columnLetter + P0 + ':' + columnLetter + UNS + ')' };
+        cell.font = { name:FONT, size:11, bold:true };
+        cell.fill = xlsxFill(GREY);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center' };
+        cell.numFmt = NUM;
+      }
+      const grandTotal = rs.getCell(TR, TOTC);
+      grandTotal.value = { formula:'SUM(B' + TR + ':' + LAST + TR + ')' };
+      grandTotal.font = { name:FONT, size:11, bold:true };
+      grandTotal.fill = xlsxFill(GREY);
+      grandTotal.border = BORDER;
+      grandTotal.alignment = { horizontal:'center' };
+      grandTotal.numFmt = NUM;
+
+      const ST = TR + 3;
+      const SH = ST + 1;
+      rs.getCell(ST, 1).value = 'Status summary';
+      rs.getCell(ST, 1).font = { name:FONT, size:13, bold:true, color:{ argb:NAVY } };
+      ['Status', 'Count', '% of all'].forEach(function (label, index) {
+        const cell = rs.getCell(SH, index + 1);
+        cell.value = label;
+        cell.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+        cell.fill = xlsxFill(NAVY);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:index === 0 ? 'left' : 'center' };
+      });
+      statuses.forEach(function (status, index) {
+        const row = SH + 1 + index;
+        const columnLetter = xlsxColumnLetter(2 + index);
+        const labelCell = rs.getCell(row, 1);
+        labelCell.value = { formula:columnLetter + '$' + HDR };
+        labelCell.font = { name:FONT, size:11 };
+        labelCell.border = BORDER;
+        const countCell = rs.getCell(row, 2);
+        countCell.value = { formula:columnLetter + TR };
+        countCell.font = { name:FONT, size:11 };
+        countCell.border = BORDER;
+        countCell.alignment = { horizontal:'center' };
+        countCell.numFmt = NUM;
+        const pctCell = rs.getCell(row, 3);
+        pctCell.value = { formula:'IFERROR(' + columnLetter + TR + '/$' + TOTL + '$' + TR + ',0)' };
+        pctCell.font = { name:FONT, size:11 };
+        pctCell.border = BORDER;
+        pctCell.alignment = { horizontal:'center' };
+        pctCell.numFmt = PCT;
+      });
+      const STT = SH + nStat + 1;
+      const summaryTotalLabel = rs.getCell(STT, 1);
+      summaryTotalLabel.value = 'Total';
+      summaryTotalLabel.font = { name:FONT, size:11, bold:true };
+      summaryTotalLabel.fill = xlsxFill(GREY);
+      summaryTotalLabel.border = BORDER;
+      [[2, 'SUM(B' + (SH + 1) + ':B' + (STT - 1) + ')', NUM], [3, 'SUM(C' + (SH + 1) + ':C' + (STT - 1) + ')', PCT]].forEach(function (entry) {
+        const cell = rs.getCell(STT, entry[0]);
+        cell.value = { formula:entry[1] };
+        cell.font = { name:FONT, size:11, bold:true };
+        cell.fill = xlsxFill(GREY);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center' };
+        cell.numFmt = entry[2];
+      });
+
+      rs.getColumn(1).width = 30;
+      for (let w = 0; w < nStat; w += 1) rs.getColumn(2 + w).width = 16;
+      rs.getColumn(TOTC).width = 10;
+
+      for (let scanRow = 2; scanRow <= SCAN; scanRow += 1) {
+        ws.getCell('C' + scanRow).dataValidation = { type:'list', allowBlank:true, formulae:['=Reports!$A$' + P0 + ':$A$' + PN] };
+        ws.getCell('D' + scanRow).dataValidation = { type:'list', allowBlank:true, formulae:['=Reports!$B$' + HDR + ':$' + LAST + '$' + HDR] };
+      }
+
+      return workbook;
+    }
+
+    function downloadXlsxBuffer(filename, buffer) {
+      const baseName = String(filename || 'records').trim().replace(/\.xlsx$/i, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'records';
+      const url = URL.createObjectURL(new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = baseName + '.xlsx';
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    }
+
+    async function exportFunnelRecords() {
       const period = funnelPeriods[document.getElementById('period').value] || funnelPeriods.total;
       const stages = [
         { label:'Inquiry', records:data.funnelRecords.inquiries },
@@ -277,12 +551,9 @@
           rows.push({ name:ui.text(record.name), email:ui.text(record.email), program:ui.text(record.program), status:stage.label });
         });
       });
-      ui.downloadCsv(period.label + '-funnel-records', [
-        { key:'name', label:'Name' },
-        { key:'email', label:'Email' },
-        { key:'program', label:'Program' },
-        { key:'status', label:'Status' }
-      ], rows);
+      const workbook = buildFunnelWorkbook(rows);
+      const buffer = await workbook.xlsx.writeBuffer();
+      downloadXlsxBuffer(period.label + '-funnel-records', buffer);
     }
 
     function dismissedIds() {
