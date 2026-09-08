@@ -6,47 +6,78 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow">
   <title>Portal Analytics — Gateway Seminary</title>
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('gs-brand-preview') === 'new') {
+          document.documentElement.setAttribute('data-brand', 'new');
+        }
+      } catch (e) {}
+    }());
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --navy:#132a46; --navy-mid:#244663; --teal:#087c78; --gold:#d2a53e; --canvas:#f2f5f6; --white:#fff; --muted:#5d6b7b; --border:#dce4e7; --red:#a43b3b; --shadow:0 4px 16px rgba(19,42,70,.07); }
+    :root {
+      --navy:#132a46; --navy-mid:#244663; --teal:#087c78; --teal-light:#0a9a95; --gold:#d2a53e; --gold-light:#e8c66f;
+      --accent3:#52729a; --canvas:#f2f5f6; --white:#fff; --muted:#5d6b7b; --border:#dce4e7; --red:#a43b3b;
+      --shadow:0 4px 16px rgba(19,42,70,.07);
+      --font-heading:'Playfair Display',Georgia,serif; --font-body:Inter,system-ui,sans-serif;
+      --header-glow-1:rgba(8,124,120,.07); --header-glow-2:rgba(210,165,62,.09);
+    }
+    /* New brand palette — GS 2026 refresh (see brandguide/BrandGuidelines_Gateway.pdf) */
+    html[data-brand="new"] {
+      --navy:#0c0f14; --navy-mid:#2c343a; --teal:#234048; --teal-light:#3a616b; --gold:#d3a422; --gold-light:#e3bd5a;
+      --accent3:#708aa2; --canvas:#f4f2ee; --white:#fff; --muted:#5c6670; --border:#dcd8d0; --red:#c44329;
+      --shadow:0 4px 16px rgba(12,15,20,.08);
+      --font-heading:Montserrat,'Segoe UI',sans-serif; --font-body:'Open Sans',system-ui,sans-serif;
+      --header-glow-1:rgba(35,64,72,.09); --header-glow-2:rgba(211,164,34,.1);
+    }
     * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; color:#203247; font-family:Inter,system-ui,sans-serif; background:
-      radial-gradient(circle at 8% 7%, rgba(8,124,120,.07), transparent 25rem),
-      radial-gradient(circle at 93% 20%, rgba(210,165,62,.09), transparent 23rem),
+    body { margin:0; min-height:100vh; color:#203247; font-family:var(--font-body); background:
+      radial-gradient(circle at 8% 7%, var(--header-glow-1), transparent 25rem),
+      radial-gradient(circle at 93% 20%, var(--header-glow-2), transparent 23rem),
       var(--canvas); }
+    .brand-toggle { display:flex; align-items:center; gap:8px; margin-left:auto; }
+    .brand-toggle-label { color:rgba(255,255,255,.7); font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .brand-toggle-group { display:inline-flex; overflow:hidden; border:1.5px solid rgba(255,255,255,.3); border-radius:14px; background:rgba(255,255,255,.08); }
+    .brand-toggle-btn { padding:6px 12px; border:0; color:rgba(255,255,255,.75); font-size:.76rem; font-weight:700; background:transparent; cursor:pointer; }
+    .brand-toggle-btn.active { color:var(--navy); background:#fff; }
     .header { min-height:70px; display:flex; align-items:center; gap:20px; padding:15px max(24px,calc((100% - 1180px)/2)); color:#fff; background:linear-gradient(120deg,var(--navy),var(--navy-mid)); border-bottom:1px solid rgba(255,255,255,.12); box-shadow:0 4px 18px rgba(19,42,70,.14); }
-    .wordmark { color:inherit; text-decoration:none; font:700 1.18rem/1.1 'Playfair Display',Georgia,serif; }
-    .wordmark span { display:block; margin-top:3px; color:#e8c66f; font:600 .62rem/1.2 Inter,sans-serif; letter-spacing:.12em; text-transform:uppercase; }
+    .wordmark { display:flex; align-items:center; color:inherit; text-decoration:none; font:700 1.18rem/1.1 var(--font-heading); }
+    .wordmark span { display:block; margin-top:3px; color:var(--gold-light); font:600 .62rem/1.2 Inter,sans-serif; letter-spacing:.12em; text-transform:uppercase; }
+    .wordmark-logo { height:26px; width:auto; display:none; }
+    html[data-brand="new"] .wordmark-text { display:none; }
+    html[data-brand="new"] .wordmark-logo { display:block; }
     .divider { width:1px; height:36px; background:rgba(255,255,255,.28); }
     .page-title { color:rgba(255,255,255,.75); font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
     main { width:min(1180px,calc(100% - 40px)); margin:0 auto; padding:40px 0 70px; }
     .intro { position:relative; isolation:isolate; overflow:hidden; display:flex; justify-content:space-between; gap:24px; align-items:end; margin-bottom:24px; padding:34px 36px 38px; border-radius:16px; background:linear-gradient(122deg,var(--navy),var(--navy-mid)); box-shadow:0 14px 34px rgba(19,42,70,.16); }
     .intro::before { content:''; position:absolute; z-index:-1; top:-115px; right:-70px; width:330px; height:330px; border:1px solid rgba(255,255,255,.12); border-radius:50%; box-shadow:0 0 0 42px rgba(255,255,255,.035), 0 0 0 84px rgba(255,255,255,.025); }
     .intro::after { content:''; position:absolute; left:36px; bottom:0; width:58px; height:4px; background:var(--gold); }
-    h1 { margin:0 0 7px; color:#fff; font:700 clamp(1.8rem,4vw,2.4rem)/1.15 'Playfair Display',Georgia,serif; letter-spacing:-.015em; }
+    h1 { margin:0 0 7px; color:#fff; font:700 clamp(1.8rem,4vw,2.4rem)/1.15 var(--font-heading); letter-spacing:-.015em; }
     .subtitle { margin:0; color:#d7e1ea; line-height:1.55; }
     .updated { margin:0; color:var(--muted); line-height:1.5; }
     .controls { display:flex; align-items:center; gap:10px; }
     label { color:#d7e1ea; font-size:.7rem; font-weight:750; letter-spacing:.1em; text-transform:uppercase; }
-    select { min-height:42px; padding:9px 34px 9px 12px; color:var(--navy); font:650 .9rem Inter,sans-serif; appearance:none; border:1px solid #cfdadd; border-radius:9px; background-color:var(--white); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23132a46' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; box-shadow:none; }
+    select { min-height:42px; padding:9px 34px 9px 12px; color:var(--navy); font:650 .9rem var(--font-body); appearance:none; border:1px solid #cfdadd; border-radius:9px; background-color:var(--white); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23132a46' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; box-shadow:none; }
     .stats { position:relative; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:32px; }
     .stat { position:relative; overflow:hidden; padding:21px 23px 20px; border:1px solid var(--border); border-radius:13px; color:var(--navy); background:var(--white); box-shadow:0 5px 18px rgba(19,42,70,.07); }
     .stat::before { content:''; position:absolute; top:0; right:0; left:0; height:3px; background:var(--stat-accent, var(--teal)); }
     .stat:nth-child(2) { --stat-accent: var(--gold); }
-    .stat:nth-child(3) { --stat-accent: #52729a; }
+    .stat:nth-child(3) { --stat-accent: var(--accent3); }
     .stat:nth-child(4) { --stat-accent: var(--teal); }
-    .stat-value { color:var(--navy); font:700 2rem/1.1 'Playfair Display',Georgia,serif; font-variant-numeric:tabular-nums; }
+    .stat-value { color:var(--navy); font:700 2rem/1.1 var(--font-heading); font-variant-numeric:tabular-nums; }
     .stat-label { margin-top:6px; color:var(--muted); font-size:.7rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; }
     .browser-note { margin:0 0 30px; color:var(--muted); font-size:.75rem; line-height:1.5; text-align:right; }
     .grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr); gap:24px; }
     .panel { overflow:hidden; border:1px solid var(--border); border-radius:14px; background:var(--white); box-shadow:var(--shadow); }
     .panel-head { padding:18px 20px; border-bottom:1px solid var(--border); }
-    h2 { margin:0; color:var(--navy); font:700 1.25rem/1.2 'Playfair Display',Georgia,serif; }
+    h2 { margin:0; color:var(--navy); font:700 1.25rem/1.2 var(--font-heading); }
     .chart { height:270px; display:flex; align-items:end; gap:5px; padding:24px 20px 12px; }
     .bar-wrap { min-width:0; height:100%; flex:1; display:flex; flex-direction:column; justify-content:end; align-items:center; gap:7px; }
-    .bar { width:100%; min-height:2px; border-radius:4px 4px 0 0; background:linear-gradient(180deg,#0a9a95,var(--teal)); }
+    .bar { width:100%; min-height:2px; border-radius:4px 4px 0 0; background:linear-gradient(180deg,var(--teal-light),var(--teal)); }
     .bar-label { color:var(--muted); font-size:.62rem; white-space:nowrap; }
     .table-wrap { max-height:270px; overflow:auto; }
     table { width:100%; border-collapse:collapse; }
@@ -59,14 +90,24 @@
     .state { min-height:180px; display:grid; place-items:center; padding:32px; color:var(--muted); text-align:center; }
     .error { color:var(--red); }
     .updated { margin-top:18px; font-size:.75rem; text-align:right; }
-    @media (max-width:760px) { .intro { align-items:start; flex-direction:column; padding:27px 24px 31px; } .stats { grid-template-columns:repeat(2,1fr); } .grid { grid-template-columns:1fr; } .chart { overflow-x:auto; } .bar-wrap { min-width:18px; } }
+    @media (max-width:760px) { .intro { align-items:start; flex-direction:column; padding:27px 24px 31px; } .stats { grid-template-columns:repeat(2,1fr); } .grid { grid-template-columns:1fr; } .chart { overflow-x:auto; } .bar-wrap { min-width:18px; } .brand-toggle { margin-left:0; } }
   </style>
 </head>
 <body>
   <header class="header">
-    <a class="wordmark" href="../">Gateway Seminary<span>Admissions</span></a>
+    <a class="wordmark" href="../">
+      <img class="wordmark-logo" src="../assets/brand-new/gs-logo-horizontal-white.png" alt="Gateway Seminary">
+      <span class="wordmark-text">Gateway Seminary<span>Admissions</span></span>
+    </a>
     <div class="divider"></div>
     <div class="page-title">Portal Analytics</div>
+    <div class="brand-toggle">
+      <span class="brand-toggle-label">Brand</span>
+      <div class="brand-toggle-group" id="brandToggle" role="group" aria-label="Brand preview">
+        <button type="button" class="brand-toggle-btn" data-brand-choice="old">Current</button>
+        <button type="button" class="brand-toggle-btn" data-brand-choice="new">New (test)</button>
+      </div>
+    </div>
   </header>
   <main>
     <section class="intro">
@@ -114,6 +155,24 @@
       const API = 'https://slate-query-tool.queryomatic.workers.dev/api/analytics/summary';
       const number = new Intl.NumberFormat();
       const range = document.getElementById('range');
+
+      function setBrand(brand) {
+        if (brand === 'new') {
+          document.documentElement.setAttribute('data-brand', 'new');
+        } else {
+          document.documentElement.removeAttribute('data-brand');
+        }
+        try { localStorage.setItem('gs-brand-preview', brand); } catch (e) {}
+        document.querySelectorAll('.brand-toggle-btn').forEach(function (btn) {
+          btn.classList.toggle('active', btn.dataset.brandChoice === brand);
+        });
+      }
+
+      document.getElementById('brandToggle').addEventListener('click', function (event) {
+        const btn = event.target.closest('.brand-toggle-btn');
+        if (btn) setBrand(btn.dataset.brandChoice);
+      });
+      setBrand(document.documentElement.getAttribute('data-brand') === 'new' ? 'new' : 'old');
 
       function fillDates(days, rows) {
         const byDate = new Map(rows.map(row => [row.date, row]));
