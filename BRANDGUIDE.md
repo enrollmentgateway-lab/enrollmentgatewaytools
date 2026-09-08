@@ -2,14 +2,31 @@
 
 Working notes for the Gateway Seminary 2026 rebrand, distilled from
 `brand-assets/brandguide/BrandGuidelines_Gateway.pdf` plus what we learned
-wiring up a live test toggle on the Portal Analytics page
-(`analytics/index.html`). Source PDF and raw assets live outside this repo,
-at `C:\Users\CadeMacritchie\Desktop\brand-assets\` (see "Asset paths" below).
+rolling it out across the portal. Source PDF and raw assets live outside
+this repo, at `C:\Users\CadeMacritchie\Desktop\brand-assets\` (see "Asset
+paths" below).
 
-## Current (production) brand — unchanged
+## Rollout status
 
-Still the live brand everywhere except the analytics test toggle. Defined
-in `assets/dashboard.css` and duplicated inline in `analytics/index.html`.
+| Page | Status |
+|---|---|
+| `analytics/index.html` (Portal Analytics) | New brand, permanent (no toggle) |
+| `index.html` (homepage) — header, hero, tab bar | New brand, permanent |
+| `index.html` — Reports tab cards | New brand, **except** BetterQuery and Record Lookup (left on the current brand deliberately) |
+| `index.html` — Other tab, Training Materials tab content | Current brand, unchanged |
+| Every other dashboard (`funnel-overview/`, `teaching-site-overview/`, etc.) | Current brand, unchanged |
+
+Started as an analytics-only toggle test; both the toggle and the "test"
+framing are gone now — these are live, one-way changes. When extending the
+rollout to another page, follow the scoping pattern in "Rolling this out to
+a shared page" below so pages/cards that should stay on the current brand
+actually do.
+
+## Current (production) brand — unchanged (where still in use)
+
+Defined in `assets/dashboard.css`, shared by every dashboard page that
+hasn't been moved to the new brand yet, plus the excluded elements on the
+homepage (BetterQuery/Record Lookup cards, Other/Training tab content).
 
 | Role | Hex |
 |---|---|
@@ -132,15 +149,15 @@ rather than picking the right tier. Check explicitly.
   - `assets/brand-new/gs-logo-horizontal-{white,black}.png`, `gs-logomark-white.png`
   - `assets/fonts/TiemposFine-{Regular,Semibold,Bold}.woff2`
 
-## Implementation notes (analytics test toggle)
+## Implementation notes
 
-- Toggle lives only on `analytics/index.html`, gated by `html[data-brand="new"]`
-  and persisted per-browser via `localStorage['gs-brand-preview']`. No other
-  portal page is touched.
-- All theme-able values are CSS custom properties (`--navy`, `--teal`,
-  `--font-heading`, etc.) redefined once under `html[data-brand="new"]`.
-  Adding a new brand-aware element means using one of these vars, not a
-  literal hex — otherwise it silently stays on the old brand's color.
+### Standalone pages (analytics/index.html)
+
+This page ships its own full inline `<style>` block — it doesn't load
+`assets/dashboard.css` — so every color/font/radius is just a plain CSS
+custom property at `:root`. No scoping tricks needed; it's the only brand
+on the page.
+
 - `[hidden]` needs an explicit `display:none !important` rule in this page's
   inline stylesheet. Any class that sets its own `display` (`.grid`,
   `.state`, etc.) beats the browser's default `[hidden]{display:none}` rule
@@ -151,6 +168,44 @@ rather than picking the right tier. Check explicitly.
   an element that also needs a tag-level default (e.g. `th`): the class
   wins over the type selector even if the type selector comes later, so
   `th.number` needed its own explicit override.
+
+### Rolling this out to a shared page (index.html and beyond)
+
+`index.html` (the homepage) loads the shared `assets/dashboard.css`, and
+reuses its classes (`.gs-header`, `.page-intro`, `.tool-card`, `.report-item`,
+...) — the same classes every other dashboard page, and the excluded
+BetterQuery/Record Lookup cards on this very page, depend on for their
+*current*-brand look. **Never redefine `assets/dashboard.css`'s shared
+`--navy`/`--teal`/`--gold`/`--border`/`--radius`/etc.**, even by adding a
+`:root` override further down a page's own stylesheet — those vars cascade
+to every element using them on that page, including ones you didn't mean to
+touch (this is exactly how BetterQuery/Record Lookup could accidentally end
+up re-themed).
+
+Instead:
+
+1. Define a **namespaced** set of custom properties (prefixed `--nb-`, for
+   "new brand") scoped to a container class that only exists on the elements
+   you're actually changing — `.hub { --nb-black:#0c0f14; ... }` on
+   `index.html`, since `<body class="hub">` is unique to that page.
+2. Write override rules using `var(--nb-*)`, addressed with enough
+   specificity to beat the shared rule (a `.hub .gs-header { background:
+   linear-gradient(120deg, var(--nb-black), var(--nb-darkgray)); }` beats
+   `assets/dashboard.css`'s bare `.gs-header` rule because two classes beat
+   one, regardless of file order).
+3. For an excluded element that shares a base class with elements you ARE
+   changing (e.g. `.tool-card` used by both the 4 redone report cards and
+   the 2 excluded ones), add a second, distinguishing class instead of
+   touching the base class — `.tool-card--gs2026` — and put every new-brand
+   rule behind that, never behind bare `.tool-card`. The excluded cards then
+   render from the untouched base rules exactly as before, with zero risk of
+   drift.
+
+This is slower to write than a blanket `:root` override, but it's the only
+way to guarantee an excluded page or card is actually unaffected — verify by
+grepping the file for the shared var names (`--navy`, `--teal`, `--gold`,
+`--border`, `--radius`) outside of comments after making changes; none of
+your new rules should reference them.
 
 ## Self-hosting a new weight/format
 

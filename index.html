@@ -8,13 +8,51 @@
   <script defer src="assets/portal-analytics.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Montserrat:wght@400;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/dashboard.css">
   <style>
     /* Hub-specific layout only. Tokens, header, container, and page-intro come
-       from assets/dashboard.css so this page matches the dashboards exactly. */
+       from assets/dashboard.css so this page matches the dashboards exactly,
+       EXCEPT where overridden below for the GS 2026 brand refresh. */
     .hub .container { padding-bottom: 80px; }
     .hub .page-intro { margin-bottom: 26px; }
+
+    /* ---- GS 2026 brand refresh ----
+       Scoped to .hub only, and using namespaced --nb-* custom properties
+       rather than dashboard.css's shared --navy/--teal/--gold/--border/--radius —
+       those shared vars stay untouched so BetterQuery, Record Lookup, the
+       Other tab, and the Training Materials tab keep the current brand
+       exactly as-is. See BRANDGUIDE.md for the full palette/rationale. */
+    @font-face { font-family: 'Tiempos Fine'; src: url('assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Tiempos Fine'; src: url('assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    .hub {
+      --nb-black:#0c0f14; --nb-darkgray:#2c343a; --nb-teal:#234048; --nb-rust:#c44329; --nb-gold:#d3a422; --nb-grayblue:#708aa2;
+      --nb-border:#dcd8d0; --nb-muted:#5c6670; --nb-ink:#2c343a; --nb-subtle:rgba(255,255,255,.82);
+      --nb-radius:4px;
+      --nb-font-heading:'Tiempos Fine',Georgia,serif; --nb-font-subheading:Montserrat,'Segoe UI',sans-serif; --nb-font-body:'Open Sans',system-ui,sans-serif;
+    }
+    .hub .gs-header { background: linear-gradient(120deg, var(--nb-black), var(--nb-darkgray)); }
+    .hub .wordmark { display: flex; align-items: center; }
+    .hub .wordmark-logo { height: 26px; width: auto; }
+    .hub .header-title { display: inline-flex; align-items: center; gap: 10px; color: var(--nb-gold); font-family: var(--nb-font-subheading); }
+    .hub .header-title::before, .hub .header-title::after { content: ''; width: 16px; height: 1px; background: var(--nb-gold); }
+    .hub .page-intro { background: linear-gradient(122deg, var(--nb-black), var(--nb-darkgray)); border-radius: var(--nb-radius); }
+    .hub .page-intro::before {
+      border: 0; box-shadow: none; border-radius: 0;
+      width: 260px; height: 260px; top: auto; right: -30px; bottom: -30px;
+      background: url('assets/brand-new/gs-logomark-white.png') no-repeat center / contain;
+      opacity: .14;
+    }
+    .hub .page-intro::after { background: var(--nb-gold); }
+    .hub .intro-heading { font-family: var(--nb-font-heading); }
+    .hub .intro-subtitle { color: var(--nb-subtle); }
+
+    .hub .hub-tabs { border-radius: var(--nb-radius); }
+    .hub .hub-tab { border-radius: var(--nb-radius); font-family: var(--nb-font-body); }
+    .hub .hub-tab:hover { color: var(--nb-black); background: rgba(12,15,20,.05); }
+    .hub .hub-tab[aria-selected="true"] { background: var(--nb-black); }
+    .hub .hub-tab:focus-visible { outline-color: rgba(35,64,72,.35); }
 
     .hub-tabs {
       display: flex;
@@ -119,6 +157,51 @@
     .report-copy { display: block; color: var(--muted); font-size: .83rem; line-height: 1.5; }
     .report-open { display: inline-flex; align-items: center; gap: 7px; color: var(--teal); font-size: .8rem; font-weight: 800; white-space: nowrap; }
 
+    /* GS 2026 brand refresh — Reports tab cards, excluding BetterQuery and
+       Record Lookup (those two keep the .tool-card base styling above). */
+    .tool-card--gs2026 {
+      border-color: var(--nb-border);
+      border-radius: var(--nb-radius);
+      box-shadow: none;
+    }
+    .tool-card--gs2026::before { content: none; }
+    .tool-card--gs2026:hover, .tool-card--gs2026:focus-visible {
+      border-color: var(--nb-rust);
+      box-shadow: 0 10px 24px rgba(12,15,20,.1);
+    }
+    .tool-card--gs2026:focus-visible { outline-color: rgba(35,64,72,.35); }
+    .tool-index {
+      display: block;
+      margin-bottom: 14px;
+      color: rgba(12,15,20,.32);
+      font: 700 1.6rem/1 var(--nb-font-heading);
+    }
+    .tool-card--gs2026 .tool-title {
+      margin: 0;
+      color: var(--nb-black);
+      font: 700 1.02rem/1.3 var(--nb-font-subheading);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .tool-card--gs2026 .tool-title::after {
+      content: '';
+      display: block;
+      margin-top: 12px;
+      width: 40px;
+      height: 3px;
+      background: var(--nb-rust);
+    }
+    .tool-card--gs2026 .tool-copy {
+      margin-top: 14px;
+      color: var(--nb-muted);
+      font-family: var(--nb-font-body);
+    }
+    .tool-card--gs2026 .tool-open {
+      color: var(--nb-gold);
+      font-family: var(--nb-font-subheading);
+      font-weight: 700;
+    }
+
     @media (max-width: 720px) {
       .hub-tabs { width: 100%; }
       .hub-tab { flex: 1; padding: 9px 10px; }
@@ -130,7 +213,7 @@
 </head>
 <body class="hub">
   <header class="gs-header">
-    <div class="wordmark">Gateway Seminary<span>Admissions</span></div>
+    <div class="wordmark"><img class="wordmark-logo" src="assets/brand-new/gs-logo-horizontal-white.png" alt="Gateway Seminary"></div>
     <div class="header-divider"></div>
     <div class="header-title">Home</div>
   </header>
@@ -149,26 +232,26 @@
 
     <section id="reports-panel" class="tab-panel" role="tabpanel" aria-labelledby="reports-tab">
       <div class="tool-grid">
-        <a class="tool-card" href="https://enroll.gs.edu/portal/directors_portal">
-          <span class="tool-icon" aria-hidden="true">&#128202;</span>
+        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/directors_portal">
+          <span class="tool-index" aria-hidden="true">01</span>
           <h2 class="tool-title">Funnel Overview</h2>
           <p class="tool-copy">Track applicant progression through inquiry, application, approval, and admission. Monitor conversion rates and find the bottlenecks.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <a class="tool-card" href="https://enroll.gs.edu/portal/teachingsite">
-          <span class="tool-icon" aria-hidden="true">&#127979;</span>
+        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/teachingsite">
+          <span class="tool-index" aria-hidden="true">02</span>
           <h2 class="tool-title">Teaching Sites</h2>
           <p class="tool-copy">Compare record volume across every active teaching site, then drill into a single site's inquiry-to-student funnel.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <a class="tool-card" href="https://enroll.gs.edu/portal/regional_campus">
-          <span class="tool-icon" aria-hidden="true">&#128205;</span>
+        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/regional_campus">
+          <span class="tool-index" aria-hidden="true">03</span>
           <h2 class="tool-title">Regional Campus Portal</h2>
           <p class="tool-copy">Explore enrollment funnels and student activity across Gateway Seminary's regional campuses.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <a class="tool-card" href="https://enroll.gs.edu/portal/event_effectiveness">
-          <span class="tool-icon" aria-hidden="true">&#128227;</span>
+        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/event_effectiveness">
+          <span class="tool-index" aria-hidden="true">04</span>
           <h2 class="tool-title">Event Effectiveness</h2>
           <p class="tool-copy">See what each recruiting event cost and what it returned — registrants, inquiries, applicants, and students per dollar spent.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
