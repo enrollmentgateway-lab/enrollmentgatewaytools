@@ -135,28 +135,6 @@
     .tool-open span { transition: transform .2s ease; }
     .tool-card:hover .tool-open span { transform: translateX(4px); }
 
-    .report-list { display: grid; gap: 12px; }
-    .report-item {
-      display: grid;
-      grid-template-columns: 44px minmax(0,1fr) auto;
-      gap: 18px;
-      align-items: center;
-      padding: 20px 24px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: inherit;
-      text-decoration: none;
-      background: var(--white);
-      box-shadow: 0 5px 18px rgba(19,42,70,.07);
-      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-    }
-    .report-item:hover, .report-item:focus-visible { border-color: rgba(8,124,120,.5); box-shadow: 0 12px 26px rgba(19,42,70,.12); transform: translateY(-2px); }
-    .report-item:focus-visible { outline: 3px solid rgba(8,124,120,.28); outline-offset: 3px; }
-    .report-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 11px; font-size: 1.2rem; background: var(--gold-light); }
-    .report-title { display: block; margin-bottom: 4px; color: var(--navy); font: 700 1.08rem/1.3 Georgia, serif; }
-    .report-copy { display: block; color: var(--muted); font-size: .83rem; line-height: 1.5; }
-    .report-open { display: inline-flex; align-items: center; gap: 7px; color: var(--teal); font-size: .8rem; font-weight: 800; white-space: nowrap; }
-
     /* GS 2026 brand refresh — Reports tab cards, excluding BetterQuery and
        Record Lookup (those two keep the .tool-card base styling above). */
     .tool-card--gs2026 {
@@ -206,8 +184,6 @@
       .hub-tabs { width: 100%; }
       .hub-tab { flex: 1; padding: 9px 10px; }
       .tool-grid { grid-template-columns: 1fr; }
-      .report-item { grid-template-columns: 40px minmax(0,1fr); padding: 18px; }
-      .report-open { grid-column: 2; }
     }
   </style>
 </head>
@@ -226,7 +202,7 @@
 
     <div class="hub-tabs" role="tablist" aria-label="Admissions sections">
       <button id="reports-tab" class="hub-tab" type="button" role="tab" aria-selected="true" aria-controls="reports-panel" data-heading="Admissions">Reports</button>
-      <button id="other-tab" class="hub-tab" type="button" role="tab" aria-selected="false" aria-controls="other-panel" tabindex="-1" data-heading="Other">Other</button>
+      <button id="tools-tab" class="hub-tab" type="button" role="tab" aria-selected="false" aria-controls="tools-panel" tabindex="-1" data-heading="Tools">Tools</button>
       <button id="training-tab" class="hub-tab" type="button" role="tab" aria-selected="false" aria-controls="training-panel" tabindex="-1" data-heading="Training Materials">Training Materials</button>
     </div>
 
@@ -256,6 +232,17 @@
           <p class="tool-copy">See what each recruiting event cost and what it returned — registrants, inquiries, applicants, and students per dollar spent.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
+        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/public_internal_events">
+          <span class="tool-index" aria-hidden="true">05</span>
+          <h2 class="tool-title">Public Event Registrants</h2>
+          <p class="tool-copy">Review public events by start date and compare their registration totals.</p>
+          <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
+        </a>
+      </div>
+    </section>
+
+    <section id="tools-panel" class="tab-panel" role="tabpanel" aria-labelledby="tools-tab" hidden>
+      <div class="tool-grid">
         <a class="tool-card" href="https://enroll.gs.edu/portal/better_query">
           <span class="tool-icon" aria-hidden="true">&#128269;</span>
           <h2 class="tool-title">BetterQuery</h2>
@@ -267,19 +254,6 @@
           <h2 class="tool-title">Record Lookup</h2>
           <p class="tool-copy">Search by first name, last name, or student ID, then open that record's full profile and application history.</p>
           <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
-        </a>
-      </div>
-    </section>
-
-    <section id="other-panel" class="tab-panel" role="tabpanel" aria-labelledby="other-tab" hidden>
-      <div class="report-list">
-        <a class="report-item" href="https://enroll.gs.edu/portal/public_internal_events">
-          <span class="report-icon" aria-hidden="true">&#128197;</span>
-          <span>
-            <span class="report-title">Public Event Registrants</span>
-            <span class="report-copy">Review public events by start date and compare their registration totals.</span>
-          </span>
-          <span class="report-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
       </div>
     </section>

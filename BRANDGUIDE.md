@@ -12,9 +12,18 @@ paths" below).
 |---|---|
 | `analytics/index.html` (Portal Analytics) | New brand, permanent (no toggle) |
 | `index.html` (homepage) — header, hero, tab bar | New brand, permanent |
-| `index.html` — Reports tab cards | New brand, **except** BetterQuery and Record Lookup (left on the current brand deliberately) |
-| `index.html` — Other tab, Training Materials tab content | Current brand, unchanged |
+| `index.html` — Reports tab (Funnel Overview, Teaching Sites, Regional Campus Portal, Event Effectiveness, Public Event Registrants) | New brand |
+| `index.html` — Tools tab (BetterQuery, Record Lookup — moved here from Reports) | Current brand, unchanged |
+| `index.html` — Training Materials tab content | Current brand, unchanged |
 | Every other dashboard (`funnel-overview/`, `teaching-site-overview/`, etc.) | Current brand, unchanged |
+
+The homepage tabs were reorganized alongside the rebrand: what was "Other"
+(a single report-list item) is now **Tools**, holding BetterQuery and Record
+Lookup — the two things deliberately left on the current brand — and Public
+Event Registrants moved from that tab into Reports, picking up the new-brand
+card treatment as card 05 since it now sits in that grid. The old
+`.report-list`/`.report-item` styles were removed as dead code once nothing
+referenced them.
 
 Started as an analytics-only toggle test; both the toggle and the "test"
 framing are gone now — these are live, one-way changes. When extending the
@@ -26,7 +35,7 @@ actually do.
 
 Defined in `assets/dashboard.css`, shared by every dashboard page that
 hasn't been moved to the new brand yet, plus the excluded elements on the
-homepage (BetterQuery/Record Lookup cards, Other/Training tab content).
+homepage (the Tools tab and Training Materials tab content).
 
 | Role | Hex |
 |---|---|
