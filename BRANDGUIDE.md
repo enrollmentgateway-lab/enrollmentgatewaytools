@@ -47,6 +47,29 @@ them reads as an off, muddy color rather than "the brand teal." Prefer flat
 fills; the analytics chart bars are flat `var(--teal)` under the new brand
 for this reason.
 
+### Shape language — sharp corners, not rounded
+
+The live marketing site (gs.edu, e.g. `/academics/`) uses square/sharp
+corners throughout — no rounded cards, buttons, or panels, and a flat
+design with minimal shadow. That's a deliberate departure from the current
+portal, which leans on pill-shaped controls and 13–16px rounded corners
+everywhere. The new brand should carry that squared-off language over.
+
+Implemented as a radius scale, all zeroed out under the new brand:
+
+| Var | Current brand | New brand | Used for |
+|---|---|---|---|
+| `--radius-sm` | `9px` | `0` | Form controls (date-range select) |
+| `--radius-stat` | `13px` | `0` | Stat cards |
+| `--radius-panel` | `14px` | `0` | Panels, brand-toggle pill |
+| `--radius-lg` | `16px` | `0` | Hero/intro card |
+| `--radius-bar` | `4px` | `0` | Chart bar top corners |
+
+Any new rounded element should route through one of these vars (or a new
+one following the same pattern) rather than a hardcoded `border-radius`,
+so it inherits the sharp-corner treatment automatically under the new
+brand.
+
 ### Fonts (three-tier system)
 
 1. **Heading** — Tiempos Fine VF (Klim Type Foundry). We only have the free
