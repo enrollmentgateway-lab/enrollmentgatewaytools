@@ -1,544 +1,249 @@
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="referrer" content="origin" />
-    <title>Admissions — Gateway Seminary</title>
-    <script defer src="assets/portal-analytics.js"></script>
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin="crossorigin" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
-    <style type="text/css">/* =============================
-       TOKENS — GS Brand
-    ============================= */
-    :root {
-      --navy:       #1A2B4A;
-      --navy-mid:   #243556;
-      --gold:       #C8952A;
-      --gold-light: #E8B84B;
-      --cream:      #F7F4EF;
-      --white:      #FFFFFF;
-      --muted:      #6B7A8D;
-      --border:     #DDD8D0;
-      --red:        #B84040;
-
-      --f1: #1A2B4A;
-      --f2: #1E3B6E;
-      --f3: #C8952A;
-      --f4: #2A6B3C;
-
-      --radius: 4px;
-      --shadow: 0 2px 12px rgba(26,43,74,0.10);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--cream);
-      color: var(--navy);
-      min-height: 100vh;
-    }
-
-    /* =============================
-       HEADER
-    ============================= */
-    .gs-header {
-      background: var(--navy);
-      padding: 18px 32px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      border-bottom: 3px solid var(--gold);
-    }
-
-    .gs-header .wordmark {
-      text-decoration: none;
-      font-family: 'Playfair Display', serif;
-      font-size: 1.25rem;
-      color: var(--white);
-      letter-spacing: 0.01em;
-      line-height: 1.1;
-    }
-
-    .gs-header .wordmark span {
-      display: block;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.65rem;
-      font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--gold-light);
-      margin-top: 2px;
-    }
-
-    .gs-header .wordmark:focus-visible {
-      outline: 3px solid rgba(232,184,75,0.6);
-      outline-offset: 5px;
-      border-radius: 2px;
-    }
-
-    .gs-header .divider {
-      width: 1px;
-      height: 36px;
-      background: rgba(255,255,255,0.2);
-    }
-
-    .gs-header .page-title {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.65);
-    }
-
-    /* =============================
-       MAIN LAYOUT
-    ============================= */
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 40px 24px 60px;
-    }
-
-    /* =============================
-       PAGE HERO
-    ============================= */
-    .hero {
-      margin-bottom: 50px;
-      text-align: center;
-    }
-
-    .hero-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.4rem;
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 12px;
-      line-height: 1.2;
-    }
-
-    .hero-subtitle {
-      font-size: 1rem;
-      color: var(--muted);
-      line-height: 1.6;
-      max-width: 600px;
-      margin: 0 auto;
-    }
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="origin">
+  <title>Admissions — Gateway Seminary</title>
+  <script defer src="assets/portal-analytics.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/dashboard.css">
+  <style>
+    /* Hub-specific layout only. Tokens, header, container, and page-intro come
+       from assets/dashboard.css so this page matches the dashboards exactly. */
+    .hub .container { padding-bottom: 80px; }
+    .hub .page-intro { margin-bottom: 26px; }
 
     .hub-tabs {
       display: flex;
-      justify-content: center;
       gap: 6px;
       width: fit-content;
-      margin: 0 auto 32px;
+      margin: 0 0 26px;
       padding: 5px;
       border: 1px solid var(--border);
       border-radius: 999px;
-      background: rgba(255,255,255,0.72);
-      box-shadow: var(--shadow);
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 8px 22px rgba(19,42,70,.10);
     }
-
     .hub-tab {
       min-height: 42px;
       padding: 9px 22px;
       border: 0;
       border-radius: 999px;
       color: var(--muted);
-      font: 700 0.82rem/1 'Inter', sans-serif;
+      font: 750 .82rem/1 Inter, sans-serif;
       background: transparent;
       cursor: pointer;
+      transition: color .18s ease, background-color .18s ease;
     }
-
-    .hub-tab:hover { color: var(--navy); }
-    .hub-tab[aria-selected="true"] { color: var(--white); background: var(--navy); }
-    .hub-tab:focus-visible { outline: 3px solid rgba(200,149,42,0.42); outline-offset: 2px; }
+    .hub-tab:hover { color: var(--navy); background: rgba(19,42,70,.05); }
+    .hub-tab[aria-selected="true"] { color: #fff; background: var(--navy); }
+    .hub-tab:focus-visible { outline: 3px solid rgba(8,124,120,.3); outline-offset: 2px; }
     .tab-panel[hidden] { display: none !important; }
 
-    .report-list { display: grid; gap: 14px; max-width: 860px; margin: 0 auto 40px; }
-    .report-list-item {
-      display: grid;
-      grid-template-columns: 48px minmax(0,1fr) auto;
-      gap: 18px;
-      align-items: center;
-      min-height: 92px;
-      padding: 20px 24px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      color: inherit;
-      text-decoration: none;
-      background: var(--white);
-      box-shadow: var(--shadow);
-      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-    }
-    .report-list-item:hover { border-color: var(--gold); box-shadow: 0 7px 22px rgba(26,43,74,.14); transform: translateY(-2px); }
-    .report-list-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; font-size: 1.35rem; background: var(--gold-light); }
-    .report-list-title { margin: 0 0 5px; font: 700 1.13rem/1.25 'Playfair Display', serif; color: var(--navy); }
-    .report-list-description { margin: 0; color: var(--muted); font-size: .86rem; line-height: 1.5; }
-    .report-list-action { display: flex; align-items: center; gap: 8px; color: var(--gold); font-size: .86rem; font-weight: 700; white-space: nowrap; }
-
-    /* =============================
-       CARD GRID
-    ============================= */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 28px;
-      margin-bottom: 40px;
-    }
-
-    .card {
-      background: var(--white);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      box-shadow: var(--shadow);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 16px; }
+    .tool-card {
+      position: relative;
       display: flex;
       flex-direction: column;
-      position: relative;
       overflow: hidden;
+      min-height: 208px;
+      padding: 26px 26px 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: inherit;
+      text-decoration: none;
+      background: var(--white);
+      box-shadow: 0 5px 18px rgba(19,42,70,.07);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
     }
-
-    .card::before {
+    .tool-card::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; right: 0; left: 0;
       height: 3px;
-      background: var(--gold);
+      background: var(--card-accent, var(--teal));
       transform: scaleX(0);
       transform-origin: left;
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform .22s ease;
     }
-
-    .card:hover {
-      box-shadow: 0 8px 28px rgba(26,43,74,0.16);
-      transform: translateY(-4px);
-      border-color: var(--gold);
+    .tool-card:nth-child(3n+2) { --card-accent: var(--gold); }
+    .tool-card:nth-child(3n+3) { --card-accent: #52729a; }
+    .tool-card:hover, .tool-card:focus-visible {
+      border-color: rgba(8,124,120,.5);
+      box-shadow: 0 14px 30px rgba(19,42,70,.13);
+      transform: translateY(-3px);
     }
-
-    .card:hover::before {
-      transform: scaleX(1);
+    .tool-card:hover::before, .tool-card:focus-visible::before { transform: scaleX(1); }
+    .tool-card:focus-visible { outline: 3px solid rgba(8,124,120,.28); outline-offset: 3px; }
+    .tool-icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      margin-bottom: 16px;
+      border-radius: 11px;
+      font-size: 1.3rem;
+      line-height: 1;
+      background: #eef4f4;
     }
+    .tool-card:nth-child(3n+2) .tool-icon { background: var(--gold-light); }
+    .tool-card:nth-child(3n+3) .tool-icon { background: #eaeff5; }
+    .tool-title { margin: 0 0 9px; color: var(--navy); font: 700 1.22rem/1.25 Georgia, serif; letter-spacing: -.01em; }
+    .tool-copy { flex: 1; margin: 0 0 18px; color: var(--muted); font-size: .85rem; line-height: 1.55; }
+    .tool-open { display: inline-flex; align-items: center; gap: 7px; color: var(--teal); font-size: .8rem; font-weight: 800; }
+    .tool-open span { transition: transform .2s ease; }
+    .tool-card:hover .tool-open span { transform: translateX(4px); }
 
-    .card-icon {
-      font-size: 3rem;
-      margin-bottom: 18px;
-      height: 60px;
-      display: flex;
+    .report-list { display: grid; gap: 12px; }
+    .report-item {
+      display: grid;
+      grid-template-columns: 44px minmax(0,1fr) auto;
+      gap: 18px;
       align-items: center;
-      opacity: 0.9;
-    }
-
-    .card-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 12px;
-      line-height: 1.3;
-    }
-
-    .card-description {
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.6;
-      flex-grow: 1;
-      margin-bottom: 20px;
-    }
-
-    .card-footer {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--gold);
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .card-arrow {
-      display: inline-block;
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .card:hover .card-arrow {
-      transform: translateX(6px);
-    }
-
-    .card-under-construction {
-      background: linear-gradient(145deg, #fff9df, #fff2b8);
-      border-color: #d6a72f;
-    }
-
-    .card-under-construction::before {
-      background: #d6a72f;
-      transform: scaleX(1);
-    }
-
-    .card-under-construction:hover {
-      border-color: #b7830c;
-      box-shadow: 0 8px 28px rgba(183,131,12,0.22);
-    }
-
-    .card-notice {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      padding: 5px 9px;
-      border: 1px solid #d6a72f;
-      border-radius: 999px;
-      color: #6d4c00;
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      background: #ffe89a;
-    }
-
-    .card-under-construction .card-footer {
-      color: #7a5600;
-    }
-
-    /* =============================
-       SECTION DIVIDER
-    ============================= */
-    .section-divider {
-      margin: 60px 0;
-      padding: 40px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      text-align: center;
-    }
-
-    .divider-eyebrow {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--gold);
-      margin-bottom: 8px;
-    }
-
-    .divider-heading {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 10px;
-    }
-
-    .divider-text {
-      font-size: 0.95rem;
-      color: var(--muted);
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    /* =============================
-       FEATURED STAT
-    ============================= */
-    .featured-stat {
-      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+      padding: 20px 24px;
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 40px;
-      text-align: center;
-      color: var(--white);
-      box-shadow: var(--shadow);
-      margin: 40px 0;
+      color: inherit;
+      text-decoration: none;
+      background: var(--white);
+      box-shadow: 0 5px 18px rgba(19,42,70,.07);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
     }
+    .report-item:hover, .report-item:focus-visible { border-color: rgba(8,124,120,.5); box-shadow: 0 12px 26px rgba(19,42,70,.12); transform: translateY(-2px); }
+    .report-item:focus-visible { outline: 3px solid rgba(8,124,120,.28); outline-offset: 3px; }
+    .report-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 11px; font-size: 1.2rem; background: var(--gold-light); }
+    .report-title { display: block; margin-bottom: 4px; color: var(--navy); font: 700 1.08rem/1.3 Georgia, serif; }
+    .report-copy { display: block; color: var(--muted); font-size: .83rem; line-height: 1.5; }
+    .report-open { display: inline-flex; align-items: center; gap: 7px; color: var(--teal); font-size: .8rem; font-weight: 800; white-space: nowrap; }
 
-    .featured-stat .stat-number {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.8rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .featured-stat .stat-label {
-      font-size: 1rem;
-      opacity: 0.9;
-      line-height: 1.5;
-    }
-
-    /* =============================
-       RESPONSIVE
-    ============================= */
-    @media (max-width: 768px) {
-      .hero-title {
-        font-size: 1.8rem;
-      }
-
-      .cards-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
-
-      .container {
-        padding: 24px 16px 40px;
-      }
-
+    @media (max-width: 720px) {
       .hub-tabs { width: 100%; }
-      .hub-tab { flex: 1; }
-      .report-list-item { grid-template-columns: 42px minmax(0,1fr); padding: 18px; }
-      .report-list-action { grid-column: 2; }
+      .hub-tab { flex: 1; padding: 9px 10px; }
+      .tool-grid { grid-template-columns: 1fr; }
+      .report-item { grid-template-columns: 40px minmax(0,1fr); padding: 18px; }
+      .report-open { grid-column: 2; }
     }
-    </style>
-  </head>
-  <body>
-    <!-- ========================
-     HEADER
-========================= -->
-    <header class="gs-header">
-      <a class="wordmark" href="./" aria-label="Return to Admissions">
-        Gateway Seminary <span>Admissions</span>
-      </a>
-      <div class="divider"></div>
-      <div class="page-title">Home</div>
-    </header>
+  </style>
+</head>
+<body class="hub">
+  <header class="gs-header">
+    <div class="wordmark">Gateway Seminary<span>Admissions</span></div>
+    <div class="header-divider"></div>
+    <div class="header-title">Home</div>
+  </header>
 
-    <!-- ========================
-     MAIN
-========================= -->
-    <main class="container">
-      <!-- HERO SECTION -->
-      <div class="hero">
-        <h1 class="hero-title">Admissions</h1>
-        <p class="hero-subtitle">Access comprehensive tools to monitor, analyze, and optimize every stage of your enrollment funnel.</p>
-      </div>
+  <main class="container">
+    <div class="page-intro">
+      <h1 id="intro-heading" class="intro-heading">Admissions</h1>
+      <p class="intro-subtitle">Monitor, analyze, and optimize every stage of the enrollment funnel from one place.</p>
+    </div>
 
-      <div class="hub-tabs" role="tablist" aria-label="Homepage sections">
-        <button id="enrollment-tools-tab" class="hub-tab" type="button" role="tab" aria-selected="true" aria-controls="enrollment-tools-panel">Reports</button>
-        <button id="other-tab" class="hub-tab" type="button" role="tab" aria-selected="false" aria-controls="other-panel" tabindex="-1">Other</button>
-        <button id="training-materials-tab" class="hub-tab" type="button" role="tab" aria-selected="false" aria-controls="training-materials-panel" tabindex="-1">Training Materials</button>
-      </div>
+    <div class="hub-tabs" role="tablist" aria-label="Admissions sections">
+      <button id="reports-tab" class="hub-tab" type="button" role="tab" aria-selected="true" aria-controls="reports-panel" data-heading="Admissions">Reports</button>
+      <button id="other-tab" class="hub-tab" type="button" role="tab" aria-selected="false" aria-controls="other-panel" tabindex="-1" data-heading="Other">Other</button>
+      <button id="training-tab" class="hub-tab" type="button" role="tab" aria-selected="false" aria-controls="training-panel" tabindex="-1" data-heading="Training Materials">Training Materials</button>
+    </div>
 
-      <section id="enrollment-tools-panel" class="tab-panel" role="tabpanel" aria-labelledby="enrollment-tools-tab">
-      <div class="cards-grid">
-        <!-- Funnel Overview -->
-        <a href="https://enroll.gs.edu/portal/directors_portal" class="card">
-          <div class="card-icon">📊</div>
-          <h2 class="card-title">Funnel Overview</h2>
-          <p class="card-description">Track applicant progression through inquiry, application, approval, and admission stages. Monitor conversion rates and identify bottlenecks.</p>
-          <div class="card-footer">
-            <span>View</span>
-            <span class="card-arrow">→</span>
-          </div>
+    <section id="reports-panel" class="tab-panel" role="tabpanel" aria-labelledby="reports-tab">
+      <div class="tool-grid">
+        <a class="tool-card" href="https://enroll.gs.edu/portal/directors_portal">
+          <span class="tool-icon" aria-hidden="true">&#128202;</span>
+          <h2 class="tool-title">Funnel Overview</h2>
+          <p class="tool-copy">Track applicant progression through inquiry, application, approval, and admission. Monitor conversion rates and find the bottlenecks.</p>
+          <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        
- <!-- Teaching Sites -->
-        <a href="https://enroll.gs.edu/portal/teachingsite" class="card">
-          <div class="card-icon">🏫</div>
-          <h2 class="card-title">Teaching Sites</h2>
-          <p class="card-description">Track interest and activity in our many teaching sites.</p>
-          <div class="card-footer">
-            <span>View</span>
-            <span class="card-arrow">→</span>
-          </div>
+        <a class="tool-card" href="https://enroll.gs.edu/portal/teachingsite">
+          <span class="tool-icon" aria-hidden="true">&#127979;</span>
+          <h2 class="tool-title">Teaching Sites</h2>
+          <p class="tool-copy">Compare record volume across every active teaching site, then drill into a single site's inquiry-to-student funnel.</p>
+          <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <!-- Regional Campus Portal -->
-        <a href="https://enroll.gs.edu/portal/regional_campus" class="card">
-          <div class="card-icon">📍</div>
-          <h2 class="card-title">Regional Campus Portal</h2>
-          <p class="card-description">Explore enrollment funnels and student activity across Gateway Seminary's regional campuses.</p>
-          <div class="card-footer">
-            <span>View</span>
-            <span class="card-arrow">→</span>
-          </div>
+        <a class="tool-card" href="https://enroll.gs.edu/portal/regional_campus">
+          <span class="tool-icon" aria-hidden="true">&#128205;</span>
+          <h2 class="tool-title">Regional Campus Portal</h2>
+          <p class="tool-copy">Explore enrollment funnels and student activity across Gateway Seminary's regional campuses.</p>
+          <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-    <!-- Event Effectiveness -->
-        <a href="https://enroll.gs.edu/portal/event_effectiveness" class="card">
-          <div class="card-icon">📣</div>
-          <h2 class="card-title">Event Effectiveness</h2>
-          <p class="card-description">Analyze the performance of your recruiting events and measure their impact on student inquiries and applications.</p>
-          <div class="card-footer">
-            <span>View</span>
-            <span class="card-arrow">→</span>
-          </div>
+        <a class="tool-card" href="https://enroll.gs.edu/portal/event_effectiveness">
+          <span class="tool-icon" aria-hidden="true">&#128227;</span>
+          <h2 class="tool-title">Event Effectiveness</h2>
+          <p class="tool-copy">See what each recruiting event cost and what it returned — registrants, inquiries, applicants, and students per dollar spent.</p>
+          <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-          <!-- BetterQuery -->
-        <a href="https://enroll.gs.edu/portal/better_query" class="card">
-          <div class="card-icon">🔍</div>
-          <h2 class="card-title">BetterQuery</h2>
-          <p class="card-description">Query Slate with simple natural language.</p>
-          <div class="card-footer">
-            <span>View</span>
-            <span class="card-arrow">→</span>
-          </div>
+        <a class="tool-card" href="https://enroll.gs.edu/portal/better_query">
+          <span class="tool-icon" aria-hidden="true">&#128269;</span>
+          <h2 class="tool-title">BetterQuery</h2>
+          <p class="tool-copy">Ask for the records you need in plain language and get a Slate query back, already run.</p>
+          <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <!-- Record Lookup -->
-        <a href="https://enroll.gs.edu/portal/record_lookup" class="card">
-          <div class="card-icon">🔎</div>
-          <h2 class="card-title">Record Lookup</h2>
-          <p class="card-description">Search by first name, last name, or student ID, then view a selected record’s profile.</p>
-          <div class="card-footer">
-            <span>View</span>
-            <span class="card-arrow">→</span>
-          </div>
+        <a class="tool-card" href="https://enroll.gs.edu/portal/record_lookup">
+          <span class="tool-icon" aria-hidden="true">&#128270;</span>
+          <h2 class="tool-title">Record Lookup</h2>
+          <p class="tool-copy">Search by first name, last name, or student ID, then open that record's full profile and application history.</p>
+          <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
         </a>
       </div>
-      </section>
+    </section>
 
-      <section id="other-panel" class="tab-panel" role="tabpanel" aria-labelledby="other-tab" hidden>
-        <div class="report-list">
-          <a href="https://enroll.gs.edu/portal/public_internal_events" class="report-list-item">
-            <span class="report-list-icon" aria-hidden="true">&#128197;</span>
-            <span>
-              <span class="report-list-title">Public Event Registrants</span>
-              <span class="report-list-description">Review public events by start date and compare their registration totals.</span>
-            </span>
-            <span class="report-list-action">Open report <span aria-hidden="true">&rarr;</span></span>
-          </a>
-        </div>
-      </section>
+    <section id="other-panel" class="tab-panel" role="tabpanel" aria-labelledby="other-tab" hidden>
+      <div class="report-list">
+        <a class="report-item" href="https://enroll.gs.edu/portal/public_internal_events">
+          <span class="report-icon" aria-hidden="true">&#128197;</span>
+          <span>
+            <span class="report-title">Public Event Registrants</span>
+            <span class="report-copy">Review public events by start date and compare their registration totals.</span>
+          </span>
+          <span class="report-open">Open report <span aria-hidden="true">&rarr;</span></span>
+        </a>
+      </div>
+    </section>
 
-      <section id="training-materials-panel" class="tab-panel" role="tabpanel" aria-labelledby="training-materials-tab" hidden>
-        <div class="cards-grid">
-          <!-- Slate Concepts -->
-          <a href="https://claude.ai/code/artifact/0810df6f-bc13-4c9c-a776-fbdbd229d2f3" class="card" target="_blank" rel="noopener">
-            <div class="card-icon">&#128218;</div>
-            <h2 class="card-title">Slate Concepts</h2>
-            <p class="card-description">Learn the record, audience, and reporting concepts that make Slate requests clearer and results easier to interpret.</p>
-            <div class="card-footer">
-              <span>Learn</span>
-              <span class="card-arrow">&rarr;</span>
-            </div>
-          </a>
-        </div>
-      </section>
-    </main>
+    <section id="training-panel" class="tab-panel" role="tabpanel" aria-labelledby="training-tab" hidden>
+      <div class="tool-grid">
+        <a class="tool-card" href="https://claude.ai/code/artifact/0810df6f-bc13-4c9c-a776-fbdbd229d2f3" target="_blank" rel="noopener">
+          <span class="tool-icon" aria-hidden="true">&#128218;</span>
+          <h2 class="tool-title">Slate Concepts</h2>
+          <p class="tool-copy">Learn the record, audience, and reporting concepts that make Slate requests clearer and results easier to interpret.</p>
+          <span class="tool-open">Start lesson <span aria-hidden="true">&rarr;</span></span>
+        </a>
+      </div>
+    </section>
+  </main>
 
-    <script>
-    (function () {
-      'use strict';
-      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-      function selectTab(selected, focus) {
-        tabs.forEach(function (tab) {
-          const active = tab === selected;
-          tab.setAttribute('aria-selected', String(active));
-          tab.tabIndex = active ? 0 : -1;
-          document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
-        });
-        if (focus) selected.focus();
-      }
-      tabs.forEach(function (tab, index) {
-        tab.addEventListener('click', function () { selectTab(tab, false); });
-        tab.addEventListener('keydown', function (event) {
-          if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
-          event.preventDefault();
-          let next = index;
-          if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
-          if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
-          if (event.key === 'Home') next = 0;
-          if (event.key === 'End') next = tabs.length - 1;
-          selectTab(tabs[next], true);
-        });
+  <script>
+  (function () {
+    'use strict';
+    const heading = document.getElementById('intro-heading');
+    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+
+    function selectTab(selected, focus) {
+      tabs.forEach(function (tab) {
+        const active = tab === selected;
+        tab.setAttribute('aria-selected', String(active));
+        tab.tabIndex = active ? 0 : -1;
+        document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
       });
-    }());
-    </script>
-  </body>
+      heading.textContent = selected.dataset.heading;
+      if (focus) selected.focus();
+    }
+
+    tabs.forEach(function (tab, index) {
+      tab.addEventListener('click', function () { selectTab(tab, false); });
+      tab.addEventListener('keydown', function (event) {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        let next = index;
+        if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+        if (event.key === 'Home') next = 0;
+        if (event.key === 'End') next = tabs.length - 1;
+        selectTab(tabs[next], true);
+      });
+    });
+  }());
+  </script>
+</body>
 </html>
