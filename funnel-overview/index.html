@@ -259,10 +259,10 @@
 
     function buildStages() {
       return [
-        { label:'Inquiries', count:ui.number(data.counts.inquiries), color:'#0c0f14' },
-        { label:'Applied', count:ui.number(data.counts.applications), color:'#2c343a' },
-        { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#d3a422' },
-        { label:'Admitted', count:ui.number(data.counts.admitted), color:'#234048' }
+        { label:'Inquiries', count:ui.number(data.counts.inquiries), color:'#234048' },
+        { label:'Applied', count:ui.number(data.counts.applications), color:'#d3a422' },
+        { label:'Awaiting Approval', count:ui.number(data.counts.awaiting), color:'#c44329' },
+        { label:'Admitted', count:ui.number(data.counts.admitted), color:'#708aa2' }
       ];
     }
 
@@ -287,16 +287,9 @@
         svg.setAttribute('viewBox', '0 0 ' + topWidth + ' ' + height);
         svg.setAttribute('preserveAspectRatio', 'none');
         svg.setAttribute('aria-hidden', 'true');
-        const definitions = document.createElementNS(svgNamespace, 'defs');
-        const gradient = document.createElementNS(svgNamespace, 'linearGradient');
-        gradient.id = 'funnel-gradient-' + index;
-        gradient.setAttribute('x1', '0'); gradient.setAttribute('y1', '0'); gradient.setAttribute('x2', '0'); gradient.setAttribute('y2', '1');
-        const topStop = document.createElementNS(svgNamespace, 'stop'); topStop.setAttribute('offset', '0%'); topStop.setAttribute('stop-color', stage.color);
-        const bottomStop = document.createElementNS(svgNamespace, 'stop'); bottomStop.setAttribute('offset', '100%'); bottomStop.setAttribute('stop-color', stage.color); bottomStop.setAttribute('stop-opacity', '.82');
-        gradient.append(topStop, bottomStop); definitions.appendChild(gradient); svg.appendChild(definitions);
         const polygon = document.createElementNS(svgNamespace, 'polygon');
         polygon.setAttribute('points', '0,0 ' + topWidth + ',0 ' + (topWidth - inset) + ',' + height + ' ' + inset + ',' + height);
-        polygon.setAttribute('fill', 'url(#' + gradient.id + ')'); svg.appendChild(polygon);
+        polygon.setAttribute('fill', stage.color); svg.appendChild(polygon);
 
         const label = document.createElement('div'); label.className = 'funnel-label';
         const name = document.createElement('div'); name.className = 'stage-name'; name.textContent = stage.label;
