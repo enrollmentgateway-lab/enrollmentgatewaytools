@@ -19,6 +19,33 @@
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
   const countsService = 'https://enroll.gs.edu/manage/query/run?id=3095d9eb-e68c-4253-bd57-e57f310e0f14&cmd=service&output=json&h=65d38d9a-bfb3-4931-a95c-e74dc6cf9d5d';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
+  // Same Queryomatic prompt/options service the Regional Campus wrapper reads
+  // its campus list from (see slate-templates/wrappers/regional-campus-wrapper.liquid.html);
+  // it exports every configured prompt's key/value pairs, so the teaching-site
+  // prompt's values are filtered out by key below instead of hardcoded here.
+  const optionsService = 'https://enroll.gs.edu/manage/query/run?id=4f1e5d6f-2286-4100-9b40-2b33fa1882aa&cmd=service&output=json';
+  const teachingSiteOptionKeys = new Set(['teachingsite', 'teachingsites', 'site', 'teaching_site']);
+  const fallbackTeachingSites = [
+    'Agricola in Finland',
+    'Bakersfield Site at Kern Country Southern Baptist Association',
+    'Boston School of Ministry',
+    'Burbank Site at Story City Church',
+    'Colorado Springs Site at Cross Fellowship Church',
+    'Fort Collins Site at Gateway Seminary Northern Colorado',
+    'Fountain Valley Site at First Chinese Baptist Church',
+    'Fresno Site at Woodward Park Baptist Church',
+    'Honk Kong Site at Kwun Tong Swatow Baptist Church',
+    'Honk Kong Site at Saddleback Church',
+    'Honolulu Site at Hawaii Pacific School of Theology',
+    'Lake Havasu Site at Calvary Baptist Church',
+    'Las Vegas Site at Nevada Southern Baptist Convention',
+    'Lviv Site at Ukrainian Baptist Theological Seminary',
+    'Mesa Site at HiWay Baptist Church',
+    'Milpitas Site at New Vision Church',
+    'Phoenix Site at Valley Life Church',
+    'Sacramento Site at SOL Bible Academy',
+    'San Diego Site at Grace Church'
+  ];
   const funnelStatuses = { inquiries:'inquiry', applications:'applicant', students:'student' };
   const frame = document.getElementById('teachingSiteOverviewFrame');
   const root = document.getElementById('teachingSiteOverviewData');
@@ -35,7 +62,8 @@
     funnel: { inquiries:0, applications:0, students:0 },
     funnelRecords: { inquiries:[], applications:[], students:[] },
     funnelRecordErrors: {},
-    records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') }))
+    records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') })),
+    teachingSites: []
   };
   const allowedParams = new Set(['term', 'year', 'site']);
   const removableParams = new Set(['status', 'term', 'year', 'site']);
@@ -94,6 +122,11 @@
     return plain(left).toLocaleLowerCase() === plain(right).toLocaleLowerCase();
   }
   function countRowsForSite(rows, site) {
+    // Without a site filter, the population service returns rows for every
+    // matching person system-wide, not just teaching-site students — a
+    // populated title/teaching-site field is what marks a row as belonging to
+    // a teaching site, so only those rows should count toward the overview
+    // totals (see README "Wrapper rollout" section).
     return rows.filter(row => {
       const rowSite = teachingSite(row);
       return site ? sameSite(rowSite, site) : Boolean(rowSite);
@@ -112,6 +145,7 @@
       sisid: sisid,
       program: plain(field(row, ['app_degree','program','program_name'])),
       status: plain(field(row, ['per_status','status'])) || funnelStatuses[stage],
+      teachingSite: teachingSite(row) || payload.filters.site,
       record_url: recordLink(rawUrl || rawName) || (sisid ? window.location.origin + '/manage/database/record?lookup=' + encodeURIComponent(sisid) : '')
     };
   }
@@ -129,16 +163,22 @@
     const countRows = await requestRows(countUrl, 'Teaching site count query');
     const count = countRowsForSite(countRows, payload.filters.site);
     let records = [];
-    if (payload.filters.site && count > 0) {
+    if (count > 0) {
+      // Fetched even in overview scope (no site filter) so the "Export Records"
+      // workbook can list every teaching site's records with a Type + Teaching
+      // Site column, not just the currently selected site's drilldown rows.
       const recordsUrl = new URL(recordsService);
       recordsUrl.searchParams.set('status', funnelStatuses[stage]);
       recordsUrl.searchParams.set('year', payload.filters.year);
       recordsUrl.searchParams.set('term', payload.filters.term);
-      recordsUrl.searchParams.set('teachingsite', payload.filters.site);
+      if (payload.filters.site) recordsUrl.searchParams.set('teachingsite', payload.filters.site);
       try {
         const detailRows = await requestRows(recordsUrl, 'Teaching site detail query');
         records = detailRows
-          .filter(row => { const rowSite = teachingSite(row); return !rowSite || sameSite(rowSite, payload.filters.site); })
+          .filter(row => {
+            const rowSite = teachingSite(row);
+            return payload.filters.site ? (!rowSite || sameSite(rowSite, payload.filters.site)) : Boolean(rowSite);
+          })
           .map(row => normalizeRecord(row, stage));
       } catch (error) {
         payload.funnelRecordErrors[stage] = 'Unable to load record details from Slate. Please try again.';
@@ -147,7 +187,24 @@
     }
     return { stage:stage, count:count, records:records };
   }
+  function normalizeKey(value) { return String(value == null ? '' : value).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  async function loadTeachingSiteOptions() {
+    try {
+      const response = await fetch(optionsService, { credentials:'same-origin', cache:'no-store', headers:{ Accept:'application/json' } });
+      if (!response.ok) throw new Error('Queryomatic options query returned ' + response.status);
+      const values = rowsFrom(await response.json())
+        .filter(row => teachingSiteOptionKeys.has(normalizeKey(row && row.key)))
+        .map(row => plain(scalar(row && row.value)))
+        .filter(Boolean);
+      if (!values.length) throw new Error('Queryomatic options did not return any teaching-site values.');
+      return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+    } catch (error) {
+      console.warn('Unable to load teaching sites from Queryomatic; using the wrapper fallback list.', error);
+      return fallbackTeachingSites.slice();
+    }
+  }
   async function loadFunnel() {
+    const teachingSitesPromise = loadTeachingSiteOptions();
     try {
       const stages = Object.keys(funnelStatuses);
       const results = await Promise.all(stages.map(loadStage));
@@ -161,6 +218,7 @@
       else payload.summaryError = 'Unable to load period totals from Slate. Please try again.';
       console.error('Teaching site funnel query failed.', error);
     }
+    payload.teachingSites = await teachingSitesPromise;
     return payload;
   }
   const payloadReady = loadFunnel();

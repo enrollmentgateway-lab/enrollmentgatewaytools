@@ -91,6 +91,9 @@
         <label class="ctrl-label" for="overview-period">Period</label>
         <select id="overview-period" class="control-select"></select>
       </div>
+      <div class="control-group" style="margin-left:auto">
+        <button id="overview-export-records" class="csv-export-button" type="button">Export Records (XLSX)</button>
+      </div>
     </div>
 
     <div class="stat-bar teaching-overview-stat-bar">
@@ -161,11 +164,15 @@
     </section>
   </main>
 
+  <script src="../assets/vendor/exceljs.min.js"></script>
   <script src="../assets/dashboard-common.js"></script>
   <script>
   (function () {
     'use strict';
-    const allTeachingSites = [
+    const TYPE_LABELS = { inquiries:'Inquiry', applications:'Applicant', students:'Student' };
+    // Used only if the wrapper's live Queryomatic prompt fetch fails; the
+    // wrapper sends the authoritative, live list as payload.teachingSites.
+    const fallbackTeachingSites = [
       'Agricola in Finland',
       'Bakersfield Site at Kern Country Southern Baptist Association',
       'Boston School of Ministry',
@@ -190,6 +197,10 @@
     let data = {};
     const bridge = window.DashboardBridge.create('teaching-site-overview', render);
 
+    function knownTeachingSites() {
+      return Array.isArray(data.teachingSites) && data.teachingSites.length ? data.teachingSites : fallbackTeachingSites;
+    }
+
     function groupRecords(records) {
       const counts = new Map();
       (Array.isArray(records) ? records : []).forEach(function (record) {
@@ -208,6 +219,7 @@
       data.funnel = data.funnel || {};
       data.funnelRecords = data.funnelRecords || {};
       data.funnelRecordErrors = data.funnelRecordErrors || {};
+      data.teachingSites = Array.isArray(data.teachingSites) ? data.teachingSites : [];
       const detailActive = Boolean(data.filters.site);
 
       document.getElementById('overview-view').hidden = detailActive;
@@ -224,7 +236,7 @@
       const grouped = groupRecords(data.records);
       const recordCount = grouped.reduce(function (sum, item) { return sum + item.count; }, 0);
       const active = new Set(grouped.map(function (item) { return item.title; }));
-      const inactive = allTeachingSites.filter(function (title) { return !active.has(title); });
+      const inactive = knownTeachingSites().filter(function (title) { return !active.has(title); });
 
       window.AcademicPeriods.populate(document.getElementById('overview-period'), data.filters.term, data.filters.year);
       ui.setText('site-count', grouped.length);
@@ -271,6 +283,295 @@
     }
 
     function openSite(title) { bridge.navigate({ site: title }, ['status']); }
+
+    function xlsxColumnLetter(n) {
+      let s = '';
+      while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; }
+      return s;
+    }
+    function xlsxFill(argb) { return { type:'pattern', pattern:'solid', fgColor:{ argb:argb } }; }
+
+    // Reports tab is formula-driven (COUNTIFS) so the crosstab keeps recalculating
+    // in Excel after the user edits the Records tab or adds new teaching-site rows.
+    // Pre-filled with the live teaching-site list (falling back to the static
+    // list only if the wrapper's Queryomatic fetch failed) so every current
+    // site appears in the breakdown even at zero records for this period.
+    function buildTeachingSiteWorkbook(rows, knownSites) {
+      const TYPES = ['Inquiry', 'Applicant', 'Student'];
+      const seen = {};
+      const sites = [];
+      (Array.isArray(knownSites) ? knownSites : []).forEach(function (site) {
+        const trimmed = String(site || '').trim();
+        if (trimmed && !seen[trimmed]) { seen[trimmed] = true; sites.push(trimmed); }
+      });
+      rows.forEach(function (record) {
+        const site = String(record.teachingSite || '').trim();
+        if (site && !seen[site]) { seen[site] = true; sites.push(site); }
+      });
+      sites.sort(function (a, b) { return a.localeCompare(b); });
+
+      const FONT = 'Arial';
+      const NAVY = 'FF1F3864';
+      const YELLOW = 'FFFFFF00';
+      const GREY = 'FFF2F2F2';
+      const BORDER = {
+        top:    { style:'thin', color:{ argb:'FFBFBFBF' } },
+        left:   { style:'thin', color:{ argb:'FFBFBFBF' } },
+        bottom: { style:'thin', color:{ argb:'FFBFBFBF' } },
+        right:  { style:'thin', color:{ argb:'FFBFBFBF' } }
+      };
+      const NUM = '#,##0;-#,##0;-';
+      const PCT = '0.0%;-0.0%;-';
+
+      const workbook = new window.ExcelJS.Workbook();
+      workbook.created = new Date();
+
+      const ws = workbook.addWorksheet('Records');
+      ws.columns = [
+        { key:'name', width:18 },
+        { key:'email', width:36 },
+        { key:'phone', width:16 },
+        { key:'sisid', width:14 },
+        { key:'program', width:26 },
+        { key:'type', width:14 },
+        { key:'teachingSite', width:36 }
+      ];
+
+      const head = ws.getRow(1);
+      ['Name', 'Email', 'Phone', 'Student ID', 'Program', 'Type', 'Teaching Site'].forEach(function (label, index) {
+        const cell = head.getCell(index + 1);
+        cell.value = label;
+        cell.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+        cell.fill = xlsxFill(NAVY);
+        cell.border = BORDER;
+        cell.alignment = { vertical:'middle' };
+      });
+      head.height = 20;
+
+      rows.forEach(function (record, index) {
+        const row = ws.getRow(index + 2);
+        [record.name, record.email, record.phone, record.sisid, record.program, record.type, record.teachingSite].forEach(function (value, column) {
+          const cell = row.getCell(column + 1);
+          cell.value = value || '';
+          cell.font = { name:FONT, size:11 };
+          cell.border = BORDER;
+        });
+      });
+
+      ws.views = [{ state:'frozen', ySplit:1 }];
+      ws.autoFilter = { from:'A1', to:'G' + Math.max(rows.length + 1, 2) };
+
+      const rs = workbook.addWorksheet('Reports', { views:[{ showGridLines:false }] });
+
+      const HDR = 5;
+      const P0 = HDR + 1;
+      const SPARE = 5;
+      const PN = P0 + Math.max(sites.length + SPARE, 10) - 1;
+      const UNS = PN + 1;
+      const TR = UNS + 1;
+
+      const nType = TYPES.length;
+      const LAST = xlsxColumnLetter(1 + nType);
+      const TOTC = 2 + nType;
+      const TOTL = xlsxColumnLetter(TOTC);
+
+      const SCAN = Math.max(rows.length + 200, 500);
+      const DSITE = 'Records!$G$2:$G$' + SCAN;
+      const DTYPE = 'Records!$F$2:$F$' + SCAN;
+
+      rs.getCell('A1').value = 'Records by Teaching Site and Type';
+      rs.getCell('A1').font = { name:FONT, size:16, bold:true, color:{ argb:NAVY } };
+      rs.getCell('A2').value = 'Counts pull automatically from the Records tab (rows 2–' + SCAN + ').';
+      rs.getCell('A2').font = { name:FONT, size:10, italic:true, color:{ argb:'FF808080' } };
+      rs.getCell('A3').value = 'Legend: yellow = type here (one row per teaching site) · white = calculated, do not type over';
+      rs.getCell('A3').font = { name:FONT, size:9, italic:true, color:{ argb:'FF808080' } };
+
+      const header = rs.getCell(HDR, 1);
+      header.value = 'Teaching Site';
+      header.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+      header.fill = xlsxFill(NAVY);
+      header.border = BORDER;
+      header.alignment = { vertical:'middle' };
+
+      TYPES.forEach(function (type, index) {
+        const cell = rs.getCell(HDR, 2 + index);
+        cell.value = type;
+        cell.font = { name:FONT, size:11, bold:true };
+        cell.fill = xlsxFill(YELLOW);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+      });
+
+      const totalHeader = rs.getCell(HDR, TOTC);
+      totalHeader.value = 'Total';
+      totalHeader.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+      totalHeader.fill = xlsxFill(NAVY);
+      totalHeader.border = BORDER;
+      totalHeader.alignment = { horizontal:'center', vertical:'middle' };
+      rs.getRow(HDR).height = 30;
+
+      for (let r = P0; r <= PN; r += 1) {
+        const label = rs.getCell(r, 1);
+        label.value = sites[r - P0] || null;
+        label.font = { name:FONT, size:11 };
+        label.fill = xlsxFill(YELLOW);
+        label.border = BORDER;
+
+        for (let j = 0; j < nType; j += 1) {
+          const columnLetter = xlsxColumnLetter(2 + j);
+          const cell = rs.getCell(r, 2 + j);
+          cell.value = { formula:'IF($A' + r + '="","",COUNTIFS(' + DSITE + ',$A' + r + ',' + DTYPE + ',' + columnLetter + '$' + HDR + '))' };
+          cell.font = { name:FONT, size:11 };
+          cell.border = BORDER;
+          cell.alignment = { horizontal:'center' };
+          cell.numFmt = NUM;
+        }
+        const total = rs.getCell(r, TOTC);
+        total.value = { formula:'IF($A' + r + '="","",SUM(B' + r + ':' + LAST + r + '))' };
+        total.font = { name:FONT, size:11, bold:true };
+        total.border = BORDER;
+        total.alignment = { horizontal:'center' };
+        total.numFmt = NUM;
+      }
+
+      const unlisted = rs.getCell(UNS, 1);
+      unlisted.value = 'No teaching site listed';
+      unlisted.font = { name:FONT, size:11, italic:true };
+      unlisted.border = BORDER;
+      for (let k = 0; k < nType; k += 1) {
+        const columnLetter = xlsxColumnLetter(2 + k);
+        const cell = rs.getCell(UNS, 2 + k);
+        cell.value = { formula:'COUNTIFS(' + DTYPE + ',' + columnLetter + '$' + HDR + ')-SUM(' + columnLetter + P0 + ':' + columnLetter + PN + ')' };
+        cell.font = { name:FONT, size:11, italic:true };
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center' };
+        cell.numFmt = NUM;
+      }
+      const unsTotal = rs.getCell(UNS, TOTC);
+      unsTotal.value = { formula:'SUM(B' + UNS + ':' + LAST + UNS + ')' };
+      unsTotal.font = { name:FONT, size:11, bold:true, italic:true };
+      unsTotal.border = BORDER;
+      unsTotal.alignment = { horizontal:'center' };
+      unsTotal.numFmt = NUM;
+
+      const totalLabel = rs.getCell(TR, 1);
+      totalLabel.value = 'Total';
+      totalLabel.font = { name:FONT, size:11, bold:true };
+      totalLabel.fill = xlsxFill(GREY);
+      totalLabel.border = BORDER;
+      for (let m = 0; m < nType; m += 1) {
+        const columnLetter = xlsxColumnLetter(2 + m);
+        const cell = rs.getCell(TR, 2 + m);
+        cell.value = { formula:'SUM(' + columnLetter + P0 + ':' + columnLetter + UNS + ')' };
+        cell.font = { name:FONT, size:11, bold:true };
+        cell.fill = xlsxFill(GREY);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center' };
+        cell.numFmt = NUM;
+      }
+      const grandTotal = rs.getCell(TR, TOTC);
+      grandTotal.value = { formula:'SUM(B' + TR + ':' + LAST + TR + ')' };
+      grandTotal.font = { name:FONT, size:11, bold:true };
+      grandTotal.fill = xlsxFill(GREY);
+      grandTotal.border = BORDER;
+      grandTotal.alignment = { horizontal:'center' };
+      grandTotal.numFmt = NUM;
+
+      const ST = TR + 3;
+      const SH = ST + 1;
+      rs.getCell(ST, 1).value = 'Type summary';
+      rs.getCell(ST, 1).font = { name:FONT, size:13, bold:true, color:{ argb:NAVY } };
+      ['Type', 'Count', '% of all'].forEach(function (label, index) {
+        const cell = rs.getCell(SH, index + 1);
+        cell.value = label;
+        cell.font = { name:FONT, size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+        cell.fill = xlsxFill(NAVY);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:index === 0 ? 'left' : 'center' };
+      });
+      TYPES.forEach(function (type, index) {
+        const row = SH + 1 + index;
+        const columnLetter = xlsxColumnLetter(2 + index);
+        const labelCell = rs.getCell(row, 1);
+        labelCell.value = { formula:columnLetter + '$' + HDR };
+        labelCell.font = { name:FONT, size:11 };
+        labelCell.border = BORDER;
+        const countCell = rs.getCell(row, 2);
+        countCell.value = { formula:columnLetter + TR };
+        countCell.font = { name:FONT, size:11 };
+        countCell.border = BORDER;
+        countCell.alignment = { horizontal:'center' };
+        countCell.numFmt = NUM;
+        const pctCell = rs.getCell(row, 3);
+        pctCell.value = { formula:'IFERROR(' + columnLetter + TR + '/$' + TOTL + '$' + TR + ',0)' };
+        pctCell.font = { name:FONT, size:11 };
+        pctCell.border = BORDER;
+        pctCell.alignment = { horizontal:'center' };
+        pctCell.numFmt = PCT;
+      });
+      const STT = SH + nType + 1;
+      const summaryTotalLabel = rs.getCell(STT, 1);
+      summaryTotalLabel.value = 'Total';
+      summaryTotalLabel.font = { name:FONT, size:11, bold:true };
+      summaryTotalLabel.fill = xlsxFill(GREY);
+      summaryTotalLabel.border = BORDER;
+      [[2, 'SUM(B' + (SH + 1) + ':B' + (STT - 1) + ')', NUM], [3, 'SUM(C' + (SH + 1) + ':C' + (STT - 1) + ')', PCT]].forEach(function (entry) {
+        const cell = rs.getCell(STT, entry[0]);
+        cell.value = { formula:entry[1] };
+        cell.font = { name:FONT, size:11, bold:true };
+        cell.fill = xlsxFill(GREY);
+        cell.border = BORDER;
+        cell.alignment = { horizontal:'center' };
+        cell.numFmt = entry[2];
+      });
+
+      rs.getColumn(1).width = 34;
+      for (let w = 0; w < nType; w += 1) rs.getColumn(2 + w).width = 14;
+      rs.getColumn(TOTC).width = 10;
+
+      for (let scanRow = 2; scanRow <= SCAN; scanRow += 1) {
+        ws.getCell('F' + scanRow).dataValidation = { type:'list', allowBlank:true, formulae:['=Reports!$B$' + HDR + ':$' + LAST + '$' + HDR] };
+        ws.getCell('G' + scanRow).dataValidation = { type:'list', allowBlank:true, formulae:['=Reports!$A$' + P0 + ':$A$' + PN] };
+      }
+
+      return workbook;
+    }
+
+    function downloadXlsxBuffer(filename, buffer) {
+      const baseName = String(filename || 'records').trim().replace(/\.xlsx$/i, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'records';
+      const url = URL.createObjectURL(new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = baseName + '.xlsx';
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    }
+
+    async function exportOverviewRecords() {
+      const stages = [
+        { key:'inquiries', records:data.funnelRecords.inquiries },
+        { key:'applications', records:data.funnelRecords.applications },
+        { key:'students', records:data.funnelRecords.students }
+      ];
+      const rows = [];
+      stages.forEach(function (stage) {
+        (Array.isArray(stage.records) ? stage.records : []).forEach(function (record) {
+          rows.push({
+            name: ui.text(record.name), email: ui.text(record.email), phone: ui.text(record.phone),
+            sisid: ui.text(record.sisid), program: ui.text(record.program),
+            type: TYPE_LABELS[stage.key], teachingSite: ui.text(record.teachingSite)
+          });
+        });
+      });
+      const periodKey = window.AcademicPeriods.keyFrom(data.filters.term, data.filters.year);
+      const periodLabel = window.AcademicPeriods.values[periodKey].label;
+      const workbook = buildTeachingSiteWorkbook(rows, knownTeachingSites());
+      const buffer = await workbook.xlsx.writeBuffer();
+      downloadXlsxBuffer(periodLabel + '-teaching-sites-records', buffer);
+    }
 
     function renderSiteFunnel() {
       const stages = [
@@ -405,6 +706,7 @@
       bridge.navigate(navigation.set, navigation.remove);
     }
 
+    document.getElementById('overview-export-records').addEventListener('click', exportOverviewRecords);
     document.getElementById('overview-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('detail-period').addEventListener('change', function (event) { changePeriod(event.target.value); });
     document.getElementById('site-back').addEventListener('click', function () { bridge.navigate({}, ['site']); });
