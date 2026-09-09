@@ -2,11 +2,17 @@
   Teaching Sites Slate wrapper.
   Configure teaching_sites_persons to return all teaching-site records and use
   only the term and year URL parameters.
-  Funnel counts come from the teaching-site population service. Record
-  drilldowns use the all_people JSON service from Record Lookup with
-  teachingsite, status, term, and year. Its current person fields are per_name,
-  per_email, per_phone, per_sisid, per_status, per_teachingsite, per_url, and
-  app_degree. Legacy field aliases remain as fallbacks during rollout.
+  Applicant/Student funnel counts come from the teaching-site population
+  service. Record drilldowns for those two stages use the all_people JSON
+  service from Record Lookup with teachingsite, status, term, and year. Its
+  current person fields are per_name, per_email, per_phone, per_sisid,
+  per_status, per_teachingsite, per_url, and app_degree. Legacy field aliases
+  remain as fallbacks during rollout.
+  Inquiries are fetched separately, per teaching site, from a dedicated
+  inquiry-only JSON service (see inquiryService below) — the same pattern as
+  the Regional Campus wrapper — because the population/all_people services
+  above only see people who have already applied. Inquiry counts are
+  therefore all-time and do not respond to the term/year period selector.
 -->
 <div id="teachingSiteOverviewData" style="display:none">
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
@@ -19,6 +25,14 @@
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
   const countsService = 'https://enroll.gs.edu/manage/query/run?id=3095d9eb-e68c-4253-bd57-e57f310e0f14&cmd=service&output=json&h=65d38d9a-bfb3-4931-a95c-e74dc6cf9d5d';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
+  // TODO: replace id/h with a dedicated inquiry-only Slate query, same recipe as
+  // Regional Campus's inquiryService (slate-templates/wrappers/regional-campus-wrapper.liquid.html):
+  // exports first/last/email/phone/sisid, filtered ONLY by a site parameter — no
+  // status/term/year. countsService/recordsService above can't see pre-application
+  // inquiries (the same limitation Regional Campus hit), so inquiries are fetched
+  // here per teaching site instead, and are therefore all-time like Regional
+  // Campus's — the period dropdown will not filter Inquiries.
+  const inquiryService = 'https://enroll.gs.edu/manage/query/run?id=REPLACE_WITH_INQUIRY_QUERY_ID&cmd=service&output=json&h=REPLACE_WITH_HASH&teachingsite=';
   // Same Queryomatic prompt/options service the Regional Campus wrapper reads
   // its campus list from (see slate-templates/wrappers/regional-campus-wrapper.liquid.html);
   // it exports every configured prompt's key/value pairs, so the teaching-site
@@ -187,6 +201,32 @@
     }
     return { stage:stage, count:count, records:records };
   }
+  async function fetchSiteInquiries(site) {
+    const url = new URL(inquiryService);
+    url.searchParams.set('teachingsite', site);
+    const rows = await requestRows(url, 'Teaching site inquiry query');
+    return rows.map(row => {
+      const record = normalizeRecord(row, 'inquiries');
+      record.teachingSite = site;
+      record.status = 'Inquiry';
+      return record;
+    });
+  }
+  async function loadInquiries(sites) {
+    const targets = payload.filters.site ? [payload.filters.site] : sites;
+    if (!targets.length) return { count:0, records:[], error:false };
+    const results = await Promise.all(targets.map(async site => {
+      try {
+        return { site:site, records:await fetchSiteInquiries(site), error:false };
+      } catch (error) {
+        console.error('Teaching site inquiry query failed for ' + site + '.', error);
+        return { site:site, records:[], error:true };
+      }
+    }));
+    const records = results.reduce((all, result) => all.concat(result.records), []);
+    const failedCount = results.filter(result => result.error).length;
+    return { count:records.length, records:records, error:failedCount > 0 && failedCount === targets.length };
+  }
   function normalizeKey(value) { return String(value == null ? '' : value).toLowerCase().replace(/[^a-z0-9]/g, ''); }
   async function loadTeachingSiteOptions() {
     try {
@@ -205,20 +245,32 @@
   }
   async function loadFunnel() {
     const teachingSitesPromise = loadTeachingSiteOptions();
-    try {
-      const stages = Object.keys(funnelStatuses);
-      const results = await Promise.all(stages.map(loadStage));
-      results.forEach(result => {
-        payload.summary[result.stage] = result.count;
-        payload.funnel[result.stage] = result.count;
-        payload.funnelRecords[result.stage] = result.records;
-      });
-    } catch (error) {
-      if (payload.filters.site) payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
-      else payload.summaryError = 'Unable to load period totals from Slate. Please try again.';
-      console.error('Teaching site funnel query failed.', error);
-    }
+    const stagesReady = (async () => {
+      try {
+        const results = await Promise.all(['applications', 'students'].map(loadStage));
+        results.forEach(result => {
+          payload.summary[result.stage] = result.count;
+          payload.funnel[result.stage] = result.count;
+          payload.funnelRecords[result.stage] = result.records;
+        });
+      } catch (error) {
+        if (payload.filters.site) payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
+        else payload.summaryError = 'Unable to load period totals from Slate. Please try again.';
+        console.error('Teaching site funnel query failed.', error);
+      }
+    })();
+    const inquiriesReady = teachingSitesPromise.then(loadInquiries);
+    await stagesReady;
     payload.teachingSites = await teachingSitesPromise;
+    const inquiryResult = await inquiriesReady;
+    payload.summary.inquiries = inquiryResult.count;
+    payload.funnel.inquiries = inquiryResult.count;
+    payload.funnelRecords.inquiries = inquiryResult.records;
+    if (inquiryResult.error) {
+      const message = 'Unable to load inquiry records from Slate. Please try again.';
+      if (payload.filters.site) payload.funnelError = payload.funnelError || message;
+      else payload.summaryError = payload.summaryError || message;
+    }
     return payload;
   }
   const payloadReady = loadFunnel();
