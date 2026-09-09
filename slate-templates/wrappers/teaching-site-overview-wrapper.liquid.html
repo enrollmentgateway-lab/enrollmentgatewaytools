@@ -190,8 +190,13 @@
     const dateRange = inquiryDateRange();
     const url = new URL(inquiryService);
     url.searchParams.set('teachingsite', site);
-    url.searchParams.set('person_created_date_start', dateRange.start);
-    url.searchParams.set('person_created_date_end', dateRange.end);
+    // Omit these entirely for "Total (All Time)" (both blank) rather than
+    // sending empty strings — the field is typed as Date in Slate, and an
+    // empty string is not a valid date value for it.
+    if (dateRange.start) url.searchParams.set('person_created_date_start', dateRange.start);
+    else url.searchParams.delete('person_created_date_start');
+    if (dateRange.end) url.searchParams.set('person_created_date_end', dateRange.end);
+    else url.searchParams.delete('person_created_date_end');
     const rows = await requestRows(url, 'Teaching site inquiry query');
     return rows.map(row => {
       const record = normalizeRecord(row, 'inquiries');
