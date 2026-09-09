@@ -8,12 +8,15 @@
   current person fields are per_name, per_email, per_phone, per_sisid,
   per_status, per_teachingsite, per_url, and app_degree. Legacy field aliases
   remain as fallbacks during rollout.
-  Inquiries also come from the all_people service, but without term/year —
-  pre-application inquiries aren't reliably tied to an academic term, so that
-  request instead filters on person_created_date_start/person_created_date_end,
-  computed from the selected period's calendar date range (see
-  periodDateRanges below). Its count is simply the number of records returned,
-  since there is no separate lightweight inquiry-count query.
+  Inquiries come from a dedicated inquiry-only JSON service instead (see
+  inquiryService below) — the same query the Regional Campus wrapper uses,
+  passing each teaching site's title as its "campus" parameter, plus
+  person_created_date_start/person_created_date_end computed from the
+  selected period's calendar date range (see periodDateRanges) since
+  pre-application inquiries aren't reliably tied to an academic term/year.
+  Its count is simply the number of records returned, summed across every
+  known teaching site in overview scope (or just the selected site in detail
+  view) — there is no separate lightweight inquiry-count query.
 -->
 <div id="teachingSiteOverviewData" style="display:none">
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
@@ -26,9 +29,14 @@
   const frameOrigin = 'https://enrollmentgateway-lab.github.io';
   const countsService = 'https://enroll.gs.edu/manage/query/run?id=3095d9eb-e68c-4253-bd57-e57f310e0f14&cmd=service&output=json&h=65d38d9a-bfb3-4931-a95c-e74dc6cf9d5d';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=&alt_form_type=&int_code=&person_created_date_start=&person_created_date_end=';
+  // Same inquiry-only query Regional Campus uses (see
+  // slate-templates/wrappers/regional-campus-wrapper.liquid.html), now also
+  // accepting person_created_date_start/person_created_date_end alongside its
+  // existing "campus" parameter.
+  const inquiryService = 'https://enroll.gs.edu/manage/query/run?id=6f920b18-cda2-44cb-94db-edd8adbefb00&cmd=service&output=json&h=e3041f08-339d-4b3d-8559-0eb93760a4b3&campus=&person_created_date_start=&person_created_date_end=';
   // Calendar bounds for each academic period, keyed "term|year" to match
   // payload.filters — used only for the inquiries request's
-  // person_created_date_start/person_created_date_end (see loadStage below).
+  // person_created_date_start/person_created_date_end (see loadInquiries below).
   // Mirrors funnel-overview's funnelPeriods date ranges.
   const periodDateRanges = {
     'Fall|2026-2027': { start:'2026-01-01', end:'2026-08-15' },
@@ -178,30 +186,36 @@
     const rowSite = teachingSite(row);
     return payload.filters.site ? (!rowSite || sameSite(rowSite, payload.filters.site)) : Boolean(rowSite);
   }
+  async function fetchSiteInquiries(site) {
+    const dateRange = inquiryDateRange();
+    const url = new URL(inquiryService);
+    url.searchParams.set('campus', site);
+    url.searchParams.set('person_created_date_start', dateRange.start);
+    url.searchParams.set('person_created_date_end', dateRange.end);
+    const rows = await requestRows(url, 'Teaching site inquiry query');
+    return rows.map(row => {
+      const record = normalizeRecord(row, 'inquiries');
+      record.teachingSite = site;
+      record.status = 'Inquiry';
+      return record;
+    });
+  }
+  async function loadInquiries(sites) {
+    const targets = payload.filters.site ? [payload.filters.site] : sites;
+    if (!targets.length) return { count:0, records:[], error:false };
+    const results = await Promise.all(targets.map(async site => {
+      try {
+        return { site:site, records:await fetchSiteInquiries(site), error:false };
+      } catch (error) {
+        console.error('Teaching site inquiry query failed for ' + site + '.', error);
+        return { site:site, records:[], error:true };
+      }
+    }));
+    const records = results.reduce((all, result) => all.concat(result.records), []);
+    const failedCount = results.filter(result => result.error).length;
+    return { count:records.length, records:records, error:failedCount > 0 && failedCount === targets.length };
+  }
   async function loadStage(stage) {
-    if (stage === 'inquiries') {
-      // No term/year here — pre-application inquiries aren't reliably tied to
-      // an academic term, so this request dates itself off
-      // person_created_date_start/end instead, and its count is simply the
-      // number of records returned (there's no separate lightweight count
-      // query for inquiries the way countsService provides for the other
-      // two stages).
-      const dateRange = inquiryDateRange();
-      const recordsUrl = new URL(recordsService);
-      // person_status on this query is documented as "Inquiry" (capitalized),
-      // unlike the lowercase applicant/student values used below — passing
-      // lowercase "inquiry" matched nothing (see queryomatic/options.md).
-      recordsUrl.searchParams.set('status', 'Inquiry');
-      recordsUrl.searchParams.set('term', '');
-      recordsUrl.searchParams.set('year', '');
-      recordsUrl.searchParams.set('person_created_date_start', dateRange.start);
-      recordsUrl.searchParams.set('person_created_date_end', dateRange.end);
-      if (payload.filters.site) recordsUrl.searchParams.set('teachingsite', payload.filters.site);
-      const detailRows = await requestRows(recordsUrl, 'Teaching site inquiry query');
-      const records = detailRows.filter(siteFilter).map(row => normalizeRecord(row, stage));
-      return { stage:stage, count:records.length, records:records };
-    }
-
     const countUrl = new URL(countsService);
     countUrl.searchParams.set('status', funnelStatuses[stage]);
     countUrl.searchParams.set('year', payload.filters.year);
@@ -247,20 +261,32 @@
   }
   async function loadFunnel() {
     const teachingSitesPromise = loadTeachingSiteOptions();
-    try {
-      const stages = ['inquiries', 'applications', 'students'];
-      const results = await Promise.all(stages.map(loadStage));
-      results.forEach(result => {
-        payload.summary[result.stage] = result.count;
-        payload.funnel[result.stage] = result.count;
-        payload.funnelRecords[result.stage] = result.records;
-      });
-    } catch (error) {
-      if (payload.filters.site) payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
-      else payload.summaryError = 'Unable to load period totals from Slate. Please try again.';
-      console.error('Teaching site funnel query failed.', error);
-    }
+    const stagesReady = (async () => {
+      try {
+        const results = await Promise.all(['applications', 'students'].map(loadStage));
+        results.forEach(result => {
+          payload.summary[result.stage] = result.count;
+          payload.funnel[result.stage] = result.count;
+          payload.funnelRecords[result.stage] = result.records;
+        });
+      } catch (error) {
+        if (payload.filters.site) payload.funnelError = 'Unable to load funnel counts from Slate. Please try again.';
+        else payload.summaryError = 'Unable to load period totals from Slate. Please try again.';
+        console.error('Teaching site funnel query failed.', error);
+      }
+    })();
+    const inquiriesReady = teachingSitesPromise.then(loadInquiries);
+    await stagesReady;
     payload.teachingSites = await teachingSitesPromise;
+    const inquiryResult = await inquiriesReady;
+    payload.summary.inquiries = inquiryResult.count;
+    payload.funnel.inquiries = inquiryResult.count;
+    payload.funnelRecords.inquiries = inquiryResult.records;
+    if (inquiryResult.error) {
+      const message = 'Unable to load inquiry records from Slate. Please try again.';
+      if (payload.filters.site) payload.funnelError = payload.funnelError || message;
+      else payload.summaryError = payload.summaryError || message;
+    }
     return payload;
   }
   const payloadReady = loadFunnel();
