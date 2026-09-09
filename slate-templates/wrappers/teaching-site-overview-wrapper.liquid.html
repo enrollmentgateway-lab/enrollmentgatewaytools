@@ -10,8 +10,8 @@
   remain as fallbacks during rollout.
   Inquiries come from a dedicated inquiry-only JSON service instead (see
   inquiryService below) — the same query the Regional Campus wrapper uses,
-  passing each teaching site's title as its "campus" parameter, plus
-  person_created_date_start/person_created_date_end computed from the
+  passing each teaching site's title through its "teachingsite" parameter,
+  plus person_created_date_start/person_created_date_end computed from the
   selected period's calendar date range (see periodDateRanges) since
   pre-application inquiries aren't reliably tied to an academic term/year.
   Its count is simply the number of records returned, summed across every
@@ -31,9 +31,9 @@
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=&alt_form_type=&int_code=&person_created_date_start=&person_created_date_end=';
   // Same inquiry-only query Regional Campus uses (see
   // slate-templates/wrappers/regional-campus-wrapper.liquid.html), now also
-  // accepting person_created_date_start/person_created_date_end alongside its
-  // existing "campus" parameter.
-  const inquiryService = 'https://enroll.gs.edu/manage/query/run?id=6f920b18-cda2-44cb-94db-edd8adbefb00&cmd=service&output=json&h=e3041f08-339d-4b3d-8559-0eb93760a4b3&campus=&person_created_date_start=&person_created_date_end=';
+  // accepting a "teachingsite" parameter (instead of Regional Campus's
+  // "campus") plus person_created_date_start/person_created_date_end.
+  const inquiryService = 'https://enroll.gs.edu/manage/query/run?id=6f920b18-cda2-44cb-94db-edd8adbefb00&cmd=service&output=json&h=e3041f08-339d-4b3d-8559-0eb93760a4b3&teachingsite=&person_created_date_start=&person_created_date_end=';
   // Calendar bounds for each academic period, keyed "term|year" to match
   // payload.filters — used only for the inquiries request's
   // person_created_date_start/person_created_date_end (see loadInquiries below).
@@ -189,7 +189,7 @@
   async function fetchSiteInquiries(site) {
     const dateRange = inquiryDateRange();
     const url = new URL(inquiryService);
-    url.searchParams.set('campus', site);
+    url.searchParams.set('teachingsite', site);
     url.searchParams.set('person_created_date_start', dateRange.start);
     url.searchParams.set('person_created_date_end', dateRange.end);
     const rows = await requestRows(url, 'Teaching site inquiry query');
