@@ -67,8 +67,6 @@
     .funnel-dashboard .funnel-stage .stage-count { font-family: var(--nb-font-heading); }
 
     .funnel-dashboard .view-tabs { margin-bottom: 20px; }
-    .funnel-dashboard #funnel { cursor: pointer; border-radius: var(--nb-radius); outline-offset: 4px; }
-    .funnel-dashboard #funnel:focus-visible { outline: 2px solid var(--nb-rust); }
     .funnel-dashboard .totals-row td { font-weight: 700; background: rgba(12,15,20,.04); }
 
     .funnel-dashboard .section-divider::before { background: var(--nb-rust); }
@@ -153,7 +151,7 @@
         <div class="stat-cell"><div id="sum-admitted" class="stat-val">0</div><div class="stat-lbl">Admitted</div></div>
       </div>
 
-      <div id="funnel" class="funnel" role="button" tabindex="0" aria-label="View funnel broken down by degree"></div>
+      <div id="funnel" class="funnel"></div>
 
       <div class="section-divider"><div class="section-eyebrow">Awaiting Approval</div><div class="section-heading">Applicants Pending Review</div></div>
       <div class="panel">
@@ -781,8 +779,6 @@
     document.getElementById('funnel-export-records').addEventListener('click', exportFunnelRecords);
     document.getElementById('tab-overview').addEventListener('click', function () { setTab('overview'); });
     document.getElementById('tab-by-degree').addEventListener('click', function () { setTab('by-degree'); });
-    document.getElementById('funnel').addEventListener('click', function () { setTab('by-degree'); });
-    document.getElementById('funnel').addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setTab('by-degree'); } });
     document.getElementById('cumulative').addEventListener('click', function () { setMode('cumulative'); });
     document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
     document.getElementById('portal-home').addEventListener('click', function () {
