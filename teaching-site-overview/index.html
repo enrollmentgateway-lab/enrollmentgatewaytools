@@ -83,7 +83,7 @@
     <section id="overview-view">
     <div class="page-intro">
       <h1 class="intro-heading">Teaching Sites Overview</h1>
-      <p class="intro-subtitle">Total record counts by teaching site, filterable by academic period.</p>
+      <p class="intro-subtitle">Student counts by teaching site, filterable by academic period.</p>
     </div>
 
     <div class="controls-row">
@@ -109,7 +109,7 @@
     </button>
     <div id="inactive-list" class="inactive-list" hidden><ul id="inactive-items"></ul></div>
 
-    <div class="section-divider"><div class="section-eyebrow">Overview</div><div class="section-heading">Records by Teaching Site</div></div>
+    <div class="section-divider"><div class="section-eyebrow">Overview</div><div class="section-heading">Students by Teaching Site</div></div>
     <div id="site-bars" class="bar-chart"></div>
     </section>
 
@@ -211,6 +211,16 @@
         .sort(function (a, b) { return b.count - a.count || a.title.localeCompare(b.title); });
     }
 
+    function groupByTeachingSite(records) {
+      const counts = new Map();
+      (Array.isArray(records) ? records : []).forEach(function (record) {
+        const title = ui.text(record.teachingSite, '').trim();
+        if (title) counts.set(title, (counts.get(title) || 0) + 1);
+      });
+      return Array.from(counts, function (entry) { return { title: entry[0], count: entry[1] }; })
+        .sort(function (a, b) { return b.count - a.count || a.title.localeCompare(b.title); });
+    }
+
     function render(payload) {
       data = payload || {};
       data.filters = data.filters || {};
@@ -246,7 +256,7 @@
       document.getElementById('overview-students').textContent = summaryUnavailable ? '\u2014' : ui.number(data.summary.students).toLocaleString();
       ui.setText('record-total', recordCount.toLocaleString());
       renderInactive(inactive);
-      renderBars(grouped);
+      renderBars(groupByTeachingSite(data.funnelRecords.students));
     }
 
     function renderSiteDetail() {
@@ -268,7 +278,7 @@
 
     function renderBars(grouped) {
       const root = document.getElementById('site-bars'); root.replaceChildren();
-      if (!grouped.length) { root.appendChild(ui.emptyState('No teaching site data available.')); return; }
+      if (!grouped.length) { root.appendChild(ui.emptyState('No student data available.')); return; }
       const max = grouped[0].count || 1;
       grouped.forEach(function (item) {
         const row = document.createElement('div'); row.className = 'bar-row clickable-site'; row.tabIndex = 0; row.setAttribute('role', 'link'); row.setAttribute('aria-label', 'Open funnel for ' + item.title);
