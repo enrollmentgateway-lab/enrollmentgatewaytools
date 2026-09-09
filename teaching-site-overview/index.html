@@ -211,13 +211,8 @@
         .sort(function (a, b) { return b.count - a.count || a.title.localeCompare(b.title); });
     }
 
-    function groupByTeachingSite(records) {
-      const counts = new Map();
-      (Array.isArray(records) ? records : []).forEach(function (record) {
-        const title = ui.text(record.teachingSite, '').trim();
-        if (title) counts.set(title, (counts.get(title) || 0) + 1);
-      });
-      return Array.from(counts, function (entry) { return { title: entry[0], count: entry[1] }; })
+    function sortGrouped(list) {
+      return (Array.isArray(list) ? list.slice() : [])
         .sort(function (a, b) { return b.count - a.count || a.title.localeCompare(b.title); });
     }
 
@@ -229,6 +224,7 @@
       data.funnel = data.funnel || {};
       data.funnelRecords = data.funnelRecords || {};
       data.funnelRecordErrors = data.funnelRecordErrors || {};
+      data.studentsBySite = Array.isArray(data.studentsBySite) ? data.studentsBySite : [];
       data.teachingSites = Array.isArray(data.teachingSites) ? data.teachingSites : [];
       const detailActive = Boolean(data.filters.site);
 
@@ -256,7 +252,7 @@
       document.getElementById('overview-students').textContent = summaryUnavailable ? '\u2014' : ui.number(data.summary.students).toLocaleString();
       ui.setText('record-total', recordCount.toLocaleString());
       renderInactive(inactive);
-      renderBars(groupByTeachingSite(data.funnelRecords.students));
+      renderBars(sortGrouped(data.studentsBySite.filter(function (item) { return item.count > 0; })));
     }
 
     function renderSiteDetail() {

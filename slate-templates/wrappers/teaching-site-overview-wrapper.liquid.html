@@ -17,6 +17,13 @@
   Its count is simply the number of records returned, summed across every
   known teaching site in overview scope (or just the selected site in detail
   view) — there is no separate lightweight inquiry-count query.
+  The overview's per-site student counts (payload.studentsBySite) come from
+  the same countsService query the site-detail funnel's "Students" stat uses,
+  called once per known teaching site with its own "site" parameter — not
+  from grouping the population-service detail rows by their free-text
+  per_teachingsite field. That field can be blank or inconsistently
+  cased/spelled on individual records, so grouping by it under-counts and
+  mismatches the authoritative per-site count Slate returns for "site".
 -->
 <div id="teachingSiteOverviewData" style="display:none">
   <div class="records">{% for record in teaching_sites_persons %}<div class="record"><span class="title">{{ record.title | escape }}</span></div>{% endfor %}</div>
@@ -92,6 +99,7 @@
     funnelRecords: { inquiries:[], applications:[], students:[] },
     funnelRecordErrors: {},
     records: Array.from(root.querySelectorAll('.record')).map(node => ({ title: read(node, 'title') })),
+    studentsBySite: [],
     teachingSites: []
   };
   const allowedParams = new Set(['term', 'year', 'site']);
@@ -225,6 +233,28 @@
     const failedCount = results.filter(result => result.error).length;
     return { count:records.length, records:records, error:failedCount > 0 && failedCount === targets.length };
   }
+  async function fetchSiteStudentCount(site) {
+    const url = new URL(countsService);
+    url.searchParams.set('status', funnelStatuses.students);
+    url.searchParams.set('year', payload.filters.year);
+    url.searchParams.set('term', payload.filters.term);
+    url.searchParams.set('site', site);
+    const rows = await requestRows(url, 'Teaching site student count query');
+    return countRowsForSite(rows, site);
+  }
+  async function loadStudentCountsBySite(sites) {
+    if (!sites.length) return { counts:[], error:false };
+    const results = await Promise.all(sites.map(async site => {
+      try {
+        return { site:site, count:await fetchSiteStudentCount(site), error:false };
+      } catch (error) {
+        console.error('Teaching site student count query failed for ' + site + '.', error);
+        return { site:site, count:0, error:true };
+      }
+    }));
+    const failedCount = results.filter(result => result.error).length;
+    return { counts:results.map(result => ({ title:result.site, count:result.count })), error:failedCount > 0 && failedCount === sites.length };
+  }
   async function loadStage(stage) {
     const countUrl = new URL(countsService);
     countUrl.searchParams.set('status', funnelStatuses[stage]);
@@ -286,6 +316,9 @@
       }
     })();
     const inquiriesReady = teachingSitesPromise.then(loadInquiries);
+    const studentsBySiteReady = payload.filters.site
+      ? Promise.resolve({ counts:[], error:false })
+      : teachingSitesPromise.then(loadStudentCountsBySite);
     await stagesReady;
     payload.teachingSites = await teachingSitesPromise;
     const inquiryResult = await inquiriesReady;
@@ -296,6 +329,11 @@
       const message = 'Unable to load inquiry records from Slate. Please try again.';
       if (payload.filters.site) payload.funnelError = payload.funnelError || message;
       else payload.summaryError = payload.summaryError || message;
+    }
+    const studentsBySiteResult = await studentsBySiteReady;
+    payload.studentsBySite = studentsBySiteResult.counts;
+    if (studentsBySiteResult.error) {
+      payload.summaryError = payload.summaryError || 'Unable to load per-site student counts from Slate. Please try again.';
     }
     return payload;
   }
