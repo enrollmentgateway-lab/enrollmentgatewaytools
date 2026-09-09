@@ -13,17 +13,32 @@ paths" below).
 | `analytics/index.html` (Portal Analytics) | New brand, permanent (no toggle) |
 | `index.html` (homepage) — header, hero, tab bar | New brand, permanent |
 | `index.html` — Reports tab (Funnel Overview, Teaching Sites, Regional Campus Portal, Event Effectiveness, Public Event Registrants) | New brand |
-| `index.html` — Tools tab (BetterQuery, Record Lookup — moved here from Reports) | Current brand, unchanged |
-| `index.html` — Training Materials tab content | Current brand, unchanged |
+| `index.html` — Tools tab (BetterQuery, Record Lookup, Slate Idea Box) | New brand |
+| `index.html` — Training Materials tab (Slate Concepts) | New brand |
 | Every other dashboard (`funnel-overview/`, `teaching-site-overview/`, etc.) | Current brand, unchanged |
 
 The homepage tabs were reorganized alongside the rebrand: what was "Other"
-(a single report-list item) is now **Tools**, holding BetterQuery and Record
-Lookup — the two things deliberately left on the current brand — and Public
-Event Registrants moved from that tab into Reports, picking up the new-brand
-card treatment as card 05 since it now sits in that grid. The old
-`.report-list`/`.report-item` styles were removed as dead code once nothing
-referenced them.
+(a single report-list item) is now **Tools**, and Public Event Registrants
+moved from that tab into Reports, picking up the new-brand card treatment as
+card 05 since it now sits in that grid. The old `.report-list`/`.report-item`
+styles were removed as dead code once nothing referenced them.
+
+The homepage is now **fully on the new brand** — the Tools and Training
+Materials cards were the last holdouts and have since been converted, so
+every card in every tab shares one treatment (numbered index in Tiempos
+Fine, uppercase Montserrat title over a short rust rule, gold CTA, 4px
+corners, hairline `--nb-border`). Two consequences:
+
+- The per-card `.tool-card--gs2026` variant class had no exclusions left to
+  protect, so it was collapsed back into a single `.tool-card` rule and the
+  HTML no longer carries the variant class.
+- The current-brand card chrome it used to sit on top of — the `.tool-icon`
+  emoji tiles (whose `#eef4f4`/`--gold-light`/`#eaeff5` backgrounds were
+  off-palette invented tints anyway), the `.tool-card::before` accent bar,
+  and the `:nth-child(3n+2)`/`(3n+3)` per-card accent colors — went away as
+  dead code. The emoji icons were replaced by the same `01`/`02`/`03`
+  numbered index the Reports cards use; numbering restarts per grid, so each
+  tab counts from `01`.
 
 Started as an analytics-only toggle test; both the toggle and the "test"
 framing are gone now — these are live, one-way changes. When extending the
@@ -34,8 +49,8 @@ actually do.
 ## Current (production) brand — unchanged (where still in use)
 
 Defined in `assets/dashboard.css`, shared by every dashboard page that
-hasn't been moved to the new brand yet, plus the excluded elements on the
-homepage (the Tools tab and Training Materials tab content).
+hasn't been moved to the new brand yet. Nothing on the homepage still
+renders in this brand.
 
 | Role | Hex |
 |---|---|
@@ -181,15 +196,16 @@ on the page.
 ### Rolling this out to a shared page (index.html and beyond)
 
 `index.html` (the homepage) loads the shared `assets/dashboard.css`, and
-reuses its classes (`.gs-header`, `.page-intro`, `.tool-card`, `.report-item`,
-...) — the same classes every other dashboard page, and the excluded
-BetterQuery/Record Lookup cards on this very page, depend on for their
-*current*-brand look. **Never redefine `assets/dashboard.css`'s shared
+reuses its classes (`.gs-header`, `.page-intro`, ...) — the same classes
+every other dashboard page depends on for its *current*-brand look. The
+homepage itself no longer has any excluded elements, but the rule below is
+what keeps the *other* pages safe, and it's the pattern to follow on the
+next shared page you convert. **Never redefine `assets/dashboard.css`'s shared
 `--navy`/`--teal`/`--gold`/`--border`/`--radius`/etc.**, even by adding a
 `:root` override further down a page's own stylesheet — those vars cascade
 to every element using them on that page, including ones you didn't mean to
-touch (this is exactly how BetterQuery/Record Lookup could accidentally end
-up re-themed).
+touch (this is exactly how the then-excluded BetterQuery/Record Lookup cards
+could accidentally have ended up re-themed).
 
 Instead:
 
@@ -203,12 +219,14 @@ Instead:
    `assets/dashboard.css`'s bare `.gs-header` rule because two classes beat
    one, regardless of file order).
 3. For an excluded element that shares a base class with elements you ARE
-   changing (e.g. `.tool-card` used by both the 4 redone report cards and
-   the 2 excluded ones), add a second, distinguishing class instead of
-   touching the base class — `.tool-card--gs2026` — and put every new-brand
-   rule behind that, never behind bare `.tool-card`. The excluded cards then
-   render from the untouched base rules exactly as before, with zero risk of
-   drift.
+   changing, add a second, distinguishing class instead of touching the base
+   class, and put every new-brand rule behind that, never behind the bare
+   base class. The excluded elements then render from the untouched base
+   rules exactly as before, with zero risk of drift. (The homepage did this
+   with `.tool-card--gs2026` while its Tools/Training cards were excluded;
+   once they were converted the variant was folded back into `.tool-card`.
+   Retire the variant class the same way when a page's last exclusion goes —
+   a variant guarding nothing is just a second name for the base.)
 
 This is slower to write than a blanket `:root` override, but it's the only
 way to guarantee an excluded page or card is actually unaffected — verify by

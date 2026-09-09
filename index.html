@@ -81,87 +81,47 @@
     .hub-tab:focus-visible { outline: 3px solid rgba(8,124,120,.3); outline-offset: 2px; }
     .tab-panel[hidden] { display: none !important; }
 
+    /* ---- Cards (GS 2026 brand) ----
+       Numbered index, uppercase Montserrat title over a short rust rule, gold
+       CTA. Every card in every tab now uses this treatment, so there are no
+       per-card exclusions left and the old .tool-card--gs2026 variant (plus
+       the current-brand .tool-icon tiles and nth-child accent bars it sat on
+       top of) is gone as dead code. Colors/radius/fonts come from the
+       namespaced --nb-* vars above; nothing here reads dashboard.css's shared
+       --navy/--teal/--gold/--border/--radius. */
     .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 16px; }
     .tool-card {
-      position: relative;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
       min-height: 208px;
       padding: 26px 26px 22px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border: 1px solid var(--nb-border);
+      border-radius: var(--nb-radius);
       color: inherit;
       text-decoration: none;
       background: var(--white);
-      box-shadow: 0 5px 18px rgba(19,42,70,.07);
       transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
     }
-    .tool-card::before {
-      content: '';
-      position: absolute;
-      top: 0; right: 0; left: 0;
-      height: 3px;
-      background: var(--card-accent, var(--teal));
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform .22s ease;
-    }
-    .tool-card:nth-child(3n+2) { --card-accent: var(--gold); }
-    .tool-card:nth-child(3n+3) { --card-accent: #52729a; }
     .tool-card:hover, .tool-card:focus-visible {
-      border-color: rgba(8,124,120,.5);
-      box-shadow: 0 14px 30px rgba(19,42,70,.13);
-      transform: translateY(-3px);
-    }
-    .tool-card:hover::before, .tool-card:focus-visible::before { transform: scaleX(1); }
-    .tool-card:focus-visible { outline: 3px solid rgba(8,124,120,.28); outline-offset: 3px; }
-    .tool-icon {
-      display: grid;
-      place-items: center;
-      width: 44px;
-      height: 44px;
-      margin-bottom: 16px;
-      border-radius: 11px;
-      font-size: 1.3rem;
-      line-height: 1;
-      background: #eef4f4;
-    }
-    .tool-card:nth-child(3n+2) .tool-icon { background: var(--gold-light); }
-    .tool-card:nth-child(3n+3) .tool-icon { background: #eaeff5; }
-    .tool-title { margin: 0 0 9px; color: var(--navy); font: 700 1.22rem/1.25 Georgia, serif; letter-spacing: -.01em; }
-    .tool-copy { flex: 1; margin: 0 0 18px; color: var(--muted); font-size: .85rem; line-height: 1.55; }
-    .tool-open { display: inline-flex; align-items: center; gap: 7px; color: var(--teal); font-size: .8rem; font-weight: 800; }
-    .tool-open span { transition: transform .2s ease; }
-    .tool-card:hover .tool-open span { transform: translateX(4px); }
-
-    /* GS 2026 brand refresh — Reports tab cards, excluding BetterQuery and
-       Record Lookup (those two keep the .tool-card base styling above). */
-    .tool-card--gs2026 {
-      border-color: var(--nb-border);
-      border-radius: var(--nb-radius);
-      box-shadow: none;
-    }
-    .tool-card--gs2026::before { content: none; }
-    .tool-card--gs2026:hover, .tool-card--gs2026:focus-visible {
       border-color: var(--nb-rust);
       box-shadow: 0 10px 24px rgba(12,15,20,.1);
+      transform: translateY(-3px);
     }
-    .tool-card--gs2026:focus-visible { outline-color: rgba(35,64,72,.35); }
+    .tool-card:focus-visible { outline: 3px solid rgba(35,64,72,.35); outline-offset: 3px; }
     .tool-index {
       display: block;
       margin-bottom: 14px;
       color: rgba(12,15,20,.32);
       font: 700 1.6rem/1 var(--nb-font-heading);
     }
-    .tool-card--gs2026 .tool-title {
+    .tool-title {
       margin: 0;
       color: var(--nb-black);
       font: 700 1.02rem/1.3 var(--nb-font-subheading);
       letter-spacing: .02em;
       text-transform: uppercase;
     }
-    .tool-card--gs2026 .tool-title::after {
+    .tool-title::after {
       content: '';
       display: block;
       margin-top: 12px;
@@ -169,16 +129,25 @@
       height: 3px;
       background: var(--nb-rust);
     }
-    .tool-card--gs2026 .tool-copy {
-      margin-top: 14px;
+    .tool-copy {
+      flex: 1;
+      margin: 14px 0 18px;
       color: var(--nb-muted);
       font-family: var(--nb-font-body);
+      font-size: .85rem;
+      line-height: 1.55;
     }
-    .tool-card--gs2026 .tool-open {
+    .tool-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       color: var(--nb-gold);
       font-family: var(--nb-font-subheading);
+      font-size: .8rem;
       font-weight: 700;
     }
+    .tool-open span { transition: transform .2s ease; }
+    .tool-card:hover .tool-open span { transform: translateX(4px); }
 
     @media (max-width: 720px) {
       .hub-tabs { width: 100%; }
@@ -208,31 +177,31 @@
 
     <section id="reports-panel" class="tab-panel" role="tabpanel" aria-labelledby="reports-tab">
       <div class="tool-grid">
-        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/directors_portal">
+        <a class="tool-card" href="https://enroll.gs.edu/portal/directors_portal">
           <span class="tool-index" aria-hidden="true">01</span>
           <h2 class="tool-title">Funnel Overview</h2>
           <p class="tool-copy">Track applicant progression through inquiry, application, approval, and admission. Monitor conversion rates and find the bottlenecks.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/teachingsite">
+        <a class="tool-card" href="https://enroll.gs.edu/portal/teachingsite">
           <span class="tool-index" aria-hidden="true">02</span>
           <h2 class="tool-title">Teaching Sites</h2>
           <p class="tool-copy">Compare record volume across every active teaching site, then drill into a single site's inquiry-to-student funnel.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/regional_campus">
+        <a class="tool-card" href="https://enroll.gs.edu/portal/regional_campus">
           <span class="tool-index" aria-hidden="true">03</span>
           <h2 class="tool-title">Regional Campus Portal</h2>
           <p class="tool-copy">Explore enrollment funnels and student activity across Gateway Seminary's regional campuses.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/event_effectiveness">
+        <a class="tool-card" href="https://enroll.gs.edu/portal/event_effectiveness">
           <span class="tool-index" aria-hidden="true">04</span>
           <h2 class="tool-title">Event Effectiveness</h2>
           <p class="tool-copy">See what each recruiting event cost and what it returned — registrants, inquiries, applicants, and students per dollar spent.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
-        <a class="tool-card tool-card--gs2026" href="https://enroll.gs.edu/portal/public_internal_events">
+        <a class="tool-card" href="https://enroll.gs.edu/portal/public_internal_events">
           <span class="tool-index" aria-hidden="true">05</span>
           <h2 class="tool-title">Public Event Registrants</h2>
           <p class="tool-copy">Review public events by start date and compare their registration totals.</p>
@@ -244,19 +213,19 @@
     <section id="tools-panel" class="tab-panel" role="tabpanel" aria-labelledby="tools-tab" hidden>
       <div class="tool-grid">
         <a class="tool-card" href="https://enroll.gs.edu/portal/better_query">
-          <span class="tool-icon" aria-hidden="true">&#128269;</span>
+          <span class="tool-index" aria-hidden="true">01</span>
           <h2 class="tool-title">BetterQuery</h2>
           <p class="tool-copy">Ask for the records you need in plain language and get a Slate query back, already run.</p>
           <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="https://enroll.gs.edu/portal/record_lookup">
-          <span class="tool-icon" aria-hidden="true">&#128270;</span>
+          <span class="tool-index" aria-hidden="true">02</span>
           <h2 class="tool-title">Record Lookup</h2>
           <p class="tool-copy">Search by first name, last name, or student ID, then open that record's full profile and application history.</p>
           <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="idea-box/">
-          <span class="tool-icon" aria-hidden="true">&#128161;</span>
+          <span class="tool-index" aria-hidden="true">03</span>
           <h2 class="tool-title">Slate Idea Box</h2>
           <p class="tool-copy">Suggest a Slate improvement, drop a reference link, and upvote what matters most.</p>
           <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
@@ -267,7 +236,7 @@
     <section id="training-panel" class="tab-panel" role="tabpanel" aria-labelledby="training-tab" hidden>
       <div class="tool-grid">
         <a class="tool-card" href="https://claude.ai/code/artifact/0810df6f-bc13-4c9c-a776-fbdbd229d2f3" target="_blank" rel="noopener">
-          <span class="tool-icon" aria-hidden="true">&#128218;</span>
+          <span class="tool-index" aria-hidden="true">01</span>
           <h2 class="tool-title">Slate Concepts</h2>
           <p class="tool-copy">Learn the record, audience, and reporting concepts that make Slate requests clearer and results easier to interpret.</p>
           <span class="tool-open">Start lesson <span aria-hidden="true">&rarr;</span></span>
