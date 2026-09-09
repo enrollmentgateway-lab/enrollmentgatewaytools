@@ -66,6 +66,11 @@
     .funnel-dashboard .funnel-stage .stage-name { font-family: var(--nb-font-subheading); }
     .funnel-dashboard .funnel-stage .stage-count { font-family: var(--nb-font-heading); }
 
+    .funnel-dashboard .view-tabs { margin-bottom: 20px; }
+    .funnel-dashboard #funnel { cursor: pointer; border-radius: var(--nb-radius); outline-offset: 4px; }
+    .funnel-dashboard #funnel:focus-visible { outline: 2px solid var(--nb-rust); }
+    .funnel-dashboard .totals-row td { font-weight: 700; background: rgba(12,15,20,.04); }
+
     .funnel-dashboard .section-divider::before { background: var(--nb-rust); }
     .funnel-dashboard .section-eyebrow { color: var(--nb-teal); font-family: var(--nb-font-subheading); }
     .funnel-dashboard .section-heading { color: var(--nb-black); font-family: var(--nb-font-heading); }
@@ -135,25 +140,42 @@
       </div>
     </div>
 
-    <div class="stat-bar">
-      <div class="stat-cell"><div id="sum-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries</div></div>
-      <div class="stat-cell"><div id="sum-applications" class="stat-val">0</div><div class="stat-lbl">Applications</div></div>
-      <div class="stat-cell"><div id="sum-awaiting" class="stat-val">0</div><div class="stat-lbl">Awaiting Approval</div></div>
-      <div class="stat-cell"><div id="sum-admitted" class="stat-val">0</div><div class="stat-lbl">Admitted</div></div>
+    <div class="toggle-group view-tabs" role="tablist" aria-label="Funnel view">
+      <button id="tab-overview" class="toggle-btn active" type="button" role="tab" aria-selected="true">Overview</button>
+      <button id="tab-by-degree" class="toggle-btn" type="button" role="tab" aria-selected="false">By Degree</button>
     </div>
 
-    <div id="funnel" class="funnel"></div>
+    <div id="panel-overview" class="tab-panel">
+      <div class="stat-bar">
+        <div class="stat-cell"><div id="sum-inquiries" class="stat-val">0</div><div class="stat-lbl">Inquiries</div></div>
+        <div class="stat-cell"><div id="sum-applications" class="stat-val">0</div><div class="stat-lbl">Applications</div></div>
+        <div class="stat-cell"><div id="sum-awaiting" class="stat-val">0</div><div class="stat-lbl">Awaiting Approval</div></div>
+        <div class="stat-cell"><div id="sum-admitted" class="stat-val">0</div><div class="stat-lbl">Admitted</div></div>
+      </div>
 
-    <div class="section-divider"><div class="section-eyebrow">Awaiting Approval</div><div class="section-heading">Applicants Pending Review</div></div>
-    <div class="panel">
-      <table class="data-table">
-        <thead><tr><th>Name</th><th>Program</th><th>Email</th><th><button id="sort-status" class="toggle-btn" type="button" style="color:#fff;padding:0">Status ↕</button></th></tr></thead>
-        <tbody id="awaiting-table"></tbody>
-      </table>
-      <div class="pagination">
-        <span id="page-info"></span>
-        <div id="page-buttons" class="pagination-buttons"></div>
-        <div><label class="ctrl-label" for="per-page">Rows</label> <select id="per-page" class="control-select" style="min-width:75px;padding:6px 8px"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></div>
+      <div id="funnel" class="funnel" role="button" tabindex="0" aria-label="View funnel broken down by degree"></div>
+
+      <div class="section-divider"><div class="section-eyebrow">Awaiting Approval</div><div class="section-heading">Applicants Pending Review</div></div>
+      <div class="panel">
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Program</th><th>Email</th><th><button id="sort-status" class="toggle-btn" type="button" style="color:#fff;padding:0">Status ↕</button></th></tr></thead>
+          <tbody id="awaiting-table"></tbody>
+        </table>
+        <div class="pagination">
+          <span id="page-info"></span>
+          <div id="page-buttons" class="pagination-buttons"></div>
+          <div><label class="ctrl-label" for="per-page">Rows</label> <select id="per-page" class="control-select" style="min-width:75px;padding:6px 8px"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-by-degree" class="tab-panel" hidden>
+      <div class="section-divider"><div class="section-eyebrow">Breakdown</div><div class="section-heading">Funnel by Degree</div></div>
+      <div class="panel">
+        <table class="data-table">
+          <thead><tr><th>Degree Program</th><th>Inquiries</th><th>Applied</th><th>Awaiting Approval</th><th>Admitted</th><th>Total</th></tr></thead>
+          <tbody id="degree-table-body"></tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -176,6 +198,7 @@
     let currentPage = 1;
     let perPage = 25;
     let statusDirection = 0;
+    let activeTab = 'overview';
     const bridge = window.DashboardBridge.create('funnel-overview', render);
 
     function render(payload) {
@@ -193,7 +216,7 @@
       ui.setText('sum-applications', ui.number(data.counts.applications).toLocaleString());
       ui.setText('sum-awaiting', ui.number(data.counts.awaiting).toLocaleString());
       ui.setText('sum-admitted', ui.number(data.counts.admitted).toLocaleString());
-      renderFunnel(); renderActions(); renderAwaiting(); ui.showApp();
+      renderFunnel(); renderActions(); renderAwaiting(); renderDegreeBreakdown(); ui.showApp();
     }
 
     function populatePeriod() {
@@ -616,6 +639,71 @@
       downloadXlsxBuffer(period.label + '-funnel-records', buffer);
     }
 
+    function setTab(tab) {
+      activeTab = tab;
+      const overviewActive = tab === 'overview';
+      document.getElementById('tab-overview').classList.toggle('active', overviewActive);
+      document.getElementById('tab-overview').setAttribute('aria-selected', String(overviewActive));
+      document.getElementById('tab-by-degree').classList.toggle('active', !overviewActive);
+      document.getElementById('tab-by-degree').setAttribute('aria-selected', String(!overviewActive));
+      document.getElementById('panel-overview').hidden = !overviewActive;
+      document.getElementById('panel-by-degree').hidden = overviewActive;
+      bridge.resize();
+    }
+
+    function buildDegreeBreakdown() {
+      const stages = [
+        { key:'inquiries', records:data.funnelRecords.inquiries },
+        { key:'applications', records:data.funnelRecords.applications },
+        { key:'awaiting', records:data.awaiting },
+        { key:'admitted', records:data.funnelRecords.admitted }
+      ];
+      const byProgram = {};
+      const order = [];
+      stages.forEach(function (stage) {
+        stage.records.forEach(function (record) {
+          const raw = String(record.program == null ? '' : record.program).trim();
+          const label = isBlankProgram(raw) ? 'No Program Listed' : raw;
+          if (!byProgram[label]) { byProgram[label] = { inquiries:0, applications:0, awaiting:0, admitted:0 }; order.push(label); }
+          byProgram[label][stage.key] += 1;
+        });
+      });
+      order.sort(function (a, b) {
+        if (a === 'No Program Listed') return 1;
+        if (b === 'No Program Listed') return -1;
+        return a.localeCompare(b);
+      });
+      return order.map(function (label) {
+        const counts = byProgram[label];
+        const total = counts.inquiries + counts.applications + counts.awaiting + counts.admitted;
+        return { program:label, inquiries:counts.inquiries, applications:counts.applications, awaiting:counts.awaiting, admitted:counts.admitted, total:total };
+      });
+    }
+
+    function renderDegreeBreakdown() {
+      const rows = buildDegreeBreakdown();
+      const body = document.getElementById('degree-table-body'); body.replaceChildren();
+      if (!rows.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 6; cell.appendChild(ui.emptyState('No funnel records available for this period.')); return; }
+      const totals = { inquiries:0, applications:0, awaiting:0, admitted:0, total:0 };
+      rows.forEach(function (record) {
+        const row = body.insertRow();
+        row.insertCell().textContent = record.program;
+        row.insertCell().textContent = record.inquiries.toLocaleString();
+        row.insertCell().textContent = record.applications.toLocaleString();
+        row.insertCell().textContent = record.awaiting.toLocaleString();
+        row.insertCell().textContent = record.admitted.toLocaleString();
+        row.insertCell().textContent = record.total.toLocaleString();
+        totals.inquiries += record.inquiries; totals.applications += record.applications; totals.awaiting += record.awaiting; totals.admitted += record.admitted; totals.total += record.total;
+      });
+      const totalRow = body.insertRow(); totalRow.className = 'totals-row';
+      totalRow.insertCell().textContent = 'Total';
+      totalRow.insertCell().textContent = totals.inquiries.toLocaleString();
+      totalRow.insertCell().textContent = totals.applications.toLocaleString();
+      totalRow.insertCell().textContent = totals.awaiting.toLocaleString();
+      totalRow.insertCell().textContent = totals.admitted.toLocaleString();
+      totalRow.insertCell().textContent = totals.total.toLocaleString();
+    }
+
     function dismissedIds() {
       try { const value = JSON.parse(localStorage.getItem('funnel-dismissed-actions') || '[]'); return Array.isArray(value) ? value : []; }
       catch (_) { return []; }
@@ -694,6 +782,10 @@
     });
     document.getElementById('funnel-export').addEventListener('click', exportFunnel);
     document.getElementById('funnel-export-records').addEventListener('click', exportFunnelRecords);
+    document.getElementById('tab-overview').addEventListener('click', function () { setTab('overview'); });
+    document.getElementById('tab-by-degree').addEventListener('click', function () { setTab('by-degree'); });
+    document.getElementById('funnel').addEventListener('click', function () { setTab('by-degree'); });
+    document.getElementById('funnel').addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setTab('by-degree'); } });
     document.getElementById('cumulative').addEventListener('click', function () { setMode('cumulative'); });
     document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
     document.getElementById('portal-home').addEventListener('click', function () {
