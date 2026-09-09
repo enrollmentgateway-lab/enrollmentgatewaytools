@@ -722,7 +722,7 @@
     }
 
     function sortedAwaiting() {
-      const records = data.awaiting.slice();
+      const records = data.awaiting.filter(function (record) { return ui.text(record.status, '').trim() === 'Awaiting Approval'; });
       if (statusDirection) records.sort(function (a, b) { return statusDirection * ui.text(a.status, '').localeCompare(ui.text(b.status, '')); });
       return records;
     }
