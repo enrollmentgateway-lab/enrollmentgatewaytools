@@ -188,7 +188,10 @@
       // two stages).
       const dateRange = inquiryDateRange();
       const recordsUrl = new URL(recordsService);
-      recordsUrl.searchParams.set('status', funnelStatuses.inquiries);
+      // person_status on this query is documented as "Inquiry" (capitalized),
+      // unlike the lowercase applicant/student values used below — passing
+      // lowercase "inquiry" matched nothing (see queryomatic/options.md).
+      recordsUrl.searchParams.set('status', 'Inquiry');
       recordsUrl.searchParams.set('term', '');
       recordsUrl.searchParams.set('year', '');
       recordsUrl.searchParams.set('person_created_date_start', dateRange.start);
