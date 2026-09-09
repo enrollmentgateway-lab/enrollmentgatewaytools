@@ -8,23 +8,30 @@
 <script defer src="../assets/portal-analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Semibold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'Tiempos Fine'; src: url('../assets/fonts/TiemposFine-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+  /* GS 2026 brand refresh - see ../BRANDGUIDE.md. Colors are the guide's 7
+     swatches only, plus the neutral canvas/border/muted values established by
+     analytics/index.html. Type is the three-tier Tiempos Fine / Montserrat /
+     Open Sans system; JetBrains Mono stays for the options.md editor, where a
+     monospace is functional rather than a brand choice. Radii are a flat 4px. */
   :root {
-    --ink: #12172b;
-    --ink-soft: #5b6072;
-    --line: #e1e3ea;
+    --ink: #0c0f14;
+    --ink-soft: #5c6670;
+    --line: #dcd8d0;
     --panel: #ffffff;
-    --bg: #f5f6f8;
-    --accent: #f5a623;       /* asking → parsing */
-    --accent-dark: #c9860f;
-    --accent-soft: #fdf1da;
-    --teal: #1f9d7c;         /* results / positive */
-    --teal-dark: #157a61;
-    --teal-soft: #e3f5ef;
+    --bg: #f4f2ee;
+    --accent: #d3a422;       /* gold: asking -> parsing */
+    --teal: #234048;         /* results / positive */
+    --red: #c44329;
+    --radius: 4px;
     --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-    --display: "Space Grotesk", var(--sans);
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --display: "Tiempos Fine", Georgia, serif;
+    --subhead: "Montserrat", "Segoe UI", sans-serif;
+    --sans: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -56,7 +63,7 @@
   .rail .seg.pulsing { animation: pulseSeg 1.1s ease-in-out infinite; }
   @keyframes pulseSeg { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-  @keyframes drawUnderline { from { width: 0; } to { width: 100%; } }
+  @keyframes drawUnderline { from { width: 0; } to { width: 48px; } }
   @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes chipIn { from { opacity: 0; transform: translateY(4px) scale(0.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @media (prefers-reduced-motion: reduce) {
@@ -75,14 +82,15 @@
     margin: 0;
     color: var(--ink);
   }
+  /* Short gold rule under the headline, per the guide's divider-line pattern
+     (a fixed ~48px, not a proportion of the title width). */
   .title-mark::after {
     content: "";
     position: absolute;
-    left: 2px; bottom: -6px;
-    height: 4px;
-    width: 46%;
+    left: 2px; bottom: -8px;
+    height: 3px;
+    width: 48px;
     background: var(--accent);
-    border-radius: 2px;
     animation: drawUnderline 0.7s cubic-bezier(.2,.8,.2,1) 0.15s both;
   }
   .sub { color: var(--ink-soft); font-size: 0.92rem; margin: 0.9rem 0 1.6rem; }
@@ -90,30 +98,33 @@
   .panel {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: var(--radius);
     padding: 1.3rem;
     margin-bottom: 1.1rem;
     animation: fadeSlideUp 0.3s ease both;
   }
-  .panel.notice { background: var(--accent-soft); border-color: #f2d9a3; }
-  .panel h3 { font-family: var(--display); font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem; }
+  /* The zero-result notice reads as "flagged" through a gold border on the
+     canvas tone; the palette has no light amber to fill it with. */
+  .panel.notice { background: var(--bg); border-color: var(--accent); }
+  .panel h3 { margin: 0 0 0.5rem; font-family: var(--subhead); font-size: 0.92rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 
   label {
     display: block;
-    font-size: 0.74rem;
-    font-weight: 600;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     margin-bottom: 0.4rem;
+    color: var(--ink-soft);
+    font-family: var(--subhead);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   textarea, input[type=text], input[type=password] {
     width: 100%;
     font-family: var(--sans);
     font-size: 0.95rem;
     padding: 0.7rem 0.85rem;
-    border: 1.5px solid var(--line);
-    border-radius: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     resize: vertical;
     background: #fff;
     color: var(--ink);
@@ -122,43 +133,45 @@
   textarea.mono { font-family: var(--mono); font-size: 0.82rem; }
   textarea:focus, input:focus {
     outline: none;
-    border-color: var(--ink);
-    box-shadow: 0 0 0 3px rgba(18, 23, 43, 0.08);
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(35, 64, 72, 0.14);
   }
 
   button {
-    font-family: var(--sans);
-    font-size: 0.9rem;
-    font-weight: 600;
     padding: 0.62rem 1.15rem;
-    border-radius: 10px;
-    border: 1.5px solid var(--ink);
-    background: #fff;
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
     color: var(--ink);
+    background: #fff;
     cursor: pointer;
     white-space: nowrap;
+    font-family: var(--subhead);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
     transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
   button:hover:not(:disabled) { background: var(--bg); }
   button:active:not(:disabled) { transform: translateY(1px); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  /* Flat gold, square corners, no offset shadow - the pill-and-ledge styling
+     was the old portal's language, not this brand's. */
   #primaryBtn {
-    background: var(--accent);
-    border-color: var(--accent-dark);
-    color: var(--ink);
-    border-radius: 999px;
     padding: 0.65rem 1.5rem;
-    box-shadow: 0 2px 0 var(--accent-dark);
+    border-color: var(--accent);
+    color: var(--ink);
+    background: var(--accent);
   }
-  #primaryBtn:hover:not(:disabled) { background: #f7b348; }
-  #primaryBtn:active:not(:disabled) { box-shadow: 0 0 0 var(--accent-dark); transform: translateY(2px); }
+  #primaryBtn:hover:not(:disabled) { border-color: var(--ink); background: var(--ink); color: #fff; }
+  #primaryBtn:active:not(:disabled) { transform: translateY(1px); }
 
   button.secondary { border-color: var(--line); color: var(--ink-soft); }
   button.secondary:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
 
-  #downloadBtn { border-color: var(--teal-dark); color: var(--teal-dark); }
-  #downloadBtn:hover:not(:disabled) { background: var(--teal-soft); }
+  #downloadBtn { border-color: var(--teal); color: var(--teal); }
+  #downloadBtn:hover:not(:disabled) { background: var(--bg); }
 
   .row { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.9rem; flex-wrap: wrap; }
 
@@ -171,41 +184,41 @@
   }
   .params-grid div { display: flex; flex-direction: column; }
   .params-grid label { font-size: 0.68rem; margin-bottom: 0.25rem; }
-  .params-grid input:focus { border-color: var(--accent-dark); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .params-grid input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(211, 164, 34, 0.18); }
 
   .status { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.65rem; min-height: 1.2em; }
-  .status.error { color: #b5432f; }
+  .status.error { color: var(--red); }
 
   .searched-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem; }
   .tag {
-    font-size: 0.76rem;
+    padding: 0.22rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     color: var(--ink-soft);
     background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.22rem 0.65rem;
+    font-size: 0.76rem;
     animation: chipIn 0.25s ease both;
   }
   .tag b { color: var(--ink); font-weight: 600; }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th { background: var(--ink); color: #fff; font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em; position: sticky; top: 0; }
-  tbody tr:hover { background: var(--teal-soft); }
-  .table-scroll { overflow-x: auto; max-height: 480px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; margin-top: 0.75rem; }
-  .count { font-size: 0.82rem; color: var(--teal-dark); font-weight: 700; margin-bottom: 0.5rem; }
+  th { position: sticky; top: 0; color: #fff; background: var(--ink); font-family: var(--subhead); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+  tbody tr:hover { background: var(--bg); }
+  .table-scroll { overflow-x: auto; max-height: 480px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius); margin-top: 0.75rem; }
+  .count { margin-bottom: 0.5rem; color: var(--teal); font-family: var(--subhead); font-size: 0.76rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
   .empty { color: var(--ink-soft); font-size: 0.9rem; padding: 1.5rem; text-align: center; }
 
   .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
   .chip {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    background: #fff; border: 1px solid #f2d9a3; border-radius: 999px;
+    background: #fff; border: 1px solid var(--accent); border-radius: var(--radius);
     padding: 0.3rem 0.4rem 0.3rem 0.75rem; font-size: 0.8rem;
     animation: chipIn 0.22s ease both;
   }
   .chip button {
-    padding: 0.15rem 0.55rem; font-size: 0.72rem; border-radius: 999px;
-    background: var(--accent); border-color: var(--accent-dark); color: var(--ink);
+    padding: 0.15rem 0.55rem; font-size: 0.66rem; border-radius: var(--radius);
+    background: var(--accent); border-color: var(--accent); color: var(--ink);
   }
   .hint { font-size: 0.82rem; color: var(--ink-soft); margin: 0 0 0.5rem; }
 </style>

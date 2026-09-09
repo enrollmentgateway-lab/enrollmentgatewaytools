@@ -15,7 +15,12 @@ paths" below).
 | `index.html` — Reports tab (Funnel Overview, Teaching Sites, Regional Campus Portal, Event Effectiveness, Public Event Registrants) | New brand |
 | `index.html` — Tools tab (BetterQuery, Record Lookup, Slate Idea Box) | New brand |
 | `index.html` — Training Materials tab (Slate Concepts) | New brand |
-| Every other dashboard (`funnel-overview/`, `teaching-site-overview/`, etc.) | Current brand, unchanged |
+| `queryomatic/index.html` (BetterQuery) | New brand |
+| `student-lookup/index.html` (Record Lookup) | New brand |
+| `idea-box/index.html` (Slate Idea Box) | New brand |
+| `slate-concepts/` (Slate Concepts lesson) | Current brand, unchanged |
+| The 5 report dashboards (`funnel-overview/`, `teaching-site-overview/`, `regional-campus/`, `event-tracker/`, `public-event-registrants/`) | Current brand, unchanged |
+| `pipeline-overview/` (not linked from the homepage) | Current brand, unchanged |
 
 The homepage tabs were reorganized alongside the rebrand: what was "Other"
 (a single report-list item) is now **Tools**, and Public Event Registrants
@@ -39,6 +44,22 @@ corners, hairline `--nb-border`). Two consequences:
   dead code. The emoji icons were replaced by the same `01`/`02`/`03`
   numbered index the Reports cards use; numbering restarts per grid, so each
   tab counts from `01`.
+
+All three Tools destinations are now converted too, so a card and the page
+it opens match. Those three were the easy ones: like `analytics/`, each
+ships its own inline `<style>` and never loads `assets/dashboard.css`, so
+retheming them carried no risk to anything else.
+
+What's left splits cleanly along that line:
+
+- `slate-concepts/` is also standalone (`index.html` + `styles.css`), so it
+  can be converted the same way — but staff read it as a bundled Claude
+  artifact, so it also needs `node slate-concepts/build-artifact.js` and a
+  republish to the existing artifact URL (see README).
+- The 5 report dashboards all share `assets/dashboard.css`. Converting them
+  means migrating the shared stylesheet's tokens rather than editing 5 pages,
+  which also re-themes `pipeline-overview/` — so decide that page's fate as
+  part of the same change.
 
 Started as an analytics-only toggle test; both the toggle and the "test"
 framing are gone now — these are live, one-way changes. When extending the
@@ -192,6 +213,41 @@ on the page.
   an element that also needs a tag-level default (e.g. `th`): the class
   wins over the type selector even if the type selector comes later, so
   `th.number` needed its own explicit override.
+
+### Recurring calls when converting a tool page
+
+The three Tools pages hit the same handful of questions the palette doesn't
+answer outright. How they were settled, so the next page matches:
+
+- **A state needs a light tint and the palette has none.** The 7 swatches are
+  all mid-to-dark, so there is no light teal/amber to fill a chip or an
+  active state with. Use an **outlined** treatment instead — transparent or
+  white fill, 1px border and text in the accent. That's how the Idea Box
+  status chips (`.status-badge`), its voted state (`.vote-btn.voted`),
+  BetterQuery's zero-result notice (`.panel.notice`), and Record Lookup's
+  highlighted profile fields (`.field.feature`) all read.
+- **A control needs a hover/active step darker than its base.** There's no
+  approved darker teal or gold, so step to the brand **black** rather than
+  inventing a shade — see `button.primary:hover` (Idea Box) and
+  `#primaryBtn:hover` (BetterQuery).
+- **More semantic states than accents.** Idea Box has 5 idea statuses against
+  4 accents, so it spends them as a progression and leaves the untriaged one
+  neutral: new → `--muted`, planned → gold, in progress → gray-blue,
+  done → teal, declined → rust.
+- **Monospace is functional, not brand type.** BetterQuery's `options.md`
+  editor keeps JetBrains Mono; the three-tier system governs prose, not a
+  code field. Same reasoning for Record Lookup's stamp, which stays Courier.
+- **Representational elements survive the rebrand.** Record Lookup draws an
+  application as a printed document — stacked sheets, a ruled margin, a
+  rubber stamp. That's an illustration of a thing, not brand chrome, so it
+  kept its shape and only changed materials: brand neutrals (`--paper`,
+  `--line`) for the cream-and-amber paper, and a rust stamp. Don't flatten a
+  device like that into a plain panel just to land on-palette.
+- **Pages embedded in Slate get no GS header.** BetterQuery and Record Lookup
+  are served inside the Slate portal's own chrome at
+  `enroll.gs.edu/portal/...`, so they deliberately have no wordmark/eyebrow
+  header of their own. Idea Box, which is served standalone from Pages, does
+  get the full header treatment.
 
 ### Rolling this out to a shared page (index.html and beyond)
 
