@@ -91,8 +91,11 @@
        --navy/--teal/--gold/--border/--radius. */
     .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 16px; }
     .tool-card {
+      position: relative;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+      isolation: isolate;
       min-height: 208px;
       padding: 26px 26px 22px;
       border: 1px solid var(--nb-border);
@@ -108,6 +111,27 @@
       transform: translateY(-3px);
     }
     .tool-card:focus-visible { outline: 3px solid rgba(35,64,72,.35); outline-offset: 3px; }
+
+    /* Subject silhouette, bled off the bottom-right corner as a watermark —
+       the same device as the hero's .page-intro::before logomark, at the same
+       kind of low opacity. Flat --nb-teal (no gradient, per the palette
+       rules). `isolation: isolate` on the card makes the card its own
+       stacking context, so z-index:-1 puts the glyph above the card's white
+       background but safely behind the text instead of escaping backwards;
+       `overflow: hidden` clips the bleed to the 4px corner. */
+    .tool-glyph {
+      position: absolute;
+      right: -18px;
+      bottom: -18px;
+      z-index: -1;
+      width: 150px;
+      height: 150px;
+      fill: var(--nb-teal);
+      opacity: .08;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    .tool-card:hover .tool-glyph, .tool-card:focus-visible .tool-glyph { opacity: .13; }
     .tool-index {
       display: block;
       margin-bottom: 14px;
@@ -178,30 +202,35 @@
     <section id="reports-panel" class="tab-panel" role="tabpanel" aria-labelledby="reports-tab">
       <div class="tool-grid">
         <a class="tool-card" href="https://enroll.gs.edu/portal/directors_portal">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 4h20l-7.6 9.2V21l-4.8-2.6v-5.2z"/></svg>
           <span class="tool-index" aria-hidden="true">01</span>
           <h2 class="tool-title">Funnel Overview</h2>
           <p class="tool-copy">Track applicant progression through inquiry, application, approval, and admission. Monitor conversion rates and find the bottlenecks.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="https://enroll.gs.edu/portal/teachingsite">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5 22.5 8.5V10.5H1.5V8.5zM3.5 12.5h3.4v7.2H3.5zM10.3 12.5h3.4v7.2h-3.4zM17.1 12.5h3.4v7.2h-3.4zM1.5 21h21v1.6h-21z"/></svg>
           <span class="tool-index" aria-hidden="true">02</span>
           <h2 class="tool-title">Teaching Sites</h2>
           <p class="tool-copy">Compare record volume across every active teaching site, then drill into a single site's inquiry-to-student funnel.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="https://enroll.gs.edu/portal/regional_campus">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M12 2a7.4 7.4 0 00-7.4 7.4C4.6 15 12 22.4 12 22.4s7.4-7.4 7.4-13A7.4 7.4 0 0012 2zm0 4.8a2.6 2.6 0 110 5.2 2.6 2.6 0 010-5.2z"/></svg>
           <span class="tool-index" aria-hidden="true">03</span>
           <h2 class="tool-title">Regional Campus Portal</h2>
           <p class="tool-copy">Explore enrollment funnels and student activity across Gateway Seminary's regional campuses.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="https://enroll.gs.edu/portal/event_effectiveness">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 20.4h19v1.6h-19zM4.5 13h3.4v6.4H4.5zM10.3 8.6h3.4v10.8h-3.4zM16.1 4h3.4v15.4h-3.4z"/></svg>
           <span class="tool-index" aria-hidden="true">04</span>
           <h2 class="tool-title">Event Effectiveness</h2>
           <p class="tool-copy">See what each recruiting event cost and what it returned — registrants, inquiries, applicants, and students per dollar spent.</p>
           <span class="tool-open">Open report <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="https://enroll.gs.edu/portal/public_internal_events">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 2h2.2v2.2H7zM14.8 2H17v2.2h-2.2zM2.5 4.2h19v4.4h-19zM5 11h3.2v2.8H5zM10.4 11h3.2v2.8h-3.2zM15.8 11h3.2v2.8h-3.2zM5 16.2h3.2v2.8H5zM10.4 16.2h3.2v2.8h-3.2zM15.8 16.2h3.2v2.8h-3.2z"/></svg>
           <span class="tool-index" aria-hidden="true">05</span>
           <h2 class="tool-title">Public Event Registrants</h2>
           <p class="tool-copy">Review public events by start date and compare their registration totals.</p>
@@ -213,18 +242,21 @@
     <section id="tools-panel" class="tab-panel" role="tabpanel" aria-labelledby="tools-tab" hidden>
       <div class="tool-grid">
         <a class="tool-card" href="https://enroll.gs.edu/portal/better_query">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M10.4 2.6a7.8 7.8 0 100 15.6 7.8 7.8 0 000-15.6zm0 2.6a5.2 5.2 0 110 10.4 5.2 5.2 0 010-10.4zM15.2 17 17 15.2 21.9 20.1 20.1 21.9z"/></svg>
           <span class="tool-index" aria-hidden="true">01</span>
           <h2 class="tool-title">BetterQuery</h2>
           <p class="tool-copy">Ask for the records you need in plain language and get a Slate query back, already run.</p>
           <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="https://enroll.gs.edu/portal/record_lookup">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.4a4.3 4.3 0 100 8.6 4.3 4.3 0 000-8.6zM3.6 21.4c0-4.6 3.8-7.2 8.4-7.2s8.4 2.6 8.4 7.2z"/></svg>
           <span class="tool-index" aria-hidden="true">02</span>
           <h2 class="tool-title">Record Lookup</h2>
           <p class="tool-copy">Search by first name, last name, or student ID, then open that record's full profile and application history.</p>
           <span class="tool-open">Open tool <span aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="tool-card" href="idea-box/">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a6.9 6.9 0 00-4.1 12.4V16.6h8.2v-2.2A6.9 6.9 0 0012 2zM8.6 18h6.8v1.7H8.6zM10 21.1h4v1.7h-4z"/></svg>
           <span class="tool-index" aria-hidden="true">03</span>
           <h2 class="tool-title">Slate Idea Box</h2>
           <p class="tool-copy">Suggest a Slate improvement, drop a reference link, and upvote what matters most.</p>
@@ -236,6 +268,7 @@
     <section id="training-panel" class="tab-panel" role="tabpanel" aria-labelledby="training-tab" hidden>
       <div class="tool-grid">
         <a class="tool-card" href="https://claude.ai/code/artifact/0810df6f-bc13-4c9c-a776-fbdbd229d2f3" target="_blank" rel="noopener">
+          <svg class="tool-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.6 5.4c3.2 0 6.4.7 8.6 2v13.2c-2.2-1.3-5.4-2-8.6-2zM21.4 5.4c-3.2 0-6.4.7-8.6 2v13.2c2.2-1.3 5.4-2 8.6-2z"/></svg>
           <span class="tool-index" aria-hidden="true">01</span>
           <h2 class="tool-title">Slate Concepts</h2>
           <p class="tool-copy">Learn the record, audience, and reporting concepts that make Slate requests clearer and results easier to interpret.</p>
