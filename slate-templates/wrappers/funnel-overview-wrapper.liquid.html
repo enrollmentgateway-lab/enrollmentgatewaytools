@@ -1,16 +1,6 @@
 <!--
   Funnel Overview Slate wrapper. It preserves the existing start_date, end_date,
-  term_app, year_app, and conv_mode URL contract used by the Slate exports, plus
-  inq_start_date/inq_end_date, which carry a wider 12-month recruiting window for
-  the Inquiry stage only (e.g. FA26 inquiries = 8/15/25-8/15/26) while
-  start_date/end_date keep filtering the narrower application-cycle window used
-  by total_apps/apps_awaiting_approval/apps_admitted.
-
-  The `inquiries` query must be updated in Slate's Query Editor to filter on
-  inq_start_date/inq_end_date instead of (or in addition to) start_date/end_date,
-  using whatever URL-parameter binding mechanism the query already uses for those
-  other params. This wrapper only relays the values through the URL/postMessage —
-  it does not filter anything itself.
+  term_app, year_app, and conv_mode URL contract used by the Slate exports.
 
   The inquiry/application/admitted record loops below assume those Slate
   objects expose name/program/email/url the same way apps_awaiting_approval
@@ -40,7 +30,7 @@
   const counts = root.querySelector('.counts');
   const pageUrl = new URL(window.location.href);
   const payload = {
-    filters: { startDate:pageUrl.searchParams.get('start_date') || '', endDate:pageUrl.searchParams.get('end_date') || '', termApp:pageUrl.searchParams.get('term_app') || '', yearApp:pageUrl.searchParams.get('year_app') || '', inqStartDate:pageUrl.searchParams.get('inq_start_date') || '', inqEndDate:pageUrl.searchParams.get('inq_end_date') || '', convMode:pageUrl.searchParams.get('conv_mode') || 'cumulative' },
+    filters: { startDate:pageUrl.searchParams.get('start_date') || '', endDate:pageUrl.searchParams.get('end_date') || '', termApp:pageUrl.searchParams.get('term_app') || '', yearApp:pageUrl.searchParams.get('year_app') || '', convMode:pageUrl.searchParams.get('conv_mode') || 'cumulative' },
     counts: { inquiries:number(read(counts,'inquiries')), applications:number(read(counts,'applications')), awaiting:number(read(counts,'awaiting')), admitted:number(read(counts,'admitted')) },
     awaiting: Array.from(root.querySelectorAll('.awaiting-record')).map(node => ({ name:read(node,'name'), program:read(node,'program'), email:read(node,'email'), status:read(node,'status'), url:read(node,'url') })),
     actions: Array.from(root.querySelectorAll('.action-record')).map(node => ({ name:read(node,'name'), email:read(node,'email'), phone:read(node,'phone'), url:read(node,'url') })),
@@ -50,7 +40,7 @@
       admitted: Array.from(root.querySelectorAll('.admitted-record')).map(node => ({ name:read(node,'name'), program:read(node,'program'), email:read(node,'email'), url:read(node,'url') }))
     }
   };
-  const allowedParams = new Set(['start_date','end_date','term_app','year_app','inq_start_date','inq_end_date','conv_mode']);
+  const allowedParams = new Set(['start_date','end_date','term_app','year_app','conv_mode']);
   function sendData() { if (frame.contentWindow) frame.contentWindow.postMessage({ type:'enrollment-dashboard-data', dashboard, payload }, frameOrigin); }
   function navigate(message) {
     const url = new URL(window.location.href);
