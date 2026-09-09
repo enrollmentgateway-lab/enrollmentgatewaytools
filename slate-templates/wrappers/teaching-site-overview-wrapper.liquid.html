@@ -39,8 +39,12 @@
   // person_created_date_start/person_created_date_end (see loadInquiries below).
   // Mirrors funnel-overview's funnelPeriods date ranges. Formatted M/D/YYYY
   // (no leading zeros) per the person_created_date field's expected format.
+  // FA26 has no start bound — there's no tracked period before it, so its
+  // window is "everything up through 8/15/2026" rather than missing whatever
+  // came in before an arbitrary 1/1/2026 cutoff. Spring/FA27 already chain
+  // back-to-back off the prior period's end with no gap.
   const periodDateRanges = {
-    'Fall|2026-2027': { start:'1/1/2026', end:'8/15/2026' },
+    'Fall|2026-2027': { start:'', end:'8/15/2026' },
     'Spring|2026-2027': { start:'8/16/2026', end:'1/15/2027' },
     'Fall|2027-2028': { start:'1/16/2027', end:'8/15/2027' }
   };
