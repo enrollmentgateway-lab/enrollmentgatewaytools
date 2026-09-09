@@ -183,11 +183,15 @@
   <script>
   (function () {
     'use strict';
+    // Applied/Awaiting/Admitted use the narrower application-cycle window (start/end).
+    // Inquiries use a wider 12-month recruiting window (inqStart/inqEnd) that runs
+    // from the prior term's start date through this term's start date — e.g. FA26
+    // inquiries span 8/15/25-8/15/26, not just the FA26 application-cycle window.
     const funnelPeriods = {
-      total: { label:'Total (All Time)', start:null, end:null, term:null, year:null },
-      FA26: { label:'FA26 — Fall 2026', start:'2026-01-01', end:'2026-08-15', term:'Fall', year:'2026-2027' },
-      SP27: { label:'SP27 — Spring 2027', start:'2026-08-16', end:'2027-01-15', term:'Spring', year:'2026-2027' },
-      FA27: { label:'FA27 — Fall 2027', start:'2027-01-16', end:'2027-08-15', term:'Fall', year:'2027-2028' }
+      total: { label:'Total (All Time)', start:null, end:null, term:null, year:null, inqStart:null, inqEnd:null },
+      FA26: { label:'FA26 — Fall 2026', start:'2026-01-01', end:'2026-08-15', term:'Fall', year:'2026-2027', inqStart:'2025-08-15', inqEnd:'2026-08-15' },
+      SP27: { label:'SP27 — Spring 2027', start:'2026-08-16', end:'2027-01-15', term:'Spring', year:'2026-2027', inqStart:'2026-01-15', inqEnd:'2027-01-15' },
+      FA27: { label:'FA27 — Fall 2027', start:'2027-01-16', end:'2027-08-15', term:'Fall', year:'2027-2028', inqStart:'2026-08-15', inqEnd:'2027-08-15' }
     };
     const ui = window.DashboardUI;
     const STATUS_ORDER = ['Inquiry', 'Applied', 'Awaiting Approval', 'Admitted'];
@@ -772,8 +776,8 @@
 
     document.getElementById('period').addEventListener('change', function (event) {
       const period = funnelPeriods[event.target.value] || funnelPeriods.total;
-      if (!period.start) bridge.navigate({ conv_mode:conversionMode }, ['start_date','end_date','term_app','year_app']);
-      else bridge.navigate({ start_date:period.start, end_date:period.end, term_app:period.term, year_app:period.year, conv_mode:conversionMode }, []);
+      if (!period.start) bridge.navigate({ conv_mode:conversionMode }, ['start_date','end_date','term_app','year_app','inq_start_date','inq_end_date']);
+      else bridge.navigate({ start_date:period.start, end_date:period.end, term_app:period.term, year_app:period.year, inq_start_date:period.inqStart, inq_end_date:period.inqEnd, conv_mode:conversionMode }, []);
     });
     document.getElementById('funnel-export').addEventListener('click', exportFunnel);
     document.getElementById('funnel-export-records').addEventListener('click', exportFunnelRecords);
@@ -783,7 +787,7 @@
     document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
     document.getElementById('portal-home').addEventListener('click', function () {
       sessionStorage.removeItem('funnel-conversion-mode');
-      bridge.navigate({}, ['start_date', 'end_date', 'term_app', 'year_app', 'conv_mode']);
+      bridge.navigate({}, ['start_date', 'end_date', 'term_app', 'year_app', 'inq_start_date', 'inq_end_date', 'conv_mode']);
     });
     document.getElementById('sort-status').addEventListener('click', function () { statusDirection = statusDirection === 1 ? -1 : 1; currentPage = 1; renderAwaiting(); });
     document.getElementById('per-page').addEventListener('change', function (event) { perPage = Number(event.target.value) || 25; currentPage = 1; renderAwaiting(); });
