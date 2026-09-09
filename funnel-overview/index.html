@@ -173,7 +173,7 @@
       <div class="section-divider"><div class="section-eyebrow">Breakdown</div><div class="section-heading">Funnel by Degree</div></div>
       <div class="panel">
         <table class="data-table">
-          <thead><tr><th>Degree Program</th><th>Inquiries</th><th>Applied</th><th>Awaiting Approval</th><th>Admitted</th><th>Total</th></tr></thead>
+          <thead><tr><th>Degree Program</th><th>Applied</th><th>Awaiting Approval</th><th>Admitted</th><th>Total</th></tr></thead>
           <tbody id="degree-table-body"></tbody>
         </table>
       </div>
@@ -653,7 +653,6 @@
 
     function buildDegreeBreakdown() {
       const stages = [
-        { key:'inquiries', records:data.funnelRecords.inquiries },
         { key:'applications', records:data.funnelRecords.applications },
         { key:'awaiting', records:data.awaiting },
         { key:'admitted', records:data.funnelRecords.admitted }
@@ -664,7 +663,7 @@
         stage.records.forEach(function (record) {
           const raw = String(record.program == null ? '' : record.program).trim();
           const label = isBlankProgram(raw) ? 'No Program Listed' : raw;
-          if (!byProgram[label]) { byProgram[label] = { inquiries:0, applications:0, awaiting:0, admitted:0 }; order.push(label); }
+          if (!byProgram[label]) { byProgram[label] = { applications:0, awaiting:0, admitted:0 }; order.push(label); }
           byProgram[label][stage.key] += 1;
         });
       });
@@ -675,29 +674,27 @@
       });
       return order.map(function (label) {
         const counts = byProgram[label];
-        const total = counts.inquiries + counts.applications + counts.awaiting + counts.admitted;
-        return { program:label, inquiries:counts.inquiries, applications:counts.applications, awaiting:counts.awaiting, admitted:counts.admitted, total:total };
+        const total = counts.applications + counts.awaiting + counts.admitted;
+        return { program:label, applications:counts.applications, awaiting:counts.awaiting, admitted:counts.admitted, total:total };
       });
     }
 
     function renderDegreeBreakdown() {
       const rows = buildDegreeBreakdown();
       const body = document.getElementById('degree-table-body'); body.replaceChildren();
-      if (!rows.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 6; cell.appendChild(ui.emptyState('No funnel records available for this period.')); return; }
-      const totals = { inquiries:0, applications:0, awaiting:0, admitted:0, total:0 };
+      if (!rows.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No funnel records available for this period.')); return; }
+      const totals = { applications:0, awaiting:0, admitted:0, total:0 };
       rows.forEach(function (record) {
         const row = body.insertRow();
         row.insertCell().textContent = record.program;
-        row.insertCell().textContent = record.inquiries.toLocaleString();
         row.insertCell().textContent = record.applications.toLocaleString();
         row.insertCell().textContent = record.awaiting.toLocaleString();
         row.insertCell().textContent = record.admitted.toLocaleString();
         row.insertCell().textContent = record.total.toLocaleString();
-        totals.inquiries += record.inquiries; totals.applications += record.applications; totals.awaiting += record.awaiting; totals.admitted += record.admitted; totals.total += record.total;
+        totals.applications += record.applications; totals.awaiting += record.awaiting; totals.admitted += record.admitted; totals.total += record.total;
       });
       const totalRow = body.insertRow(); totalRow.className = 'totals-row';
       totalRow.insertCell().textContent = 'Total';
-      totalRow.insertCell().textContent = totals.inquiries.toLocaleString();
       totalRow.insertCell().textContent = totals.applications.toLocaleString();
       totalRow.insertCell().textContent = totals.awaiting.toLocaleString();
       totalRow.insertCell().textContent = totals.admitted.toLocaleString();
