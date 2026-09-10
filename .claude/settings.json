@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npx wrangler deploy*)",
+      "Bash(npx --yes wrangler@latest deploy*)",
+      "Bash(npx wrangler versions*)",
+      "Bash(npx --yes wrangler@latest versions*)"
+    ]
+  }
+}
