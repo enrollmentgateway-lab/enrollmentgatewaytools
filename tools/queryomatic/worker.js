@@ -55,8 +55,8 @@
 // CONFIG
 // ============================================================
 
-const GITHUB_OWNER = "enrollmentgateway-lab";
-const GITHUB_REPO = "enrollmentgatewaytools";
+const GITHUB_OWNER = "gateway-seminary-labs";
+const GITHUB_REPO = "gs.labs";
 const GITHUB_BRANCH = "main";
 const GITHUB_OPTIONS_PATH = "tools/queryomatic/options.md";
 
@@ -193,50 +193,50 @@ function json(data, env, status = 200) {
 const ANALYTICS_RETENTION_SECONDS = 90 * 24 * 60 * 60;
 const ANALYTICS_IDENTIFIER_PATTERN = /^[a-f0-9-]{20,64}$/i;
 const ANALYTICS_PATHS = new Set([
-  "/enrollmentgatewaytools/",
-  "/enrollmentgatewaytools/funnel-overview/",
-  "/enrollmentgatewaytools/reports/funnel-overview/",
-  "/enrollmentgatewaytools/pipeline-overview/",
-  "/enrollmentgatewaytools/teaching-site-overview/",
-  "/enrollmentgatewaytools/reports/teaching-site-overview/",
-  "/enrollmentgatewaytools/event-tracker/",
-  "/enrollmentgatewaytools/reports/event-tracker/",
-  "/enrollmentgatewaytools/public-event-registrants/",
-  "/enrollmentgatewaytools/reports/public-event-registrants/",
-  "/enrollmentgatewaytools/regional-campus/",
-  "/enrollmentgatewaytools/reports/regional-campus/",
-  "/enrollmentgatewaytools/student-lookup/",
-  "/enrollmentgatewaytools/tools/student-lookup/",
-  "/enrollmentgatewaytools/slate-concepts/",
-  "/enrollmentgatewaytools/training/slate-concepts/",
-  "/enrollmentgatewaytools/queryomatic/",
-  "/enrollmentgatewaytools/tools/queryomatic/",
-  "/enrollmentgatewaytools/queryomatic/admin/",
-  "/enrollmentgatewaytools/tools/queryomatic/admin/",
+  "/gs.labs/",
+  "/gs.labs/funnel-overview/",
+  "/gs.labs/reports/funnel-overview/",
+  "/gs.labs/pipeline-overview/",
+  "/gs.labs/teaching-site-overview/",
+  "/gs.labs/reports/teaching-site-overview/",
+  "/gs.labs/event-tracker/",
+  "/gs.labs/reports/event-tracker/",
+  "/gs.labs/public-event-registrants/",
+  "/gs.labs/reports/public-event-registrants/",
+  "/gs.labs/regional-campus/",
+  "/gs.labs/reports/regional-campus/",
+  "/gs.labs/student-lookup/",
+  "/gs.labs/tools/student-lookup/",
+  "/gs.labs/slate-concepts/",
+  "/gs.labs/training/slate-concepts/",
+  "/gs.labs/queryomatic/",
+  "/gs.labs/tools/queryomatic/",
+  "/gs.labs/queryomatic/admin/",
+  "/gs.labs/tools/queryomatic/admin/",
 ]);
 
 function analyticsLabel(path) {
   const labels = {
-    "/enrollmentgatewaytools/": "Admissions",
-    "/enrollmentgatewaytools/funnel-overview/": "Funnel Overview",
-    "/enrollmentgatewaytools/reports/funnel-overview/": "Funnel Overview",
-    "/enrollmentgatewaytools/pipeline-overview/": "Pipeline Overview",
-    "/enrollmentgatewaytools/teaching-site-overview/": "Teaching Sites",
-    "/enrollmentgatewaytools/reports/teaching-site-overview/": "Teaching Sites",
-    "/enrollmentgatewaytools/event-tracker/": "Event Tracker",
-    "/enrollmentgatewaytools/reports/event-tracker/": "Event Tracker",
-    "/enrollmentgatewaytools/public-event-registrants/": "Public Event Registrants",
-    "/enrollmentgatewaytools/reports/public-event-registrants/": "Public Event Registrants",
-    "/enrollmentgatewaytools/regional-campus/": "Regional Campus",
-    "/enrollmentgatewaytools/reports/regional-campus/": "Regional Campus",
-    "/enrollmentgatewaytools/student-lookup/": "Record Lookup",
-    "/enrollmentgatewaytools/tools/student-lookup/": "Record Lookup",
-    "/enrollmentgatewaytools/slate-concepts/": "Slate Concepts",
-    "/enrollmentgatewaytools/training/slate-concepts/": "Slate Concepts",
-    "/enrollmentgatewaytools/queryomatic/": "BetterQuery",
-    "/enrollmentgatewaytools/tools/queryomatic/": "BetterQuery",
-    "/enrollmentgatewaytools/queryomatic/admin/": "BetterQuery Admin",
-    "/enrollmentgatewaytools/tools/queryomatic/admin/": "BetterQuery Admin",
+    "/gs.labs/": "Admissions",
+    "/gs.labs/funnel-overview/": "Funnel Overview",
+    "/gs.labs/reports/funnel-overview/": "Funnel Overview",
+    "/gs.labs/pipeline-overview/": "Pipeline Overview",
+    "/gs.labs/teaching-site-overview/": "Teaching Sites",
+    "/gs.labs/reports/teaching-site-overview/": "Teaching Sites",
+    "/gs.labs/event-tracker/": "Event Tracker",
+    "/gs.labs/reports/event-tracker/": "Event Tracker",
+    "/gs.labs/public-event-registrants/": "Public Event Registrants",
+    "/gs.labs/reports/public-event-registrants/": "Public Event Registrants",
+    "/gs.labs/regional-campus/": "Regional Campus",
+    "/gs.labs/reports/regional-campus/": "Regional Campus",
+    "/gs.labs/student-lookup/": "Record Lookup",
+    "/gs.labs/tools/student-lookup/": "Record Lookup",
+    "/gs.labs/slate-concepts/": "Slate Concepts",
+    "/gs.labs/training/slate-concepts/": "Slate Concepts",
+    "/gs.labs/queryomatic/": "BetterQuery",
+    "/gs.labs/tools/queryomatic/": "BetterQuery",
+    "/gs.labs/queryomatic/admin/": "BetterQuery Admin",
+    "/gs.labs/tools/queryomatic/admin/": "BetterQuery Admin",
   };
 
   return labels[path] || path;

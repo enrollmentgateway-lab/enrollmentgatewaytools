@@ -1,8 +1,8 @@
 const telegramToken = Deno.env.get('TELEGRAM_BOT_TOKEN') || '';
 const webhookSecret = Deno.env.get('TELEGRAM_WEBHOOK_SECRET') || '';
 const githubToken = Deno.env.get('GITHUB_DISPATCH_TOKEN') || '';
-const githubOwner = Deno.env.get('GITHUB_OWNER') || 'enrollmentgateway-lab';
-const githubRepo = Deno.env.get('GITHUB_REPO') || 'enrollmentgatewaytools';
+const githubOwner = Deno.env.get('GITHUB_OWNER') || 'gateway-seminary-labs';
+const githubRepo = Deno.env.get('GITHUB_REPO') || 'gs.labs';
 const allowedUserIds = new Set(
   (Deno.env.get('TELEGRAM_ALLOWED_USER_IDS') || '')
     .split(',')

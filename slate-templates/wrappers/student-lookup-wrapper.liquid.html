@@ -14,11 +14,11 @@
   app_created_date. It is called only when an opened record has Student status.
   Legacy field aliases remain as fallbacks during rollout.
 -->
-<iframe id="studentLookupFrame" src="https://enrollmentgateway-lab.github.io/enrollmentgatewaytools/tools/student-lookup/?v=student-lookup-v22" title="Record Lookup" referrerpolicy="origin" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
+<iframe id="studentLookupFrame" src="https://gateway-seminary-labs.github.io/gs.labs/tools/student-lookup/?v=student-lookup-v22" title="Record Lookup" referrerpolicy="origin" style="width:100%;height:600px;min-height:600px;border:0;display:block"></iframe>
 <script>
 (function () {
   'use strict';
-  const frameOrigin = 'https://enrollmentgateway-lab.github.io';
+  const frameOrigin = 'https://gateway-seminary-labs.github.io';
   const recordsService = 'https://enroll.gs.edu/manage/query/run?id=b83ba692-55a0-42d9-b950-60a3f2eccac7&cmd=service&output=json&h=7eb188d8-0524-4d60-b731-37c0b94af784&first=&last=&sisid=&term=&year=&status=&pipeline=&teachingsite=&program=&app_code=&app_createddate_start=&app_createddate_end=&campus_assigned=';
   const additionalApplicationsService = 'https://enroll.gs.edu/manage/query/run?id=ae358124-96d9-4c40-a6a9-da66b82b8f19&cmd=service&output=json&h=ff8fb6fa-de49-4f83-9a64-fc916a0dc6e8&sisid=';
   const frame = document.getElementById('studentLookupFrame');

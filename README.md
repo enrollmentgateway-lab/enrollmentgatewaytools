@@ -38,7 +38,7 @@ The GitHub-hosted hub and portal interfaces support Cloudflare Web Analytics for
 
 To enable collection:
 
-1. In the existing Cloudflare account, open **Web Analytics**, add `enrollmentgateway-lab.github.io` as a site, and copy its beacon token.
+1. In the existing Cloudflare account, open **Web Analytics**, add `gateway-seminary-labs.github.io` as a site, and copy its beacon token.
 2. Paste the public token into `SITE_TOKEN` in `assets/portal-analytics.js`.
 3. Push the change to `main`, repaste the seven iframe wrappers in Slate to activate their explicit referrer safeguards, and verify a visit in the Cloudflare Web Analytics dashboard.
 
@@ -90,4 +90,4 @@ Do not rename the query exports or their fields without making the matching chan
 
 ## Queryomatic
 
-The former standalone Queryomatic repository was imported under `tools/queryomatic/`. The Cloudflare Worker remains a separate deployment; use `tools/queryomatic/README.md` for its Worker secrets and setup instructions. Update its worker `ALLOWED_ORIGIN` to permit the consolidated Pages origin and the `/enrollmentgatewaytools` site.
+The former standalone Queryomatic repository was imported under `tools/queryomatic/`. The Cloudflare Worker remains a separate deployment; use `tools/queryomatic/README.md` for its Worker secrets and setup instructions. Update its worker `ALLOWED_ORIGIN` to permit the consolidated Pages origin and the `/gs.labs` site.

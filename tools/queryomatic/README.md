@@ -46,7 +46,7 @@ The main Slate query and Queryomatic currently share this parameter contract:
 
 Keep the `SLATE_QUERY_URL`, the frontend `PARAMS` list, and the Worker's generated JSON schema in sync when adding another parameter. Fixed prompt values belong in `options.md`; free-text identity and date parameters are described directly in the Worker prompt.
 
-The Worker reads and refreshes `tools/queryomatic/options.md` in the consolidated `enrollmentgatewaytools` repository. Its GitHub token therefore needs write access to this repository if administrators will use **Refresh from source**.
+The Worker reads and refreshes `tools/queryomatic/options.md` in the consolidated `gs.labs` repository. Its GitHub token therefore needs write access to this repository if administrators will use **Refresh from source**.
 
 `wrangler deploy` prints your Worker URL, e.g.
 `https://slate-query-tool.yoursubdomain.workers.dev`.

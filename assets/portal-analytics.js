@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const PRODUCTION_HOST = 'enrollmentgateway-lab.github.io';
+  const PRODUCTION_HOST = 'gateway-seminary-labs.github.io';
   const SITE_TOKEN = '41948a5bca5f4a97b32961ff03ce053f';
   const AGGREGATE_ENDPOINT = 'https://slate-query-tool.queryomatic.workers.dev/api/analytics/event';
   const IDENTIFIER_PATTERN = /^[a-f0-9-]{20,64}$/i;

@@ -33,7 +33,7 @@ Use `message.from.id` for `TELEGRAM_ALLOWED_USER_IDS` and `message.chat.id` for 
 
 ## 2. Create the GitHub dispatch token
 
-Create a fine-grained GitHub personal access token scoped only to `enrollmentgateway-lab/enrollmentgatewaytools`. It needs permission to create repository dispatch events. Store it only as the Supabase secret `GITHUB_DISPATCH_TOKEN`.
+Create a fine-grained GitHub personal access token scoped only to `gateway-seminary-labs/gs.labs`. It needs permission to create repository dispatch events. Store it only as the Supabase secret `GITHUB_DISPATCH_TOKEN`.
 
 ## 3. Configure and deploy Supabase
 
@@ -45,8 +45,8 @@ supabase secrets set TELEGRAM_WEBHOOK_SECRET="$env:TELEGRAM_WEBHOOK_SECRET"
 supabase secrets set TELEGRAM_ALLOWED_USER_IDS="YOUR_NUMERIC_USER_ID"
 supabase secrets set TELEGRAM_ALLOWED_CHAT_IDS="YOUR_NUMERIC_CHAT_ID"
 supabase secrets set GITHUB_DISPATCH_TOKEN="$env:GITHUB_DISPATCH_TOKEN"
-supabase secrets set GITHUB_OWNER="enrollmentgateway-lab"
-supabase secrets set GITHUB_REPO="enrollmentgatewaytools"
+supabase secrets set GITHUB_OWNER="gateway-seminary-labs"
+supabase secrets set GITHUB_REPO="gs.labs"
 supabase functions deploy telegram-codex --no-verify-jwt
 ```
 
