@@ -1,6 +1,6 @@
 # Slate Idea Box — Worker setup
 
-A small Cloudflare Worker + D1 database backing `idea-box/index.html`. No
+A small Cloudflare Worker + D1 database backing `tools/idea-box/index.html`. No
 Slate integration — it just stores submitted ideas, vote counts, and status.
 
 ## 1. Deploy the Worker
@@ -32,7 +32,7 @@ Edit `wrangler.toml` first:
 
 ## 2. Point the frontend at it
 
-Open `../idea-box/index.html` and set:
+Open `../tools/idea-box/index.html` and set:
 
 ```js
 const WORKER_URL = "https://slate-idea-box.yoursubdomain.workers.dev";

@@ -15,11 +15,11 @@ paths" below).
 | `index.html` — Reports tab (Funnel Overview, Teaching Sites, Regional Campus Portal, Event Effectiveness, Public Event Registrants) | New brand |
 | `index.html` — Tools tab (BetterQuery, Record Lookup, Slate Idea Box) | New brand |
 | `index.html` — Training Materials tab (Slate Concepts) | New brand |
-| `queryomatic/index.html` (BetterQuery) | New brand |
-| `student-lookup/index.html` (Record Lookup) | New brand |
-| `idea-box/index.html` (Slate Idea Box) | New brand |
-| `slate-concepts/` (Slate Concepts lesson) | Current brand, unchanged |
-| The 5 report dashboards (`funnel-overview/`, `teaching-site-overview/`, `regional-campus/`, `event-tracker/`, `public-event-registrants/`) | Current brand, unchanged |
+| `tools/queryomatic/index.html` (BetterQuery) | New brand |
+| `tools/student-lookup/index.html` (Record Lookup) | New brand |
+| `tools/idea-box/index.html` (Slate Idea Box) | New brand |
+| `training/slate-concepts/` (Slate Concepts lesson) | Current brand, unchanged |
+| The 5 report dashboards (`reports/funnel-overview/`, `reports/teaching-site-overview/`, `reports/regional-campus/`, `reports/event-tracker/`, `reports/public-event-registrants/`) | Current brand, unchanged |
 | `pipeline-overview/` (not linked from the homepage) | Current brand, unchanged |
 
 The homepage tabs were reorganized alongside the rebrand: what was "Other"
@@ -52,9 +52,9 @@ retheming them carried no risk to anything else.
 
 What's left splits cleanly along that line:
 
-- `slate-concepts/` is also standalone (`index.html` + `styles.css`), so it
+- `training/slate-concepts/` is also standalone (`index.html` + `styles.css`), so it
   can be converted the same way — but staff read it as a bundled Claude
-  artifact, so it also needs `node slate-concepts/build-artifact.js` and a
+  artifact, so it also needs `node training/slate-concepts/build-artifact.js` and a
   republish to the existing artifact URL (see README).
 - The 5 report dashboards all share `assets/dashboard.css`. Converting them
   means migrating the shared stylesheet's tokens rather than editing 5 pages,

@@ -5,16 +5,16 @@ This repository is the single source of truth for the Admissions hub and its ass
 ## Structure
 
 - `index.html` — hub published at the GitHub Pages root.
-- `queryomatic/` — Queryomatic frontend, Worker configuration, options reference, and setup notes. Its GitHub Pages entry point is `/queryomatic/`.
+- `tools/queryomatic/` — Queryomatic frontend, Worker configuration, options reference, and setup notes. Its GitHub Pages entry point is `/tools/queryomatic/`.
 - `slate-templates/wrappers/` — the small wrapper files you paste into Slate.
-- `student-lookup/` — GitHub-hosted record search/profile interface.
+- `tools/student-lookup/` — GitHub-hosted record search/profile interface.
 - `slate-templates/wrappers/student-lookup-wrapper.liquid.html` — the Slate query wrapper for the Record Lookup portal.
-- `regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
-- `slate-concepts/` — source for the conceptual Slate glossary and guided staff training lesson. The hub's Training Materials tab links to a bundled copy of this page published as a Claude Artifact (comments enabled) rather than the GitHub Pages copy, so staff can leave feedback comments directly on the lesson; Claude applies accepted feedback back to these source files, regenerates the bundle with `node slate-concepts/build-artifact.js`, and republishes it to the same artifact URL. The artifact also declares the `sample` runtime capability (for the "Practice with Claude" request-feedback module); a plain republish keeps that declaration, but pass `capabilities: {sample: {}}` explicitly again if it's ever republished from a fresh session state.
+- `reports/regional-campus/` — GitHub-hosted campus funnel, record drilldown, lookup, and individual record dashboard.
+- `training/slate-concepts/` — source for the conceptual Slate glossary and guided staff training lesson. The hub's Training Materials tab links to a bundled copy of this page published as a Claude Artifact (comments enabled) rather than the GitHub Pages copy, so staff can leave feedback comments directly on the lesson; Claude applies accepted feedback back to these source files, regenerates the bundle with `node training/slate-concepts/build-artifact.js`, and republishes it to the same artifact URL. The artifact also declares the `sample` runtime capability (for the "Practice with Claude" request-feedback module); a plain republish keeps that declaration, but pass `capabilities: {sample: {}}` explicitly again if it's ever republished from a fresh session state.
 - `slate-templates/wrappers/regional-campus-wrapper.liquid.html` — the Slate query wrapper for the Regional Campus portal.
-- `public-event-registrants/` — GitHub-hosted public-event registrant count interface.
-- `idea-box/` and `idea-box-worker/` — Slate Idea Box: a standalone submission/voting board for Slate improvement ideas (with an optional reference URL), backed by a small Cloudflare Worker + D1 database. No Slate integration or scheduled sync — see `idea-box-worker/README.md` for deploy steps.
-- `pipeline-overview/`, `teaching-site-overview/`, `event-tracker/`, and `funnel-overview/` — GitHub-hosted dashboard interfaces.
+- `reports/public-event-registrants/` — GitHub-hosted public-event registrant count interface.
+- `tools/idea-box/` and `idea-box-worker/` — Slate Idea Box: a standalone submission/voting board for Slate improvement ideas (with an optional reference URL), backed by a small Cloudflare Worker + D1 database. No Slate integration or scheduled sync — see `idea-box-worker/README.md` for deploy steps.
+- `pipeline-overview/`, `reports/teaching-site-overview/`, `reports/event-tracker/`, and `reports/funnel-overview/` — GitHub-hosted dashboard interfaces.
 - `assets/dashboard.css` and `assets/dashboard-common.js` — shared dashboard presentation, iframe bridge, and academic-period definitions.
 - `slate-templates/wrappers/*-wrapper.liquid.html` — thin Slate templates that serialize query results and host the corresponding dashboard iframe.
 - `merch-order-form/` — merchandise catalog admin, public order form, and branded catalog PDF generator. Unlike the other tools this is a Next.js **server** app (SQLite via Prisma, Puppeteer for the PDF), so GitHub Pages does not host it — see its own `README.md` and "Deployment model" below.
@@ -42,7 +42,7 @@ To enable collection:
 2. Paste the public token into `SITE_TOKEN` in `assets/portal-analytics.js`.
 3. Push the change to `main`, repaste the seven iframe wrappers in Slate to activate their explicit referrer safeguards, and verify a visit in the Cloudflare Web Analytics dashboard.
 
-An empty `SITE_TOKEN` disables collection, and the loader also refuses to run outside the production GitHub Pages hostname so local development does not affect the reports. The dashboard paths distinguish the hub, Funnel Overview, Pipeline Overview, Teaching Sites, Event Tracker, Public Event Registrants, Regional Campus, Record Lookup, Slate Concepts, BetterQuery, and `/queryomatic/admin/`. The Slate wrapper iframes use an origin-only referrer policy so parent portal paths and query values are not disclosed to the hosted interfaces or analytics beacon.
+An empty `SITE_TOKEN` disables collection, and the loader also refuses to run outside the production GitHub Pages hostname so local development does not affect the reports. The dashboard paths distinguish the hub, Funnel Overview, Pipeline Overview, Teaching Sites, Event Tracker, Public Event Registrants, Regional Campus, Record Lookup, Slate Concepts, BetterQuery, and `/tools/queryomatic/admin/`. The Slate wrapper iframes use an origin-only referrer policy so parent portal paths and query values are not disclosed to the hosted interfaces or analytics beacon.
 
 ## Wrapper rollout
 
@@ -90,4 +90,4 @@ Do not rename the query exports or their fields without making the matching chan
 
 ## Queryomatic
 
-The former standalone Queryomatic repository was imported under `queryomatic/`. The Cloudflare Worker remains a separate deployment; use `queryomatic/README.md` for its Worker secrets and setup instructions. Update its worker `ALLOWED_ORIGIN` to permit the consolidated Pages origin and the `/enrollmentgatewaytools` site.
+The former standalone Queryomatic repository was imported under `tools/queryomatic/`. The Cloudflare Worker remains a separate deployment; use `tools/queryomatic/README.md` for its Worker secrets and setup instructions. Update its worker `ALLOWED_ORIGIN` to permit the consolidated Pages origin and the `/enrollmentgatewaytools` site.
