@@ -241,6 +241,15 @@ button, select { font: inherit; }
 .funnel-dashboard .stage-count { color: #fff; font-family: Georgia, serif; font-size: 2rem; font-weight: 700; line-height: 1; }
 .funnel-dashboard .stage-rate { margin-top: 4px; padding: 2px 8px; border-radius: 20px; color: rgba(255,255,255,.78); font-size: .7rem; font-weight: 600; background: rgba(0,0,0,.18); }
 
+.funnel-dashboard .degree-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-bottom: 16px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 13px; background: rgba(242,245,246,.7); }
+.funnel-dashboard .degree-search-input { width: min(300px, 70vw); min-height: 42px; padding: 8px 12px; border: 1.5px solid #cfdadd; border-radius: var(--radius); color: var(--navy); font: 650 .86rem Inter, sans-serif; background: var(--white); box-shadow: none; }
+.funnel-dashboard .degree-search-input:focus { outline: 3px solid rgba(8,124,120,.28); outline-offset: 2px; border-color: var(--teal); }
+.funnel-dashboard .degree-empty-toggle { display: inline-flex; align-items: center; gap: 9px; color: var(--navy); font-size: .82rem; font-weight: 700; cursor: pointer; }
+.funnel-dashboard .degree-empty-toggle input { width: 17px; height: 17px; margin: 0; accent-color: var(--teal); }
+.funnel-dashboard .degree-filter-count { margin-left: auto; color: var(--muted); font-size: .76rem; font-weight: 700; }
+.funnel-dashboard .stage-column-active { color: var(--teal); font-weight: 800; background: rgba(8,124,120,.07); }
+.funnel-dashboard th.stage-column-active { color: #fff; background: rgba(0,0,0,.16); }
+
 .event-dashboard .container { width: min(1440px, calc(100% - 40px)); max-width: 1440px; }
 .event-dashboard .event-filter-controls { justify-content: flex-start; align-items: center; gap: 18px 28px; }
 .event-dashboard .event-search-group { align-items: center; }
@@ -315,6 +324,10 @@ button, select { font: inherit; }
   .inactive-list ul { columns: 1; }
   .pipeline-dashboard .stat-bar, .funnel-dashboard .stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .funnel-dashboard .conversion-mode-control { width: 100%; }
+  .funnel-dashboard .degree-filter-row { align-items: stretch; margin-right: 8px; margin-left: 8px; }
+  .funnel-dashboard .degree-search-group, .funnel-dashboard .degree-search-input { width: 100%; }
+  .funnel-dashboard .degree-empty-toggle { width: 100%; }
+  .funnel-dashboard .degree-filter-count { margin-left: 0; }
   .teaching-site-detail .site-funnel-stat-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .teaching-dashboard .teaching-overview-stat-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pipeline-dashboard .stat-val { font-size: 2.3rem; }

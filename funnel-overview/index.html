@@ -169,9 +169,36 @@
 
     <div id="panel-by-degree" class="tab-panel" hidden>
       <div class="section-divider"><div class="section-eyebrow">Breakdown</div><div class="section-heading">Funnel by Degree</div></div>
+      <div class="degree-filter-row">
+        <div class="control-group degree-search-group">
+          <label class="ctrl-label" for="degree-search">Search</label>
+          <input id="degree-search" class="degree-search-input" type="search" placeholder="Filter degree programs…" autocomplete="off">
+        </div>
+        <div class="control-group">
+          <label class="ctrl-label" for="degree-stage">Stage</label>
+          <select id="degree-stage" class="control-select">
+            <option value="all" selected>All Stages</option>
+            <option value="applications">Applied</option>
+            <option value="awaiting">Awaiting Approval</option>
+            <option value="admitted">Admitted</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="ctrl-label" for="degree-sort">Sort</label>
+          <select id="degree-sort" class="control-select">
+            <option value="program" selected>Program A–Z</option>
+            <option value="total">Total (High–Low)</option>
+            <option value="applications">Applied (High–Low)</option>
+            <option value="awaiting">Awaiting (High–Low)</option>
+            <option value="admitted">Admitted (High–Low)</option>
+          </select>
+        </div>
+        <label class="degree-empty-toggle" for="degree-hide-empty"><input id="degree-hide-empty" type="checkbox" checked> Hide programs with no records</label>
+        <span id="degree-filter-count" class="degree-filter-count"></span>
+      </div>
       <div class="panel">
         <table class="data-table">
-          <thead><tr><th>Degree Program</th><th>Applied</th><th>Awaiting Approval</th><th>Admitted</th><th>Total</th></tr></thead>
+          <thead><tr><th>Degree Program</th><th data-stage="applications">Applied</th><th data-stage="awaiting">Awaiting Approval</th><th data-stage="admitted">Admitted</th><th>Total</th></tr></thead>
           <tbody id="degree-table-body"></tbody>
         </table>
       </div>
@@ -191,12 +218,17 @@
     };
     const ui = window.DashboardUI;
     const STATUS_ORDER = ['Inquiry', 'Applied', 'Awaiting Approval', 'Admitted'];
+    const stageColumns = ['applications', 'awaiting', 'admitted'];
     let data = { counts:{}, awaiting:[], actions:[], filters:{}, funnelRecords:{} };
     let conversionMode = sessionStorage.getItem('funnel-conversion-mode') || 'cumulative';
     let currentPage = 1;
     let perPage = 25;
     let statusDirection = 0;
     let activeTab = 'overview';
+    let degreeSearch = '';
+    let degreeStage = 'all';
+    let degreeSort = 'program';
+    let degreeHideEmpty = true;
     const bridge = window.DashboardBridge.create('funnel-overview', render);
 
     function render(payload) {
@@ -346,8 +378,11 @@
       ], rows);
     }
 
+    function programLabel(value) {
+      return ui.decodeText(value == null ? '' : value).trim();
+    }
     function isBlankProgram(value) {
-      const text = String(value == null ? '' : value).trim();
+      const text = programLabel(value);
       return text === '' || text === '—' || text === '-' || text === 'N/A';
     }
     function deriveFunnelStatuses(rows) {
@@ -364,7 +399,7 @@
       const seen = {};
       const found = [];
       rows.forEach(function (record) {
-        const program = String(record.program == null ? '' : record.program).trim();
+        const program = programLabel(record.program);
         if (!isBlankProgram(program) && !seen[program]) { seen[program] = true; found.push(program); }
       });
       return found.sort(function (a, b) { return a.localeCompare(b); });
@@ -659,7 +694,7 @@
       const order = [];
       stages.forEach(function (stage) {
         stage.records.forEach(function (record) {
-          const raw = String(record.program == null ? '' : record.program).trim();
+          const raw = programLabel(record.program);
           const label = isBlankProgram(raw) ? 'No Program Listed' : raw;
           if (!byProgram[label]) { byProgram[label] = { applications:0, awaiting:0, admitted:0 }; order.push(label); }
           byProgram[label][stage.key] += 1;
@@ -677,25 +712,52 @@
       });
     }
 
+    function filterDegreeRows(rows) {
+      const needle = degreeSearch.trim().toLowerCase();
+      const filtered = rows.filter(function (record) {
+        if (needle && record.program.toLowerCase().indexOf(needle) === -1) return false;
+        if (degreeStage !== 'all' && record[degreeStage] <= 0) return false;
+        if (degreeHideEmpty && record.total <= 0) return false;
+        return true;
+      });
+      if (degreeSort !== 'program') {
+        filtered.sort(function (a, b) { return b[degreeSort] - a[degreeSort] || a.program.localeCompare(b.program); });
+      }
+      return filtered;
+    }
+
     function renderDegreeBreakdown() {
-      const rows = buildDegreeBreakdown();
+      const allRows = buildDegreeBreakdown();
+      const rows = filterDegreeRows(allRows);
+      const count = document.getElementById('degree-filter-count');
+      count.textContent = allRows.length
+        ? 'Showing ' + rows.length.toLocaleString() + ' of ' + allRows.length.toLocaleString() + ' programs'
+        : '';
+      Array.prototype.forEach.call(document.querySelectorAll('#panel-by-degree th[data-stage]'), function (header) {
+        header.classList.toggle('stage-column-active', header.getAttribute('data-stage') === degreeStage);
+      });
       const body = document.getElementById('degree-table-body'); body.replaceChildren();
-      if (!rows.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No funnel records available for this period.')); return; }
+      if (!allRows.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No funnel records available for this period.')); return; }
+      if (!rows.length) { const row = body.insertRow(); const cell = row.insertCell(); cell.colSpan = 5; cell.appendChild(ui.emptyState('No degree programs match the current filters.')); return; }
       const totals = { applications:0, awaiting:0, admitted:0, total:0 };
       rows.forEach(function (record) {
         const row = body.insertRow();
         row.insertCell().textContent = record.program;
-        row.insertCell().textContent = record.applications.toLocaleString();
-        row.insertCell().textContent = record.awaiting.toLocaleString();
-        row.insertCell().textContent = record.admitted.toLocaleString();
+        stageColumns.forEach(function (stage) {
+          const cell = row.insertCell();
+          cell.textContent = record[stage].toLocaleString();
+          if (stage === degreeStage) cell.classList.add('stage-column-active');
+        });
         row.insertCell().textContent = record.total.toLocaleString();
         totals.applications += record.applications; totals.awaiting += record.awaiting; totals.admitted += record.admitted; totals.total += record.total;
       });
       const totalRow = body.insertRow(); totalRow.className = 'totals-row';
-      totalRow.insertCell().textContent = 'Total';
-      totalRow.insertCell().textContent = totals.applications.toLocaleString();
-      totalRow.insertCell().textContent = totals.awaiting.toLocaleString();
-      totalRow.insertCell().textContent = totals.admitted.toLocaleString();
+      totalRow.insertCell().textContent = rows.length === allRows.length ? 'Total' : 'Filtered Total';
+      stageColumns.forEach(function (stage) {
+        const cell = totalRow.insertCell();
+        cell.textContent = totals[stage].toLocaleString();
+        if (stage === degreeStage) cell.classList.add('stage-column-active');
+      });
       totalRow.insertCell().textContent = totals.total.toLocaleString();
     }
 
@@ -779,6 +841,10 @@
     document.getElementById('funnel-export-records').addEventListener('click', exportFunnelRecords);
     document.getElementById('tab-overview').addEventListener('click', function () { setTab('overview'); });
     document.getElementById('tab-by-degree').addEventListener('click', function () { setTab('by-degree'); });
+    document.getElementById('degree-search').addEventListener('input', function (event) { degreeSearch = event.target.value; renderDegreeBreakdown(); bridge.resize(); });
+    document.getElementById('degree-stage').addEventListener('change', function (event) { degreeStage = event.target.value; renderDegreeBreakdown(); bridge.resize(); });
+    document.getElementById('degree-sort').addEventListener('change', function (event) { degreeSort = event.target.value; renderDegreeBreakdown(); bridge.resize(); });
+    document.getElementById('degree-hide-empty').addEventListener('change', function (event) { degreeHideEmpty = event.target.checked; renderDegreeBreakdown(); bridge.resize(); });
     document.getElementById('cumulative').addEventListener('click', function () { setMode('cumulative'); });
     document.getElementById('sequential').addEventListener('click', function () { setMode('sequential'); });
     document.getElementById('portal-home').addEventListener('click', function () {

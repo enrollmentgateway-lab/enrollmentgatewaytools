@@ -106,8 +106,22 @@
     return decoded;
   }
 
+  // Slate sometimes hands back percent-escaped values (e.g. "Master%20of%20Divinity").
+  // Decode each run of valid escapes on its own so a stray "%" never breaks the whole string.
+  function decodePercent(value) {
+    const raw = String(value == null ? '' : value);
+    if (!/%[0-9a-f]{2}/i.test(raw)) return raw;
+    return raw.replace(/(?:%[0-9a-f]{2})+/gi, function (match) {
+      try { return decodeURIComponent(match); } catch (_) { return match; }
+    });
+  }
+
+  function decodeText(value) {
+    return decodeEntities(decodePercent(decodeEntities(value)));
+  }
+
   function text(value, fallback) {
-    return decodeEntities(value == null || value === '' ? (fallback == null ? '—' : fallback) : value);
+    return decodeText(value == null || value === '' ? (fallback == null ? '—' : fallback) : value);
   }
 
   function setText(id, value) {
@@ -135,7 +149,7 @@
   }
 
   function csvCell(value) {
-    let normalized = decodeEntities(value == null ? '' : value).replace(/\r\n?/g, '\n');
+    let normalized = decodeText(value == null ? '' : value).replace(/\r\n?/g, '\n');
     if (/^\s*[=+\-@]/.test(normalized)) normalized = "'" + normalized;
     return '"' + normalized.replace(/"/g, '""') + '"';
   }
@@ -174,6 +188,7 @@
   window.DashboardUI = Object.freeze({
     number: number,
     decodeEntities: decodeEntities,
+    decodeText: decodeText,
     text: text,
     setText: setText,
     showApp: showApp,
